@@ -7,7 +7,7 @@ namespace H3.Model {
 
     public class BaseCellRotation {
         public int Cell { get; init; }
-        public int CounterClockwiseRotation60 { get; init; }
+        public int CounterClockwiseRotations { get; init; }
         public BaseCell BaseCell => BaseCell.BaseCells[Cell];
 
         #region lookups
@@ -454,7 +454,7 @@ namespace H3.Model {
         public static implicit operator BaseCellRotation((int, int) tuple) =>
             new BaseCellRotation {
                 Cell = tuple.Item1,
-                CounterClockwiseRotation60 = tuple.Item2
+                CounterClockwiseRotations = tuple.Item2
             };
 
         public static int GetCounterClockwiseRotationsForBaseCell(int cell, int face) {
@@ -464,7 +464,7 @@ namespace H3.Model {
                 for (var j = 0; j < 3; j += 1) {
                     for (var k = 0; k < 3; k += 1) {
                         var e = FaceIjkBaseCells[face, i, j, k];
-                        if (e.Cell == cell) return e.CounterClockwiseRotation60;
+                        if (e.Cell == cell) return e.CounterClockwiseRotations;
                     }
                 }
             }
@@ -474,9 +474,9 @@ namespace H3.Model {
 
         public override bool Equals(object? other) => other is BaseCellRotation r &&
             Cell == r.Cell &&
-            CounterClockwiseRotation60 == r.CounterClockwiseRotation60;
+            CounterClockwiseRotations == r.CounterClockwiseRotations;
 
-        public override int GetHashCode() => HashCode.Combine(Cell, CounterClockwiseRotation60);
+        public override int GetHashCode() => HashCode.Combine(Cell, CounterClockwiseRotations);
     }
 
 }

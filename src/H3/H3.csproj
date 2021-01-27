@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <PackOnBuild>true</PackOnBuild>
+    <PackageId>pocketken.H3</PackageId>
+    <PackageVersion>3.7.1</PackageVersion>
+    <Authors>pocketken</Authors>
+    <Description>Port of Uber's H3 to .NET</Description>
   </PropertyGroup>
 
   <ItemGroup>

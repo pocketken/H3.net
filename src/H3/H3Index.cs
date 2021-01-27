@@ -250,23 +250,23 @@ namespace H3 {
         }
 
         public void RotatePentagonCounterClockwise() =>
-            RotatePentagon(RotateCounterClockwise, cell => cell.Rotate60CounterClockwise());
+            RotatePentagon(RotateCounterClockwise, cell => cell.RotateCounterClockwise());
 
         public void RotatePentagoClockwise() =>
-            RotatePentagon(RotateClockwise, cell => cell.Rotate60Clockwise());
+            RotatePentagon(RotateClockwise, cell => cell.RotateClockwise());
 
         public void RotateCounterClockwise() {
             // rotate in place
             int resolution = Resolution;
             for (int r = 1; r <= resolution; r += 1)
-                SetCellIndexForResolution(r, GetCellIndexForResolution(r).Rotate60CounterClockwise());
+                SetCellIndexForResolution(r, GetCellIndexForResolution(r).RotateCounterClockwise());
         }
 
         public void RotateClockwise() {
             // rotate in place
             int resolution = Resolution;
             for (int r = 1; r <= resolution; r += 1)
-                SetCellIndexForResolution(r, GetCellIndexForResolution(r).Rotate60Clockwise());
+                SetCellIndexForResolution(r, GetCellIndexForResolution(r).RotateClockwise());
         }
 
         #endregion manipulations
@@ -333,7 +333,7 @@ namespace H3 {
             // found our base cell
             index.BaseCellNumber = ijk.BaseCellRotation.Cell;
             var baseCell = ijk.BaseCellRotation.BaseCell;
-            int numRotations = ijk.BaseCellRotation.CounterClockwiseRotation60;
+            int numRotations = ijk.BaseCellRotation.CounterClockwiseRotations;
 
             // rotate if necessary to get canonical base cell orientation
             // for this base cell

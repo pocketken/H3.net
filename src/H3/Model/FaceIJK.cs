@@ -9,12 +9,6 @@ using static H3.Utils;
 
 namespace H3.Model {
 
-    public enum Overage {
-        None = 0,
-        FaceEdge = 1,
-        NewFace = 2
-    }
-
     public class FaceIJK {
         public int Face { get; set; }
         public CoordIJK Coord { get; set; } = new CoordIJK();

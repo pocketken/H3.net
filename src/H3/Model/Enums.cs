@@ -14,7 +14,7 @@ namespace H3.Model {
     }
 
     public static class CellIndexExtensions {
-        public static CellIndex Rotate60Clockwise(this CellIndex cell) => cell switch {
+        public static CellIndex RotateClockwise(this CellIndex cell) => cell switch {
             CellIndex.K => CellIndex.JK,
             CellIndex.JK => CellIndex.J,
             CellIndex.J => CellIndex.IJ,
@@ -24,7 +24,7 @@ namespace H3.Model {
             _ => cell
         };
 
-        public static CellIndex Rotate60CounterClockwise(this CellIndex cell) => cell switch {
+        public static CellIndex RotateCounterClockwise(this CellIndex cell) => cell switch {
             CellIndex.K => CellIndex.IK,
             CellIndex.IK => CellIndex.I,
             CellIndex.I => CellIndex.IJ,
@@ -40,4 +40,11 @@ namespace H3.Model {
         Hexagon = 1,
         UniEdge = 2
     }
+
+    public enum Overage {
+        None = 0,
+        FaceEdge = 1,
+        NewFace = 2
+    }
+
 }
