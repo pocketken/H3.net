@@ -34,7 +34,7 @@ namespace H3.Model {
         public GeoCoord ToFaceGeoCoord(int face, int resolution, bool isSubstrate) {
             double r = Magitude;
             if (r < EPSILON) {
-                return GeoCoord.FaceCenters[0];
+                return LookupTables.GeoFaceCenters[0];
             }
 
             double theta = Math.Atan2(X, Y);
@@ -50,8 +50,8 @@ namespace H3.Model {
                 theta = NormalizeAngle(theta + M_AP7_ROT_RADS);
             }
 
-            theta = NormalizeAngle(FaceIJK.AxisAzimuths[face, 0] - theta);
-            return GeoCoord.ForAzimuthDistanceInRadians(GeoCoord.FaceCenters[face], theta, r);
+            theta = NormalizeAngle(LookupTables.AxisAzimuths[face, 0] - theta);
+            return GeoCoord.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
         }
 
         public override bool Equals(object? other) => other is Vec2d v && X == v.X && Y == v.Y;

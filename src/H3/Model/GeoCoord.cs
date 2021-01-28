@@ -10,33 +10,6 @@ namespace H3.Model {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
 
-        #region lookups
-
-        public static readonly GeoCoord[] FaceCenters = new[] {
-            new GeoCoord(0.803582649718989942, 1.248397419617396099),    // face  0
-            new GeoCoord(1.307747883455638156, 2.536945009877921159),    // face  1
-            new GeoCoord(1.054751253523952054, -1.347517358900396623),   // face  2
-            new GeoCoord(0.600191595538186799, -0.450603909469755746),   // face  3
-            new GeoCoord(0.491715428198773866, 0.401988202911306943),    // face  4
-            new GeoCoord(0.172745327415618701, 1.678146885280433686),    // face  5
-            new GeoCoord(0.605929321571350690, 2.953923329812411617),    // face  6
-            new GeoCoord(0.427370518328979641, -1.888876200336285401),   // face  7
-            new GeoCoord(-0.079066118549212831, -0.733429513380867741),  // face  8
-            new GeoCoord(-0.230961644455383637, 0.506495587332349035),   // face  9
-            new GeoCoord(0.079066118549212831, 2.408163140208925497),    // face 10
-            new GeoCoord(0.230961644455383637, -2.635097066257444203),   // face 11
-            new GeoCoord(-0.172745327415618701, -1.463445768309359553),  // face 12
-            new GeoCoord(-0.605929321571350690, -0.187669323777381622),  // face 13
-            new GeoCoord(-0.427370518328979641, 1.252716453253507838),   // face 14
-            new GeoCoord(-0.600191595538186799, 2.690988744120037492),   // face 15
-            new GeoCoord(-0.491715428198773866, -2.739604450678486295),  // face 16
-            new GeoCoord(-0.803582649718989942, -1.893195233972397139),  // face 17
-            new GeoCoord(-1.307747883455638156, -0.604647643711872080),  // face 18
-            new GeoCoord(-1.054751253523952054, 1.794075294689396615),   // face 19
-        };
-
-        #endregion lookups
-
         public GeoCoord() { }
 
         public GeoCoord(double latitude, double longitude) {

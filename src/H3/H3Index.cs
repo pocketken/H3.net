@@ -46,7 +46,7 @@ namespace H3 {
 
         private ulong Value { get; set; } = 0;
 
-        public BaseCell? BaseCell => IsValid ? BaseCell.BaseCells[BaseCellNumber] : null;
+        public BaseCell? BaseCell => IsValid ? LookupTables.BaseCells[BaseCellNumber] : null;
 
         public int HighBit {
             get => (int)((Value & H3_HIGH_BIT_MASK) >> H3_MAX_OFFSET);
@@ -96,7 +96,7 @@ namespace H3 {
 
                     if (!foundFirstNonZeroDigit && idx != CellIndex.Center) {
                         foundFirstNonZeroDigit = true;
-                        if (!BaseCell.BaseCells[baseCell].IsPentagon && idx == CellIndex.K) {
+                        if (!LookupTables.BaseCells[baseCell].IsPentagon && idx == CellIndex.K) {
                             return false;
                         }
                     }
@@ -125,7 +125,7 @@ namespace H3 {
             }
         }
 
-        public bool IsPentagon => BaseCell.BaseCells[BaseCellNumber].IsPentagon &&
+        public bool IsPentagon => LookupTables.BaseCells[BaseCellNumber].IsPentagon &&
             LeadingNonZeroCellIndex != CellIndex.Center;
 
         #endregion properties

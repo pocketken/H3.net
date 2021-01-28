@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using static H3.Constants;
 
 #nullable enable
@@ -11,66 +10,9 @@ namespace H3.Model {
         public int I { get; set; } = 0;
         public int J { get; set; } = 0;
         public int K { get; set; } = 0;
-        public bool IsValid => this != Invalid;
+        public bool IsValid => this != InvalidIJKCoordinate;
 
-        public static readonly CoordIJK Invalid = new CoordIJK(-1, -1, -1);
-
-        #region lookups
-
-        public static readonly CoordIJK[] UnitVectors = new CoordIJK[7] {
-            new CoordIJK(0, 0, 0),
-            new CoordIJK(0, 0, 1),
-            new CoordIJK(0, 1, 0),
-            new CoordIJK(0, 1, 1),
-            new CoordIJK(1, 0, 0),
-            new CoordIJK(1, 0, 1),
-            new CoordIJK(1, 1, 0)
-        };
-
-        public static readonly CoordIJK[] Class2HexVertices = new CoordIJK[NUM_HEX_VERTS] {
-            new CoordIJK(2, 1, 0),
-            new CoordIJK(1, 2, 0),
-            new CoordIJK(0, 2, 1),
-            new CoordIJK(0, 1, 2),
-            new CoordIJK(1, 0, 2),
-            new CoordIJK(2, 0, 1)
-        };
-
-        public static readonly CoordIJK[] Class3HexVertices = new CoordIJK[NUM_HEX_VERTS] {
-            new CoordIJK(5, 4, 0),
-            new CoordIJK(1, 5, 0),
-            new CoordIJK(0, 5, 4),
-            new CoordIJK(0, 1, 5),
-            new CoordIJK(4, 0, 5),
-            new CoordIJK(5, 0, 1)
-        };
-
-        public static readonly CoordIJK[] Class2PentagonVertices = new CoordIJK[NUM_PENT_VERTS] {
-            new CoordIJK(2, 1, 0),
-            new CoordIJK(1, 2, 0),
-            new CoordIJK(0, 2, 1),
-            new CoordIJK(0, 1, 2),
-            new CoordIJK(1, 0, 2)
-        };
-
-        public static readonly CoordIJK[] Class3PentagonVertices = new CoordIJK[NUM_PENT_VERTS] {
-            new CoordIJK(5, 4, 0),
-            new CoordIJK(1, 5, 0),
-            new CoordIJK(0, 5, 4),
-            new CoordIJK(0, 1, 5),
-            new CoordIJK(4, 0, 5)
-        };
-
-        private static readonly Dictionary<CellIndex, CoordIJK> IndexToUnitVector =
-            Enum.GetValues<CellIndex>().ToDictionary(e => e, e => e switch {
-                CellIndex.Invalid => Invalid,
-                _ => UnitVectors[(int)e]
-            });
-
-        private static readonly Dictionary<CoordIJK, CellIndex> UnitVectorToIndex =
-            IndexToUnitVector.ToDictionary(e => e.Value, e => e.Key);
-
-        #endregion lookups
+        public static readonly CoordIJK InvalidIJKCoordinate = new CoordIJK(-int.MaxValue, -int.MaxValue, -int.MaxValue);
 
         public CoordIJK() { }
 
@@ -223,17 +165,17 @@ namespace H3.Model {
         }
 
         public CoordIJK RotateCounterClockwise() {
-            CoordIJK iVec = IndexToUnitVector[CellIndex.IJ] * I;
-            CoordIJK jVec = IndexToUnitVector[CellIndex.JK] * J;
-            CoordIJK kVec = IndexToUnitVector[CellIndex.IK] * K;
+            CoordIJK iVec = LookupTables.IndexToUnitVector[CellIndex.IJ] * I;
+            CoordIJK jVec = LookupTables.IndexToUnitVector[CellIndex.JK] * J;
+            CoordIJK kVec = LookupTables.IndexToUnitVector[CellIndex.IK] * K;
 
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
 
         public CoordIJK RotateClockwise() {
-            CoordIJK iVec = IndexToUnitVector[CellIndex.IK] * I;
-            CoordIJK jVec = IndexToUnitVector[CellIndex.IJ] * J;
-            CoordIJK kVec = IndexToUnitVector[CellIndex.JK] * K;
+            CoordIJK iVec = LookupTables.IndexToUnitVector[CellIndex.IK] * I;
+            CoordIJK jVec = LookupTables.IndexToUnitVector[CellIndex.IJ] * J;
+            CoordIJK kVec = LookupTables.IndexToUnitVector[CellIndex.JK] * K;
 
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
@@ -307,7 +249,7 @@ namespace H3.Model {
 
         public CoordIJK ToNeighbour(CellIndex cellIndex) {
             if (cellIndex > CellIndex.Center && cellIndex < CellIndex.Invalid) {
-                SetFrom(this + IndexToUnitVector[cellIndex]).Normalize();
+                SetFrom(this + LookupTables.IndexToUnitVector[cellIndex]).Normalize();
             }
             return this;
         }
@@ -366,7 +308,7 @@ namespace H3.Model {
             new CoordIJK(source).DownAperature3Clockwise();
 
         public static implicit operator CellIndex(CoordIJK h) =>
-            UnitVectorToIndex.GetValueOrDefault(Normalize(h), CellIndex.Invalid);
+            LookupTables.UnitVectorToIndex.GetValueOrDefault(Normalize(h), CellIndex.Invalid);
 
         public static CoordIJK operator +(CoordIJK a, CoordIJK b) {
             return new CoordIJK {

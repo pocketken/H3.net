@@ -17,6 +17,7 @@ namespace H3.Test {
         [TestCase(1, 1, 0, CellIndex.IJ)]
         [TestCase(2, 2, 2, CellIndex.Center)]
         [TestCase(2, 2, 3, CellIndex.K)]
+        [TestCase(8, 1, 8, CellIndex.Invalid)]
         public void Test_CoordIJK_UnitVector_Matching(int i, int j, int k, CellIndex expectedIndex) {
             // Arrange
             CoordIJK coord = new CoordIJK(i, j, k);
