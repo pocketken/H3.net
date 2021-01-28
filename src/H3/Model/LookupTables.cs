@@ -384,8 +384,6 @@ namespace H3.Model {
             {121, 116, 120, 119, 117, 113, 118},                // base cell 121
         };
 
-        public const int InvalidRotations = -1;
-
         /// <summary>
         /// Resolution 0 base cell lookup table for each face.
         /// 

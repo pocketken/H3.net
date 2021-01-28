@@ -10,6 +10,8 @@ namespace H3.Model {
         public int CounterClockwiseRotations { get; init; }
         public BaseCell BaseCell => LookupTables.BaseCells[Cell];
 
+        public const int InvalidRotations = -1;
+
         private BaseCellRotation() { }
 
         public static implicit operator BaseCellRotation((int, int) tuple) =>
@@ -19,7 +21,7 @@ namespace H3.Model {
             };
 
         public static int GetCounterClockwiseRotationsForBaseCell(int cell, int face) {
-            if (face < 0 || face > NUM_ICOSA_FACES) return LookupTables.InvalidRotations;
+            if (face < 0 || face > NUM_ICOSA_FACES) return InvalidRotations;
 
             for (var i = 0; i < 3; i+= 1) {
                 for (var j = 0; j < 3; j += 1) {
@@ -30,7 +32,7 @@ namespace H3.Model {
                 }
             }
 
-            return LookupTables.InvalidRotations;
+            return InvalidRotations;
         }
 
         public override bool Equals(object? other) => other is BaseCellRotation r &&
