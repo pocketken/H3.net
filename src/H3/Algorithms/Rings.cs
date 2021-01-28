@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using H3.Model;
 
 namespace H3.Algorithms {
 
-    public enum HexRangeResult {
+    public enum RingResult {
         Success = 0,
         Pentagon,
         KSequence
@@ -25,6 +27,49 @@ namespace H3.Algorithms {
         public static long MaxKRingSize(int k) => 3 * k * (k + 1) + 1;
 
         /// <summary>
+        /// GetHexRange produces indexes within k distance of the origin index.
+        /// Output behavior is undefined when one of the indexes returned by this
+        /// function is a pentagon or is in the pentagon distortion area.
+        ///
+        /// k-ring 0 is defined as the origin index, k-ring 1 is defined as k-ring 0 and
+        /// all neighboring indexes, and so on.
+        ///
+        /// Output is placed in the resulting enumerator in order of increasing distance from
+        /// the origin.
+        /// </summary>
+        /// <param name="origin">Origin location</param>
+        /// <param name="k">k >= 0</param>
+        /// <returns>(RingResult.Success, IEnumerable) on success</returns>
+        public static (RingResult, IEnumerable<H3Index>) GetHexRange(this H3Index origin, int k) {
+            List<H3Index> indicies = new();
+            var result = HexRangeDistance(origin, k, (index, _) => indicies.Add(index));
+            return (result, indicies);
+        }
+
+        /// <summary>
+        /// GetHexRanges takes an array of input hex IDs and a max k-ring and returns an
+        /// array of hexagon IDs sorted first by the original hex IDs and then by the
+        /// k-ring (0 to max), with no guaranteed sorting within each k-ring group.
+        /// </summary>
+        /// <param name="origins">Array of origin locations</param>
+        /// <param name="k">k >= 0</param>
+        /// <returns>(RingResult.Success, IEnumerable) on success</returns>
+        public static (RingResult, H3Index[]) GetHexRanges(this H3Index[] origins, int k) {
+            long segmentSize = MaxKRingSize(k);
+            H3Index[] indicies = new H3Index[segmentSize * origins.Length];
+
+            for (int i = 0; i < origins.Length; i+= 1) {
+                int j = 0;
+                var ringResult = HexRangeDistance(origins[i], k, (index, _) => {
+                    indicies[(i * segmentSize) + j++] = index;
+                });
+                if (ringResult != RingResult.Success) return (ringResult, indicies);
+            }
+
+            return (RingResult.Success, indicies);
+        }
+
+        /// <summary>
         /// GetHexRangeDistances produces indexes within k cell distance of the origin index.
         /// Output behavior is undefined when one of the indexes returned by this
         /// function is a pentagon or is in the pentagon distortion area.
@@ -32,22 +77,43 @@ namespace H3.Algorithms {
         /// k-ring 0 is defined as the origin index, k-ring 1 is defined as k-ring 0 and
         /// all neighboring indexes, and so on.
         ///
-        /// Output is placed in the provided enumerator in order of increasing distance from
+        /// Output is placed in the resulting enumerator in order of increasing distance from
         /// the origin.
         /// </summary>
         /// <param name="origin">Origin location</param>
         /// <param name="k">k >= 0</param>
-        /// <param name="distances">out parameter for resultant distances</param>
-        /// <returns>HexRangeResult</returns>
-        public static HexRangeResult GetHexRangeDistances(this H3Index origin, int k, out List<HexRangeDistance> distances) {
-            // TODO should this be an actual generator/iterator?
+        /// <returns>(RingResult.Success, IEnumerable) on success</returns>
+        public static (RingResult, IEnumerable<HexRangeDistance>) GetHexRangeDistances(this H3Index origin, int k) {
+            List<HexRangeDistance> distances = new();
+            var result = HexRangeDistance(origin, k, (index, distance) => distances.Add(new HexRangeDistance {
+                Index = index,
+                Distance = distance
+            }));
+            return (result, distances);
+        }
+
+        /// <summary>
+        /// Guts of the hex range algorithm which produces indexes within k cell distance
+        /// of the origin index.
+        ///
+        /// k-ring 0 is defined as the origin index, k-ring 1 is defined as k-ring 0 and
+        /// all neighboring indexes, and so on.
+        ///
+        /// Output behavior is undefined when one of the indexes returned by this
+        /// function is a pentagon or is in the pentagon distortion area.
+        /// </summary>
+        /// <param name="origin">Origin location</param>
+        /// <param name="k">k >= 0</param>
+        /// <param name="callback">callback function which receives index and distance for
+        /// each result produced by the algorithm.</param>
+        /// <returns>RingResult.Success on success</returns>
+        private static RingResult HexRangeDistance(H3Index origin, int k, Action<H3Index, int> callback) {
             H3Index index = new H3Index(origin);
 
-            // k must be >= 0, so origin is always needed
-            distances = new List<HexRangeDistance>() { new HexRangeDistance { Index = origin, Distance = 0 } };
+            callback(origin, 0);
 
             // Pentagon was encountered; bail out as user doesn't want this.
-            if (origin.IsPentagon) return HexRangeResult.Pentagon;
+            if (origin.IsPentagon) return RingResult.Pentagon;
 
             // 0 < ring <= k, current ring
             int ring = 1;
@@ -70,12 +136,12 @@ namespace H3.Algorithms {
                     if (index == H3Index.Invalid) {
                         // Should not be possible because `origin` would have to be a
                         // pentagon
-                        return HexRangeResult.KSequence;
+                        return RingResult.KSequence;
                     }
 
                     if (index.IsPentagon) {
                         // Pentagon was encountered; bail out as user doesn't want this.
-                        return HexRangeResult.Pentagon;
+                        return RingResult.Pentagon;
                     }
                 }
 
@@ -83,10 +149,10 @@ namespace H3.Algorithms {
                 if (index == H3Index.Invalid) {
                     // Should not be possible because `origin` would have to be a
                     // pentagon
-                    return HexRangeResult.Pentagon;
+                    return RingResult.Pentagon;
                 }
 
-                distances.Add(new HexRangeDistance { Index = index, Distance = ring });
+                callback(index, ring);
                 i += 1;
 
                 // Check if end of this side of the k-ring
@@ -102,11 +168,11 @@ namespace H3.Algorithms {
                 }
 
                 if (index.IsPentagon) {
-                    return HexRangeResult.Pentagon;
+                    return RingResult.Pentagon;
                 }
             }
 
-            return HexRangeResult.Success;
+            return RingResult.Success;
         }
 
     }

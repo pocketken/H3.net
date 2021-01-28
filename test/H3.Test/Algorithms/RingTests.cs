@@ -12,10 +12,10 @@ namespace H3.Test.Algorithms {
         [Test]
         public void Test_GetHexDistances_KnownValue() {
             // Act
-            var hexDistanceResult = new H3Index(TestHelpers.TestIndexValue).GetHexRangeDistances(2, out var hexDistanceList);
+            var (hexDistanceResult, hexDistanceList) = new H3Index(TestHelpers.TestIndexValue).GetHexRangeDistances(2);
 
             // Assert
-            Assert.AreEqual(HexRangeResult.Success, hexDistanceResult, "should be successful");
+            Assert.AreEqual(RingResult.Success, hexDistanceResult, "should be successful");
 
             var hexDistances = hexDistanceList.ToArray();
             Assert.AreEqual(TestHelpers.TestIndexKRingsTo2.Length, hexDistances.Length, "should be same length");
