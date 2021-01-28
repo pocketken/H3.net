@@ -1,10 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using H3.Model;
-using static H3.Utils;
 
 namespace H3.Algorithms {
+
+    public enum HexRangeResult {
+        Success = 0,
+        Pentagon,
+        KSequence
+    }
 
     public record HexRangeDistance {
         public H3Index Index { get; init; }
@@ -34,18 +37,17 @@ namespace H3.Algorithms {
         /// </summary>
         /// <param name="origin">Origin location</param>
         /// <param name="k">k >= 0</param>
-        /// <returns>Empty iterator if no pentagon or pentagonal distortion area was
-        /// encountered</returns>
-        public static IEnumerable<HexRangeDistance> GetHexRangeDistances(this H3Index origin, int k) {
+        /// <param name="distances">out parameter for resultant distances</param>
+        /// <returns>HexRangeResult</returns>
+        public static HexRangeResult GetHexRangeDistances(this H3Index origin, int k, out List<HexRangeDistance> distances) {
             // TODO should this be an actual generator/iterator?
             H3Index index = new H3Index(origin);
 
             // k must be >= 0, so origin is always needed
-            List<HexRangeDistance> distances = new() { new HexRangeDistance { Index = origin, Distance = 0 } };
+            distances = new List<HexRangeDistance>() { new HexRangeDistance { Index = origin, Distance = 0 } };
 
             // Pentagon was encountered; bail out as user doesn't want this.
-            // TODO do we want different error codes...? HEX_RANGE_PENTAGON
-            if (origin.IsPentagon) return distances;
+            if (origin.IsPentagon) return HexRangeResult.Pentagon;
 
             // 0 < ring <= k, current ring
             int ring = 1;
@@ -68,14 +70,12 @@ namespace H3.Algorithms {
                     if (index == H3Index.Invalid) {
                         // Should not be possible because `origin` would have to be a
                         // pentagon
-                        // TODO error code HEX_RANGE_K_SUBSEQUENCE
-                        return distances;
+                        return HexRangeResult.KSequence;
                     }
 
                     if (index.IsPentagon) {
                         // Pentagon was encountered; bail out as user doesn't want this.
-                        // TODO error code HEX_RANGE_PENTAGON
-                        return distances;
+                        return HexRangeResult.Pentagon;
                     }
                 }
 
@@ -83,8 +83,7 @@ namespace H3.Algorithms {
                 if (index == H3Index.Invalid) {
                     // Should not be possible because `origin` would have to be a
                     // pentagon
-                    // TODO error code HEX_RANGE_PENTAGON
-                    return distances;
+                    return HexRangeResult.Pentagon;
                 }
 
                 distances.Add(new HexRangeDistance { Index = index, Distance = ring });
@@ -103,12 +102,11 @@ namespace H3.Algorithms {
                 }
 
                 if (index.IsPentagon) {
-                    // TODO error code HEX_RANGE_PENTAGON
-                    return distances;
+                    return HexRangeResult.Pentagon;
                 }
             }
 
-            return distances;
+            return HexRangeResult.Success;
         }
 
     }

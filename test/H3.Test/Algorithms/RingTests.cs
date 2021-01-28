@@ -12,9 +12,12 @@ namespace H3.Test.Algorithms {
         [Test]
         public void Test_GetHexDistances_KnownValue() {
             // Act
-            var hexDistances = new H3Index(TestHelpers.TestIndexValue).GetHexRangeDistances(2).ToArray();
+            var hexDistanceResult = new H3Index(TestHelpers.TestIndexValue).GetHexRangeDistances(2, out var hexDistanceList);
 
             // Assert
+            Assert.AreEqual(HexRangeResult.Success, hexDistanceResult, "should be successful");
+
+            var hexDistances = hexDistanceList.ToArray();
             Assert.AreEqual(TestHelpers.TestIndexKRingsTo2.Length, hexDistances.Length, "should be same length");
             for (int i = 0; i < TestHelpers.TestIndexKRingsTo2.Length; i += 1) {
                 var expected = TestHelpers.TestIndexKRingsTo2[i];
