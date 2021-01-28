@@ -42,7 +42,7 @@ namespace H3.Algorithms {
         /// <returns>(RingResult.Success, IEnumerable) on success</returns>
         public static (RingResult, IEnumerable<H3Index>) GetHexRange(this H3Index origin, int k) {
             List<H3Index> indicies = new();
-            var result = ForEachHexRange(origin, k, (index, _) => indicies.Add(index));
+            var result = ForEachHexRange(origin, k, (index, _, __) => indicies.Add(index));
             return (result, indicies);
         }
 
@@ -60,9 +60,8 @@ namespace H3.Algorithms {
             H3Index[] indicies = new H3Index[segmentSize * origins.Length];
 
             for (int i = 0; i < origins.Length; i+= 1) {
-                int j = 0;
-                var ringResult = ForEachHexRange(origins[i], k, (index, _) => {
-                    indicies[(i * segmentSize) + j++] = index;
+                var ringResult = ForEachHexRange(origins[i], k, (index, _, j) => {
+                    indicies[(i * segmentSize) + j] = index;
                 });
                 if (ringResult != RingResult.Success) return (ringResult, indicies);
             }
@@ -86,7 +85,7 @@ namespace H3.Algorithms {
         /// <returns>(RingResult.Success, IEnumerable) on success</returns>
         public static (RingResult, IEnumerable<HexRangeDistance>) GetHexRangeDistances(this H3Index origin, int k) {
             List<HexRangeDistance> distances = new();
-            var result = ForEachHexRange(origin, k, (index, distance) => distances.Add(new HexRangeDistance {
+            var result = ForEachHexRange(origin, k, (index, distance, _) => distances.Add(new HexRangeDistance {
                 Index = index,
                 Distance = distance
             }));
@@ -105,13 +104,14 @@ namespace H3.Algorithms {
         /// </summary>
         /// <param name="origin">Origin location</param>
         /// <param name="k">k >= 0</param>
-        /// <param name="callback">callback function which receives index and distance for
-        /// each result produced by the algorithm.</param>
+        /// <param name="callback">callback function which receives index, distance (ring)
+        /// and total index count thus far for each result produced by the algorithm.</param>
         /// <returns>RingResult.Success on success</returns>
-        public static RingResult ForEachHexRange(H3Index origin, int k, Action<H3Index, int> callback) {
+        public static RingResult ForEachHexRange(H3Index origin, int k, Action<H3Index, int, long> callback) {
             H3Index index = new H3Index(origin);
 
-            callback(origin, 0);
+            // k must be >= 0, so origin is always needed
+            callback(origin, 0, 0);
 
             // Pentagon was encountered; bail out as user doesn't want this.
             if (origin.IsPentagon) return RingResult.Pentagon;
@@ -129,14 +129,16 @@ namespace H3.Algorithms {
             // which faces have been crossed.)
             int rotations = 0;
 
+            // total number of indicies generated
+            long count = 1;
+
             while (ring <= k) {
                 if (direction == 0 && i == 0) {
                     // Not putting in the output set as it will be done later, at
                     // the end of this ring.
                     index = index.NeighbourRotations(LookupTables.NextRingDirection, ref rotations);
                     if (index == H3Index.Invalid) {
-                        // Should not be possible because `origin` would have to be a
-                        // pentagon
+                        // Should not be possible because `origin` would have to be a pentagon
                         return RingResult.KSequence;
                     }
 
@@ -148,12 +150,11 @@ namespace H3.Algorithms {
 
                 index = index.NeighbourRotations(LookupTables.CounterClockwiseDirections[direction], ref rotations);
                 if (index == H3Index.Invalid) {
-                    // Should not be possible because `origin` would have to be a
-                    // pentagon
+                    // Should not be possible because `origin` would have to be a pentagon
                     return RingResult.Pentagon;
                 }
 
-                callback(index, ring);
+                callback(index, ring, count++);
                 i += 1;
 
                 // Check if end of this side of the k-ring
