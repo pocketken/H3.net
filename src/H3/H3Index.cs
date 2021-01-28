@@ -186,6 +186,8 @@ namespace H3 {
         public long GetMaxChildrenSizeForResolution(int childResolution) {
             int parentResolution = Resolution;
             if (!IsValidChildResolution(parentResolution, childResolution)) return 0;
+            // TODO this is changing upstream to be pentago aware; port changes assuming we
+            //      need this method at all.  @see https://github.com/uber/h3/issues/412
             return IPow(7, childResolution - parentResolution);
         }
 

@@ -9,12 +9,11 @@ namespace H3.Model {
         public FaceIJK Home { get; init; } = new();
         public bool IsPentagon { get; init; }
         public int[] ClockwiseOffsetPent { get; init; } = new int[2];
+        public bool IsPolarPentagon => Cell == 4 || Cell == 117;
 
         private BaseCell() { }
 
         public bool FaceMatchesOffset(int face) => ClockwiseOffsetPent[0] == face || ClockwiseOffsetPent[1] == face;
-
-        public bool IsPolarPentagon() => IsPolarPentagon(Cell);
 
         public BaseCell Neighbour(CellIndex cellIndex) => LookupTables.BaseCells[LookupTables.Neighbours[Cell, (int)cellIndex]];
 
@@ -34,8 +33,6 @@ namespace H3.Model {
                 IsPentagon = tuple.Item2 == 1,
                 ClockwiseOffsetPent = new int[2] { tuple.Item3.Item1, tuple.Item3.Item2 }
             };
-
-        public static bool IsPolarPentagon(int cell) => cell == 4 || cell == 117;
 
         public static bool FaceMatchesOffset(int cell, int face) => LookupTables.BaseCells[cell].FaceMatchesOffset(face);
 

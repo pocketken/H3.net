@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using H3.Algorithms;
 using H3.Model;
 using NetTopologySuite.Geometries;
 using NUnit.Framework;

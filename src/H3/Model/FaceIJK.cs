@@ -48,10 +48,6 @@ namespace H3.Model {
             Coord = new CoordIJK(i, j, k);
         }
 
-        #region lookups
-
-        #endregion lookups
-
         public static FaceIJK FromGeoCoord(GeoCoord coord, int resolution) {
             Vec3d v3d = Vec3d.FromGeoCoord(coord);
             FaceIJK result = new();

@@ -7,6 +7,7 @@ namespace H3.Model {
 
     public static class LookupTables {
 
+        #region basecells
         public static readonly BaseCell[] BaseCells = new BaseCell[NUM_BASE_CELLS] {
             ((1, (1, 0, 0)), 0, (0, 0)),     // base cell 0
             ((2, (1, 1, 0)), 0, (0, 0)),     // base cell 1
@@ -132,7 +133,7 @@ namespace H3.Model {
             ((18, (1, 0, 0)), 0, (0, 0))     // base cell 121
         };
 
-        public static readonly int[,] NeighbourCounterClockwise60Rotations = new int[NUM_BASE_CELLS, 7] {
+        public static readonly int[,] NeighbourCounterClockwiseRotations = new int[NUM_BASE_CELLS, 7] {
             { 0, 5, 0, 0, 1, 5, 1},   // base cell 0
             { 0, 0, 1, 0, 1, 0, 1},   // base cell 1
             { 0, 0, 0, 0, 0, 5, 0},   // base cell 2
@@ -816,7 +817,9 @@ namespace H3.Model {
                 }
             }
         };
+        #endregion basecells
 
+        #region coordinates + unit vectors
         public static readonly CoordIJK[] UnitVectors = new CoordIJK[7] {
             new CoordIJK(0, 0, 0),
             new CoordIJK(0, 0, 1),
@@ -869,7 +872,9 @@ namespace H3.Model {
 
         public static readonly Dictionary<CoordIJK, CellIndex> UnitVectorToIndex =
             IndexToUnitVector.ToDictionary(e => e.Value, e => e.Key);
+        #endregion coordinates + unit vectors
 
+        #region faces
         // TODO do we need [,3] here?  looks like only [0] is used..?
         public static readonly double[,] AxisAzimuths = new double[NUM_ICOSA_FACES, 3] {
             { 5.619958268523939882, 3.525563166130744542, 1.431168063737548730 },  // face  0
@@ -1089,46 +1094,6 @@ namespace H3.Model {
             }
         };
 
-        public static readonly int[] MaxDistanceByClass2Res = new int[] {
-            2,        // res  0
-            -1,       // res  1
-            14,       // res  2
-            -1,       // res  3
-            98,       // res  4
-            -1,       // res  5
-            686,      // res  6
-            -1,       // res  7
-            4802,     // res  8
-            -1,       // res  9
-            33614,    // res 10
-            -1,       // res 11
-            235298,   // res 12
-            -1,       // res 13
-            1647086,  // res 14
-            -1,       // res 15
-            11529602  // res 16
-        };
-
-        public static readonly int[] UnitScaleByClass2Res = new int[] {
-            1,       // res  0
-            -1,      // res  1
-            7,       // res  2
-            -1,      // res  3
-            49,      // res  4
-            -1,      // res  5
-            343,     // res  6
-            -1,      // res  7
-            2401,    // res  8
-            -1,      // res  9
-            16807,   // res 10
-            -1,      // res 11
-            117649,  // res 12
-            -1,      // res 13
-            823543,  // res 14
-            -1,      // res 15
-            5764801  // res 16
-        };
-
         public static readonly GeoCoord[] GeoFaceCenters = new[] {
             new GeoCoord(0.803582649718989942, 1.248397419617396099),    // face  0
             new GeoCoord(1.307747883455638156, 2.536945009877921159),    // face  1
@@ -1174,6 +1139,222 @@ namespace H3.Model {
             new Vec3d(0.2139234834501420, -0.1478171829550704, -0.9656017935214205),   // face 18
             new Vec3d(-0.1092625278784796, 0.4811951572873210, -0.8697775121287253),   // face 19
         };
+        #endregion faces
+
+        #region other
+        public static readonly int[] MaxDistanceByClass2Res = new int[] {
+            2,        // res  0
+            -1,       // res  1
+            14,       // res  2
+            -1,       // res  3
+            98,       // res  4
+            -1,       // res  5
+            686,      // res  6
+            -1,       // res  7
+            4802,     // res  8
+            -1,       // res  9
+            33614,    // res 10
+            -1,       // res 11
+            235298,   // res 12
+            -1,       // res 13
+            1647086,  // res 14
+            -1,       // res 15
+            11529602  // res 16
+        };
+
+        public static readonly int[] UnitScaleByClass2Res = new int[] {
+            1,       // res  0
+            -1,      // res  1
+            7,       // res  2
+            -1,      // res  3
+            49,      // res  4
+            -1,      // res  5
+            343,     // res  6
+            -1,      // res  7
+            2401,    // res  8
+            -1,      // res  9
+            16807,   // res 10
+            -1,      // res 11
+            117649,  // res 12
+            -1,      // res 13
+            823543,  // res 14
+            -1,      // res 15
+            5764801  // res 16
+        };
+
+        /// <summary>
+        /// Directions used for traversing a hexagonal ring counterclockwise around
+        /// {1, 0, 0}.
+        ///
+        /// <pre>
+        ///       _
+        ///     _/ \\_
+        ///    / \\5/ \\
+        ///    \\0/ \\4/
+        ///    / \\_/ \\
+        ///    \\1/ \\3/
+        ///      \\2/
+        /// </pre>
+        /// </summary>
+        public static readonly CellIndex[] CounterClockwiseDirections = new CellIndex[6] {
+            CellIndex.J,
+            CellIndex.JK,
+            CellIndex.K,
+            CellIndex.IK,
+            CellIndex.I,
+            CellIndex.IJ
+        };
+
+        /// <summary>
+        /// Direction used for traversing to the next outward hexagonal ring.
+        /// </summary>
+        public const CellIndex NextRingDirection = CellIndex.I;
+
+        /// <summary>
+        /// New digit when traversing along class II grids.
+        ///
+        /// Current digit -> direction -> new digit.
+        /// </summary>
+        public static readonly CellIndex[,] NewDirectionClass2 = new CellIndex[7, 7] {
+            {
+                CellIndex.Center, CellIndex.K, CellIndex.J, CellIndex.JK, CellIndex.I,
+                CellIndex.IK, CellIndex.IJ
+            },
+            {
+                CellIndex.K, CellIndex.I, CellIndex.JK, CellIndex.IJ, CellIndex.IK,
+                CellIndex.J, CellIndex.Center
+            },
+            {
+                CellIndex.J, CellIndex.JK, CellIndex.K, CellIndex.I, CellIndex.IJ,
+                CellIndex.Center, CellIndex.IK
+            },
+            {
+                CellIndex.JK, CellIndex.IJ, CellIndex.I, CellIndex.IK, CellIndex.Center,
+                CellIndex.K, CellIndex.J
+            },
+            {
+                CellIndex.I, CellIndex.IK, CellIndex.IJ, CellIndex.Center, CellIndex.J,
+                CellIndex.JK, CellIndex.K
+            },
+            {
+                CellIndex.IK, CellIndex.J, CellIndex.Center, CellIndex.K, CellIndex.JK,
+                CellIndex.IJ, CellIndex.I
+            },
+            {
+                CellIndex.IJ, CellIndex.Center, CellIndex.IK, CellIndex.J, CellIndex.K,
+                CellIndex.I, CellIndex.JK
+            }
+        };
+
+        /// <summary>
+        /// New traversal direction when traversing along class II grids.
+        ///
+        /// Current digit -> direction -> new ap7 move (at coarser level).
+        /// </summary>
+        public static readonly CellIndex[,] NewAdjustmentClass2 = new CellIndex[7, 7] {
+            {
+                CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center,
+                CellIndex.Center, CellIndex.Center
+            },
+            {
+                CellIndex.Center, CellIndex.K, CellIndex.Center, CellIndex.K, CellIndex.Center,
+                CellIndex.IK, CellIndex.Center
+            },
+            {
+                CellIndex.Center, CellIndex.Center, CellIndex.J, CellIndex.JK, CellIndex.Center,
+                CellIndex.Center, CellIndex.J
+            },
+            {
+                CellIndex.Center, CellIndex.K, CellIndex.JK, CellIndex.JK, CellIndex.Center,
+                CellIndex.Center, CellIndex.Center
+            },
+            {
+                CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.I,
+                CellIndex.I, CellIndex.IJ
+            },
+            {
+                CellIndex.Center, CellIndex.IK, CellIndex.Center, CellIndex.Center, CellIndex.I,
+                CellIndex.IK, CellIndex.Center
+            },
+            {
+                CellIndex.Center, CellIndex.Center, CellIndex.J, CellIndex.Center, CellIndex.IJ,
+                CellIndex.Center, CellIndex.IJ
+            }
+        };
+
+        /// <summary>
+        /// New traversal direction when traversing along class III grids.
+        ///
+        /// Current digit -> direction -> new digit.
+        /// </summary>
+        public static readonly CellIndex[,] NewDirectionClass3 = new CellIndex[7, 7] {
+            {
+                CellIndex.Center, CellIndex.K, CellIndex.J, CellIndex.JK, CellIndex.I,
+                CellIndex.IK, CellIndex.IJ
+            },
+            {
+                CellIndex.K, CellIndex.J, CellIndex.JK, CellIndex.I, CellIndex.IK,
+                CellIndex.IJ, CellIndex.Center
+            },
+            {
+                CellIndex.J, CellIndex.JK, CellIndex.I, CellIndex.IK, CellIndex.IJ,
+                CellIndex.Center, CellIndex.K
+            },
+            {
+                CellIndex.JK, CellIndex.I, CellIndex.IK, CellIndex.IJ, CellIndex.Center,
+                CellIndex.K, CellIndex.J
+            },
+            {
+                CellIndex.I, CellIndex.IK, CellIndex.IJ, CellIndex.Center, CellIndex.K,
+                CellIndex.J, CellIndex.JK
+            },
+            {
+                CellIndex.IK, CellIndex.IJ, CellIndex.Center, CellIndex.K, CellIndex.J,
+                CellIndex.JK, CellIndex.I
+            },
+            {
+                CellIndex.IJ, CellIndex.Center, CellIndex.K, CellIndex.J, CellIndex.JK,
+                CellIndex.I, CellIndex.IK
+            }
+        };
+
+        /// <summary>
+        /// New traversal direction when traversing along class III grids.
+        ///
+        /// Current digit -> direction -> new ap7 move (at coarser level).
+        /// </summary>
+        public static readonly CellIndex[,] NewAdjustmentClass3 = new CellIndex[7, 7] {
+            {
+                CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center,
+                CellIndex.Center, CellIndex.Center
+            },
+            {
+                CellIndex.Center, CellIndex.K, CellIndex.Center, CellIndex.JK, CellIndex.Center,
+                CellIndex.K, CellIndex.Center
+            },
+            {
+                CellIndex.Center, CellIndex.Center, CellIndex.J, CellIndex.J, CellIndex.Center,
+                CellIndex.Center, CellIndex.IJ
+            },
+            {
+                CellIndex.Center, CellIndex.JK, CellIndex.J, CellIndex.JK, CellIndex.Center,
+                CellIndex.Center, CellIndex.Center
+            },
+            {
+                CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.I,
+                CellIndex.IK, CellIndex.I
+            },
+            {
+                CellIndex.Center, CellIndex.K, CellIndex.Center, CellIndex.Center, CellIndex.IK,
+                CellIndex.IK, CellIndex.Center
+            },
+            {
+                CellIndex.Center, CellIndex.Center, CellIndex.IJ, CellIndex.Center, CellIndex.I,
+                CellIndex.Center, CellIndex.IJ
+            }
+        };
+
+        #endregion other
 
     }
 }
