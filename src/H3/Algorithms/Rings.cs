@@ -42,7 +42,7 @@ namespace H3.Algorithms {
         /// <returns>(RingResult.Success, IEnumerable) on success</returns>
         public static (RingResult, IEnumerable<H3Index>) GetHexRange(this H3Index origin, int k) {
             List<H3Index> indicies = new();
-            var result = HexRangeDistance(origin, k, (index, _) => indicies.Add(index));
+            var result = ForEachHexRange(origin, k, (index, _) => indicies.Add(index));
             return (result, indicies);
         }
 
@@ -55,12 +55,13 @@ namespace H3.Algorithms {
         /// <param name="k">k >= 0</param>
         /// <returns>(RingResult.Success, IEnumerable) on success</returns>
         public static (RingResult, H3Index[]) GetHexRanges(this H3Index[] origins, int k) {
+            // TODO while this mimics the original API, is this really how we want to do it?
             long segmentSize = MaxKRingSize(k);
             H3Index[] indicies = new H3Index[segmentSize * origins.Length];
 
             for (int i = 0; i < origins.Length; i+= 1) {
                 int j = 0;
-                var ringResult = HexRangeDistance(origins[i], k, (index, _) => {
+                var ringResult = ForEachHexRange(origins[i], k, (index, _) => {
                     indicies[(i * segmentSize) + j++] = index;
                 });
                 if (ringResult != RingResult.Success) return (ringResult, indicies);
@@ -85,7 +86,7 @@ namespace H3.Algorithms {
         /// <returns>(RingResult.Success, IEnumerable) on success</returns>
         public static (RingResult, IEnumerable<HexRangeDistance>) GetHexRangeDistances(this H3Index origin, int k) {
             List<HexRangeDistance> distances = new();
-            var result = HexRangeDistance(origin, k, (index, distance) => distances.Add(new HexRangeDistance {
+            var result = ForEachHexRange(origin, k, (index, distance) => distances.Add(new HexRangeDistance {
                 Index = index,
                 Distance = distance
             }));
@@ -107,7 +108,7 @@ namespace H3.Algorithms {
         /// <param name="callback">callback function which receives index and distance for
         /// each result produced by the algorithm.</param>
         /// <returns>RingResult.Success on success</returns>
-        private static RingResult HexRangeDistance(H3Index origin, int k, Action<H3Index, int> callback) {
+        public static RingResult ForEachHexRange(H3Index origin, int k, Action<H3Index, int> callback) {
             H3Index index = new H3Index(origin);
 
             callback(origin, 0);
