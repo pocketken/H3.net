@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using H3.Algorithms;
 using H3.Model;
 using NetTopologySuite.Geometries;
 using NUnit.Framework;
@@ -9,42 +8,11 @@ namespace H3.Test {
 
     [TestFixture]
     public class H3IndexTests {
-        // result of encoding Point(-110, 30) @ Res14 in PG
-        public const ulong TestIndexValue = 0x8e48e1d7038d527;
-
-        // result of select h3_to_children('8e48e1d7038d527'::h3index, 15) in PG
-        public static readonly ulong[] TestIndexChildrenAtRes15 = new ulong[7] {
-            0x8f48e1d7038d520,
-            0x8f48e1d7038d521,
-            0x8f48e1d7038d522,
-            0x8f48e1d7038d523,
-            0x8f48e1d7038d524,
-            0x8f48e1d7038d525,
-            0x8f48e1d7038d526,
-        };
-
-        // Cell index values for resolutions 1 -> 14 for TestIndexValue
-        public static readonly CellIndex[] TestIndexCellIndexPerResolution = new CellIndex[14] {
-            CellIndex.JK,
-            CellIndex.I,
-            CellIndex.K,
-            CellIndex.IJ,
-            CellIndex.IK,
-            CellIndex.IJ,
-            CellIndex.Center,
-            CellIndex.K,
-            CellIndex.IJ,
-            CellIndex.K,
-            CellIndex.IK,
-            CellIndex.J,
-            CellIndex.I,
-            CellIndex.I
-        };
 
         [Test]
         public void Test_KnownIndexValue() {
             // Act
-            H3Index h3 = new H3Index(TestIndexValue);
+            H3Index h3 = new H3Index(TestHelpers.TestIndexValue);
 
             // Assert
             AssertKnownIndexValue(h3);
@@ -53,13 +21,13 @@ namespace H3.Test {
         [Test]
         public void Test_KnownIndexValue_Children() {
             // Arrange
-            H3Index h3 = new H3Index(TestIndexValue);
+            H3Index h3 = new H3Index(TestHelpers.TestIndexValue);
 
             // Act
             H3Index[] children = h3.GetChildrenAtResolution(15).ToArray();
 
             // Assert
-            AssertChildren(TestIndexChildrenAtRes15, children);
+            AssertChildren(TestHelpers.TestIndexChildrenAtRes15, children);
         }
 
         [Test]
@@ -75,7 +43,7 @@ namespace H3.Test {
         }
 
         private static void AssertKnownIndexValue(H3Index h3) {
-            Assert.IsTrue(TestIndexValue == h3, "ulong value should equal H3Index");
+            Assert.IsTrue(TestHelpers.TestIndexValue == h3, "ulong value should equal H3Index");
             Assert.IsTrue(h3.IsValid, "should be valid");
             Assert.IsFalse(h3.IsPentagon, "should not be a pentagon");
             Assert.AreEqual(Mode.Hexagon, h3.Mode, "should be mode of hexagon");
@@ -86,9 +54,9 @@ namespace H3.Test {
 
             for (int r = 1; r <= 14; r += 1) {
                 Assert.AreEqual(
-                    TestIndexCellIndexPerResolution[r-1],
+                    TestHelpers.TestIndexCellIndexPerResolution[r-1],
                     h3.GetCellIndexForResolution(r),
-                    $"res {r} should have cell index {TestIndexCellIndexPerResolution[r-1]}"
+                    $"res {r} should have cell index {TestHelpers.TestIndexCellIndexPerResolution[r-1]}"
                 );
             }
         }

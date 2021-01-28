@@ -15,4 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\H3\H3.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Algorithms\" />
+  </ItemGroup>
 </Project>
