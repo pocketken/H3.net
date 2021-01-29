@@ -15,7 +15,7 @@ namespace H3.Test.Algorithms {
             var (hexDistanceResult, hexDistanceList) = new H3Index(TestHelpers.TestIndexValue).GetHexRangeDistances(2);
 
             // Assert
-            Assert.AreEqual(RingResult.Success, hexDistanceResult, "should be successful");
+            Assert.AreEqual(HexRingResult.Success, hexDistanceResult, "should be successful");
 
             var hexDistances = hexDistanceList.ToArray();
             Assert.AreEqual(TestHelpers.TestIndexKRingsTo2.Length, hexDistances.Length, "should be same length");
@@ -26,6 +26,15 @@ namespace H3.Test.Algorithms {
                 Assert.IsTrue(expected.Item1 == actual.Index, $"should be same index {expected.Item1}");
                 Assert.AreEqual(expected.Item2, actual.Distance, $"should be same distance {expected.Item2}");
             }
+        }
+
+        [Test]
+        public void Test_GetKRingDistances_KnownValue() {
+            // Act
+            var ringDistanceList = new H3Index(TestHelpers.TestIndexValue).GetKRingDistances(2);
+
+            // Assert
+            Assert.IsNotEmpty(ringDistanceList, "should not be empty");
         }
 
     }

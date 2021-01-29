@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using H3.Model;
 using NetTopologySuite.Geometries;
@@ -16,6 +17,17 @@ namespace H3.Test {
 
             // Assert
             AssertKnownIndexValue(h3);
+        }
+
+        [Test]
+        public void Test_Equality() {
+            // Arrange
+            H3Index h3 = new H3Index(TestHelpers.TestIndexValue);
+            List<H3Index> h3List = new() { h3 };
+
+            // Assert
+            Assert.IsTrue(h3List.Exists(e => e == TestHelpers.TestIndexValue), "should exist");
+            Assert.IsFalse(h3List.Exists(e => e == 0UL), "should not exist");
         }
 
         [Test]
