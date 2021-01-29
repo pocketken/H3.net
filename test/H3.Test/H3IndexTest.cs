@@ -20,25 +20,6 @@ namespace H3.Test {
         }
 
         [Test]
-        public void Test_Equality() {
-            // Arrange
-            H3Index i1 = new H3Index(TestHelpers.TestIndexValue);
-            H3Index i1_1 = new H3Index(TestHelpers.TestIndexValue);
-            H3Index i2 = new H3Index(TestHelpers.TestIndexValue + 1);
-            H3Index i2_2 = new H3Index(TestHelpers.TestIndexValue + 1);
-            List<H3Index> h3List = new() { i1, i2 };
-            HashSet<H3Index> h3Set = new() { i1, i2 };
-
-            // Assert
-            Assert.IsTrue(h3List.Exists(e => e == TestHelpers.TestIndexValue), "should exist");
-            Assert.IsTrue(h3List.Exists(e => e == TestHelpers.TestIndexValue + 1), "should exist");
-            Assert.IsTrue(h3Set.Contains(i1_1), "should contain i1_1");
-            Assert.IsTrue(h3Set.Contains(i2_2), "should contain i2_2");
-            Assert.IsTrue(h3Set.Contains(TestHelpers.TestIndexValue), "should contain TestIndexValue");
-            Assert.IsFalse(h3List.Exists(e => e == 0UL), "should not exist");
-        }
-
-        [Test]
         public void Test_KnownIndexValue_Children() {
             // Arrange
             H3Index h3 = new H3Index(TestHelpers.TestIndexValue);
@@ -60,6 +41,26 @@ namespace H3.Test {
 
             // Assert
             AssertKnownIndexValue(h3);
+        }
+
+        [Test]
+        public void Test_Equality() {
+            // Arrange
+            H3Index i1 = new H3Index(TestHelpers.TestIndexValue);
+            H3Index i1_1 = new H3Index(TestHelpers.TestIndexValue);
+            H3Index i2 = new H3Index(TestHelpers.TestIndexValue + 1);
+            H3Index i2_2 = new H3Index(TestHelpers.TestIndexValue + 1);
+            List<H3Index> h3List = new() { i1, i2 };
+            HashSet<H3Index> h3Set = new() { i1, i2 };
+
+            // Assert
+            Assert.IsTrue(h3List.Exists(e => e == TestHelpers.TestIndexValue), "should exist");
+            Assert.IsTrue(h3List.Exists(e => e == TestHelpers.TestIndexValue + 1), "should exist");
+            Assert.IsFalse(h3List.Exists(e => e == 0UL), "should not exist");
+            Assert.IsTrue(h3Set.Contains(i1_1), "should contain i1_1");
+            Assert.IsTrue(h3Set.Contains(i2_2), "should contain i2_2");
+            Assert.IsTrue(h3Set.Contains(TestHelpers.TestIndexValue), "should contain TestIndexValue");
+            Assert.IsFalse(h3Set.Contains(0), "should not contain 0");
         }
 
         private static void AssertKnownIndexValue(H3Index h3) {
