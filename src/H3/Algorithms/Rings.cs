@@ -91,8 +91,61 @@ namespace H3.Algorithms {
         }
 
         /// <summary>
+        /// Returns the "hollow" ring of hexagons at exactly grid distance k from
+        /// the origin hexagon. In particular, k=0 returns just the origin hexagon.
+        ///
+        /// A nonzero failure code may be returned in some cases, for example,
+        /// if a pentagon is encountered.
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="k"></param>
+        /// <returns></returns>
+        public static (HexRingResult, IEnumerable<H3Index>) GetHexRing(this H3Index origin, int k) {
+            List<H3Index> result = new();
+
+            // Identity short-circuit; return origin if k == 0
+            if (k == 0) {
+                result.Add(origin);
+                return (origin.IsPentagon ? HexRingResult.Pentagon : HexRingResult.Success, result);
+            }
+
+            if (origin.IsPentagon) return (HexRingResult.Pentagon, result);
+
+            H3Index index = new H3Index(origin);
+
+            // break out to the requested ring
+            int rotations = 0;
+            for (int ring = 0; ring < k; ring +=1 ) {
+                index = index.NeighbourRotations(LookupTables.NextRingDirection, ref rotations);
+                if (index == H3Index.Invalid) return (HexRingResult.KSequence, result);
+                if (index.IsPentagon) return (HexRingResult.Pentagon, result);
+            }
+
+            H3Index lastIndex = new H3Index(index);
+            result.Add(index);
+
+            for (int direction = 0; direction < 6; direction += 1) {
+                // TODO not sure i get this second loop to k...?
+                for (int pos = 0; pos < k; pos += 1) {
+                    index = index.NeighbourRotations(LookupTables.CounterClockwiseDirections[direction], ref rotations);
+                    if (index == H3Index.Invalid) return (HexRingResult.KSequence, result);
+
+                    // Skip the very last index, it was already added. We do
+                    // however need to traverse to it because of the pentagonal
+                    // distortion check, below.
+                    if (pos != k - 1 || direction != 5) {
+                        result.Add(index);
+                        if (index.IsPentagon) return (HexRingResult.Pentagon, result);
+                    }
+                }
+            }
+
+            return (lastIndex != index ? HexRingResult.Pentagon : HexRingResult.Success, result);
+        }
+
+        /// <summary>
         /// Produce cells from the given origin cell within distance k.  This is a
-        /// "higher-accuracy", but slower performing, version of GetHexRange.
+        /// "higher-accuracy" but slower performing version of GetHexRange.
         ///
         /// k-ring 0 is defined as the origin cell, k-ring 1 is defined as k-ring 0 and
         /// all neighboring cells, and so on.
@@ -114,7 +167,7 @@ namespace H3.Algorithms {
 
         /// <summary>
         /// Produce cells and their distances from the given origin cell within distance k.
-        /// This is a "higher-accuracy", but slower performing, version of GetHexRangeDistances.
+        /// This is a "higher-accuracy" but slower performing version of GetHexRangeDistances.
         ///
         /// k-ring 0 is defined as the origin cell, k-ring 1 is defined as k-ring 0 and
         /// all neighboring cells, and so on.
@@ -153,8 +206,8 @@ namespace H3.Algorithms {
 
         /// <summary>
         /// Recursively produce cells and their distances from the given origin cell within
-        /// distance k.  This is a "higher-accuracy" version of ForEachHexRange, but may
-        /// produce certain cells more than once as they may be seen from multiple paths/depths.
+        /// distance k.  This is a "higher-accuracy" version of ForEachHexRange, but will
+        /// produce cells more than once as they will be seen from multiple paths/depths.
         ///
         /// Callback function should return true to keep recursing beyond the current cell,
         /// false to stop.
@@ -191,7 +244,7 @@ namespace H3.Algorithms {
 
         /// <summary>
         /// Guts of the hex range algorithm which non-recursively produces indexes within k
-        /// cell distance of the origin index.  This is a lower-accuracy, but faster version of
+        /// cell distance of the origin index.  This is a lower-accuracy but faster version of
         /// ForEachKRingIndex.
         ///
         /// k-ring 0 is defined as the origin index, k-ring 1 is defined as k-ring 0 and
@@ -213,6 +266,9 @@ namespace H3.Algorithms {
 
             // Pentagon was encountered; bail out as user doesn't want this.
             if (origin.IsPentagon) return HexRingResult.Pentagon;
+
+            // short circuit; k = 0 means we just want the origin (strange, but you get what you ask for)
+            if (k == 0) return HexRingResult.Success;
 
             // 0 < ring <= k, current ring
             int ring = 1;
