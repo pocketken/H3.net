@@ -18,6 +18,9 @@ namespace H3.Algorithms {
         public int Distance { get; init; }
     }
 
+    /// <summary>
+    /// Extends the H3Index class with support for kRing and hex ring queries.
+    /// </summary>
     public static class Rings {
 
         /// <summary>

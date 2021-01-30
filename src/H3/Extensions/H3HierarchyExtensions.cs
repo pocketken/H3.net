@@ -8,6 +8,9 @@ using static H3.Utils;
 
 namespace H3.Extensions {
 
+    /// <summary>
+    /// Extends the H3Index class with support for bitwise hierarchial queries.
+    /// </summary>
     public static class H3HierarchyExtensions {
 
         /// <summary>
@@ -182,7 +185,13 @@ namespace H3.Extensions {
             return Direction.Invalid;
         }
 
-        // TODO docs
+        /// <summary>
+        /// Produces the parent index for a given H3 index at the specified
+        /// resolution.
+        /// </summary>
+        /// <param name="origin">origin index</param>
+        /// <param name="parentResolution">parent resolution, must be &gt;= 0 &lt; resolution</param>
+        /// <returns>H3Index of parent</returns>
         public static H3Index GetParentForResolution(this H3Index origin, int parentResolution) {
             int resolution = origin.Resolution;
 
@@ -203,13 +212,26 @@ namespace H3.Extensions {
             return parentIndex;
         }
 
-        // TODO docs
+        /// <summary>
+        /// Returns the immediate child index based on the specified cell number.
+        /// Bit operations only, could generate invalid indexes if not careful
+        /// (deleted cell under a pentagon).
+        /// </summary>
+        /// <param name="origin">origin index</param>
+        /// <param name="direction">direction to travel</param>
+        /// <returns></returns>
         public static H3Index GetDirectChild(this H3Index origin, Direction direction) => new H3Index(origin) {
             Resolution = origin.Resolution + 1,
             Direction = direction
         };
 
-        // TODO docs
+        /// <summary>
+        /// Produces the center child index for a given H3 index at the specified
+        /// resolution.
+        /// </summary>
+        /// <param name="origin">origin index to find center of</param>
+        /// <param name="childResolution">the resolution to switch to, must be &gt; resolution &lt;= MAX_H3_RES</param>
+        /// <returns>H3Index of the center child, or H3Index.Invalid if you actually asked for a parent</returns>
         public static H3Index GetChildCenterForResolution(this H3Index origin, int childResolution) {
             int resolution = origin.Resolution;
             if (!IsValidChildResolution(resolution, childResolution)) return H3Index.Invalid;
@@ -226,7 +248,12 @@ namespace H3.Extensions {
             return childIndex;
         }
 
-        // TODO docs
+        /// <summary>
+        /// Returns the maximum number of children possible for a given child resolution.
+        /// </summary>
+        /// <param name="origin">index to find children for</param>
+        /// <param name="childResolution">resolution of child level</param>
+        /// <returns></returns>
         public static long GetMaxChildrenSizeForResolution(this H3Index origin, int childResolution) {
             int parentResolution = origin.Resolution;
             if (!IsValidChildResolution(parentResolution, childResolution)) return 0;
@@ -235,7 +262,13 @@ namespace H3.Extensions {
             return IPow(7, childResolution - parentResolution);
         }
 
-        // TODO docs
+        /// <summary>
+        /// Takes the given hexagon id and generates all of the children at the specified
+        /// resolution.
+        /// </summary>
+        /// <param name="origin">index to find children for</param>
+        /// <param name="childResolution">resolution of child level</param>
+        /// <returns></returns>
         public static IEnumerable<H3Index> GetChildrenAtResolution(this H3Index origin, int childResolution) {
             List<H3Index> children = new();
             int resolution = origin.Resolution;

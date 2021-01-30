@@ -17,5 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Algorithms\" />
+    <Folder Include="Extensions\" />
   </ItemGroup>
 </Project>
