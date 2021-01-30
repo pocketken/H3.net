@@ -15,16 +15,16 @@ namespace H3.Model {
 
         public bool FaceMatchesOffset(int face) => ClockwiseOffsetPent[0] == face || ClockwiseOffsetPent[1] == face;
 
-        public BaseCell Neighbour(CellIndex cellIndex) => LookupTables.BaseCells[LookupTables.Neighbours[Cell, (int)cellIndex]];
+        public BaseCell Neighbour(Direction direction) => LookupTables.BaseCells[LookupTables.Neighbours[Cell, (int)direction]];
 
-        public static CellIndex GetNeighbourCellIndex(int originCell, int neighbouringCell) {
-            for (CellIndex idx = CellIndex.Center; idx < CellIndex.Invalid; idx += 1) {
+        public static Direction GetNeighbourDirection(int originCell, int neighbouringCell) {
+            for (Direction idx = Direction.Center; idx < Direction.Invalid; idx += 1) {
                 if (LookupTables.Neighbours[originCell, (int)idx] == neighbouringCell) {
                     return idx;
                 }
             }
 
-            return CellIndex.Invalid;
+            return Direction.Invalid;
         }
 
         public static implicit operator BaseCell(((int, (int, int, int)), int, (int, int)) tuple) =>

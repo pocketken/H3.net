@@ -75,9 +75,9 @@ namespace H3.Test {
 
             for (int r = 1; r <= 14; r += 1) {
                 Assert.AreEqual(
-                    TestHelpers.TestIndexCellIndexPerResolution[r-1],
-                    h3.GetCellIndexForResolution(r),
-                    $"res {r} should have cell index {TestHelpers.TestIndexCellIndexPerResolution[r-1]}"
+                    TestHelpers.TestIndexDirectionPerResolution[r-1],
+                    h3.GetDirectionForResolution(r),
+                    $"res {r} should have cell index {TestHelpers.TestIndexDirectionPerResolution[r-1]}"
                 );
             }
         }

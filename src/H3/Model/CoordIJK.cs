@@ -165,17 +165,17 @@ namespace H3.Model {
         }
 
         public CoordIJK RotateCounterClockwise() {
-            CoordIJK iVec = LookupTables.IndexToUnitVector[CellIndex.IJ] * I;
-            CoordIJK jVec = LookupTables.IndexToUnitVector[CellIndex.JK] * J;
-            CoordIJK kVec = LookupTables.IndexToUnitVector[CellIndex.IK] * K;
+            CoordIJK iVec = LookupTables.DirectionToUnitVector[Direction.IJ] * I;
+            CoordIJK jVec = LookupTables.DirectionToUnitVector[Direction.JK] * J;
+            CoordIJK kVec = LookupTables.DirectionToUnitVector[Direction.IK] * K;
 
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
 
         public CoordIJK RotateClockwise() {
-            CoordIJK iVec = LookupTables.IndexToUnitVector[CellIndex.IK] * I;
-            CoordIJK jVec = LookupTables.IndexToUnitVector[CellIndex.IJ] * J;
-            CoordIJK kVec = LookupTables.IndexToUnitVector[CellIndex.JK] * K;
+            CoordIJK iVec = LookupTables.DirectionToUnitVector[Direction.IK] * I;
+            CoordIJK jVec = LookupTables.DirectionToUnitVector[Direction.IJ] * J;
+            CoordIJK kVec = LookupTables.DirectionToUnitVector[Direction.JK] * K;
 
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
@@ -247,9 +247,9 @@ namespace H3.Model {
             return Normalize();
         }
 
-        public CoordIJK ToNeighbour(CellIndex cellIndex) {
-            if (cellIndex > CellIndex.Center && cellIndex < CellIndex.Invalid) {
-                SetFrom(this + LookupTables.IndexToUnitVector[cellIndex]).Normalize();
+        public CoordIJK ToNeighbour(Direction direction) {
+            if (direction > Direction.Center && direction < Direction.Invalid) {
+                SetFrom(this + LookupTables.DirectionToUnitVector[direction]).Normalize();
             }
             return this;
         }
@@ -280,7 +280,7 @@ namespace H3.Model {
         public static CoordIJK Normalize(CoordIJK source) =>
             new CoordIJK(source).Normalize();
 
-        public static CoordIJK ToNeighbour(CoordIJK source, CellIndex direction) =>
+        public static CoordIJK ToNeighbour(CoordIJK source, Direction direction) =>
             new CoordIJK(source).ToNeighbour(direction);
 
         public static CoordIJK RotateCounterClockwise(CoordIJK source) =>
@@ -307,8 +307,8 @@ namespace H3.Model {
         public static CoordIJK DownAperature3Clockwise(CoordIJK source) =>
             new CoordIJK(source).DownAperature3Clockwise();
 
-        public static implicit operator CellIndex(CoordIJK h) =>
-            LookupTables.UnitVectorToIndex.GetValueOrDefault(Normalize(h), CellIndex.Invalid);
+        public static implicit operator Direction(CoordIJK h) =>
+            LookupTables.UnitVectorToDirection.GetValueOrDefault(Normalize(h), Direction.Invalid);
 
         public static CoordIJK operator +(CoordIJK a, CoordIJK b) {
             return new CoordIJK {

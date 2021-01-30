@@ -864,17 +864,19 @@ namespace H3.Model {
             new CoordIJK(4, 0, 5)
         };
 
-        public static readonly Dictionary<CellIndex, CoordIJK> IndexToUnitVector =
-            Enum.GetValues<CellIndex>().ToDictionary(e => e, e => e switch {
-                CellIndex.Invalid => CoordIJK.InvalidIJKCoordinate,
+        public static readonly Dictionary<Direction, CoordIJK> DirectionToUnitVector =
+            Enum.GetValues<Direction>().ToDictionary(e => e, e => e switch {
+                Direction.Invalid => CoordIJK.InvalidIJKCoordinate,
                 _ => UnitVectors[(int)e]
             });
 
-        public static readonly Dictionary<CoordIJK, CellIndex> UnitVectorToIndex =
-            IndexToUnitVector.ToDictionary(e => e.Value, e => e.Key);
+        public static readonly Dictionary<CoordIJK, Direction> UnitVectorToDirection =
+            DirectionToUnitVector.ToDictionary(e => e.Value, e => e.Key);
+
         #endregion coordinates + unit vectors
 
         #region faces
+
         // TODO do we need [,3] here?  looks like only [0] is used..?
         public static readonly double[,] AxisAzimuths = new double[NUM_ICOSA_FACES, 3] {
             { 5.619958268523939882, 3.525563166130744542, 1.431168063737548730 },  // face  0
@@ -1196,53 +1198,53 @@ namespace H3.Model {
         ///      \\2/
         /// </pre>
         /// </summary>
-        public static readonly CellIndex[] CounterClockwiseDirections = new CellIndex[6] {
-            CellIndex.J,
-            CellIndex.JK,
-            CellIndex.K,
-            CellIndex.IK,
-            CellIndex.I,
-            CellIndex.IJ
+        public static readonly Direction[] CounterClockwiseDirections = new Direction[6] {
+            Direction.J,
+            Direction.JK,
+            Direction.K,
+            Direction.IK,
+            Direction.I,
+            Direction.IJ
         };
 
         /// <summary>
         /// Direction used for traversing to the next outward hexagonal ring.
         /// </summary>
-        public const CellIndex NextRingDirection = CellIndex.I;
+        public const Direction NextRingDirection = Direction.I;
 
         /// <summary>
         /// New digit when traversing along class II grids.
         ///
         /// Current digit -> direction -> new digit.
         /// </summary>
-        public static readonly CellIndex[,] NewDirectionClass2 = new CellIndex[7, 7] {
+        public static readonly Direction[,] NewDirectionClass2 = new Direction[7, 7] {
             {
-                CellIndex.Center, CellIndex.K, CellIndex.J, CellIndex.JK, CellIndex.I,
-                CellIndex.IK, CellIndex.IJ
+                Direction.Center, Direction.K, Direction.J, Direction.JK, Direction.I,
+                Direction.IK, Direction.IJ
             },
             {
-                CellIndex.K, CellIndex.I, CellIndex.JK, CellIndex.IJ, CellIndex.IK,
-                CellIndex.J, CellIndex.Center
+                Direction.K, Direction.I, Direction.JK, Direction.IJ, Direction.IK,
+                Direction.J, Direction.Center
             },
             {
-                CellIndex.J, CellIndex.JK, CellIndex.K, CellIndex.I, CellIndex.IJ,
-                CellIndex.Center, CellIndex.IK
+                Direction.J, Direction.JK, Direction.K, Direction.I, Direction.IJ,
+                Direction.Center, Direction.IK
             },
             {
-                CellIndex.JK, CellIndex.IJ, CellIndex.I, CellIndex.IK, CellIndex.Center,
-                CellIndex.K, CellIndex.J
+                Direction.JK, Direction.IJ, Direction.I, Direction.IK, Direction.Center,
+                Direction.K, Direction.J
             },
             {
-                CellIndex.I, CellIndex.IK, CellIndex.IJ, CellIndex.Center, CellIndex.J,
-                CellIndex.JK, CellIndex.K
+                Direction.I, Direction.IK, Direction.IJ, Direction.Center, Direction.J,
+                Direction.JK, Direction.K
             },
             {
-                CellIndex.IK, CellIndex.J, CellIndex.Center, CellIndex.K, CellIndex.JK,
-                CellIndex.IJ, CellIndex.I
+                Direction.IK, Direction.J, Direction.Center, Direction.K, Direction.JK,
+                Direction.IJ, Direction.I
             },
             {
-                CellIndex.IJ, CellIndex.Center, CellIndex.IK, CellIndex.J, CellIndex.K,
-                CellIndex.I, CellIndex.JK
+                Direction.IJ, Direction.Center, Direction.IK, Direction.J, Direction.K,
+                Direction.I, Direction.JK
             }
         };
 
@@ -1251,34 +1253,34 @@ namespace H3.Model {
         ///
         /// Current digit -> direction -> new ap7 move (at coarser level).
         /// </summary>
-        public static readonly CellIndex[,] NewAdjustmentClass2 = new CellIndex[7, 7] {
+        public static readonly Direction[,] NewAdjustmentClass2 = new Direction[7, 7] {
             {
-                CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center,
-                CellIndex.Center, CellIndex.Center
+                Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.Center,
+                Direction.Center, Direction.Center
             },
             {
-                CellIndex.Center, CellIndex.K, CellIndex.Center, CellIndex.K, CellIndex.Center,
-                CellIndex.IK, CellIndex.Center
+                Direction.Center, Direction.K, Direction.Center, Direction.K, Direction.Center,
+                Direction.IK, Direction.Center
             },
             {
-                CellIndex.Center, CellIndex.Center, CellIndex.J, CellIndex.JK, CellIndex.Center,
-                CellIndex.Center, CellIndex.J
+                Direction.Center, Direction.Center, Direction.J, Direction.JK, Direction.Center,
+                Direction.Center, Direction.J
             },
             {
-                CellIndex.Center, CellIndex.K, CellIndex.JK, CellIndex.JK, CellIndex.Center,
-                CellIndex.Center, CellIndex.Center
+                Direction.Center, Direction.K, Direction.JK, Direction.JK, Direction.Center,
+                Direction.Center, Direction.Center
             },
             {
-                CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.I,
-                CellIndex.I, CellIndex.IJ
+                Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.I,
+                Direction.I, Direction.IJ
             },
             {
-                CellIndex.Center, CellIndex.IK, CellIndex.Center, CellIndex.Center, CellIndex.I,
-                CellIndex.IK, CellIndex.Center
+                Direction.Center, Direction.IK, Direction.Center, Direction.Center, Direction.I,
+                Direction.IK, Direction.Center
             },
             {
-                CellIndex.Center, CellIndex.Center, CellIndex.J, CellIndex.Center, CellIndex.IJ,
-                CellIndex.Center, CellIndex.IJ
+                Direction.Center, Direction.Center, Direction.J, Direction.Center, Direction.IJ,
+                Direction.Center, Direction.IJ
             }
         };
 
@@ -1287,34 +1289,34 @@ namespace H3.Model {
         ///
         /// Current digit -> direction -> new digit.
         /// </summary>
-        public static readonly CellIndex[,] NewDirectionClass3 = new CellIndex[7, 7] {
+        public static readonly Direction[,] NewDirectionClass3 = new Direction[7, 7] {
             {
-                CellIndex.Center, CellIndex.K, CellIndex.J, CellIndex.JK, CellIndex.I,
-                CellIndex.IK, CellIndex.IJ
+                Direction.Center, Direction.K, Direction.J, Direction.JK, Direction.I,
+                Direction.IK, Direction.IJ
             },
             {
-                CellIndex.K, CellIndex.J, CellIndex.JK, CellIndex.I, CellIndex.IK,
-                CellIndex.IJ, CellIndex.Center
+                Direction.K, Direction.J, Direction.JK, Direction.I, Direction.IK,
+                Direction.IJ, Direction.Center
             },
             {
-                CellIndex.J, CellIndex.JK, CellIndex.I, CellIndex.IK, CellIndex.IJ,
-                CellIndex.Center, CellIndex.K
+                Direction.J, Direction.JK, Direction.I, Direction.IK, Direction.IJ,
+                Direction.Center, Direction.K
             },
             {
-                CellIndex.JK, CellIndex.I, CellIndex.IK, CellIndex.IJ, CellIndex.Center,
-                CellIndex.K, CellIndex.J
+                Direction.JK, Direction.I, Direction.IK, Direction.IJ, Direction.Center,
+                Direction.K, Direction.J
             },
             {
-                CellIndex.I, CellIndex.IK, CellIndex.IJ, CellIndex.Center, CellIndex.K,
-                CellIndex.J, CellIndex.JK
+                Direction.I, Direction.IK, Direction.IJ, Direction.Center, Direction.K,
+                Direction.J, Direction.JK
             },
             {
-                CellIndex.IK, CellIndex.IJ, CellIndex.Center, CellIndex.K, CellIndex.J,
-                CellIndex.JK, CellIndex.I
+                Direction.IK, Direction.IJ, Direction.Center, Direction.K, Direction.J,
+                Direction.JK, Direction.I
             },
             {
-                CellIndex.IJ, CellIndex.Center, CellIndex.K, CellIndex.J, CellIndex.JK,
-                CellIndex.I, CellIndex.IK
+                Direction.IJ, Direction.Center, Direction.K, Direction.J, Direction.JK,
+                Direction.I, Direction.IK
             }
         };
 
@@ -1323,34 +1325,34 @@ namespace H3.Model {
         ///
         /// Current digit -> direction -> new ap7 move (at coarser level).
         /// </summary>
-        public static readonly CellIndex[,] NewAdjustmentClass3 = new CellIndex[7, 7] {
+        public static readonly Direction[,] NewAdjustmentClass3 = new Direction[7, 7] {
             {
-                CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center,
-                CellIndex.Center, CellIndex.Center
+                Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.Center,
+                Direction.Center, Direction.Center
             },
             {
-                CellIndex.Center, CellIndex.K, CellIndex.Center, CellIndex.JK, CellIndex.Center,
-                CellIndex.K, CellIndex.Center
+                Direction.Center, Direction.K, Direction.Center, Direction.JK, Direction.Center,
+                Direction.K, Direction.Center
             },
             {
-                CellIndex.Center, CellIndex.Center, CellIndex.J, CellIndex.J, CellIndex.Center,
-                CellIndex.Center, CellIndex.IJ
+                Direction.Center, Direction.Center, Direction.J, Direction.J, Direction.Center,
+                Direction.Center, Direction.IJ
             },
             {
-                CellIndex.Center, CellIndex.JK, CellIndex.J, CellIndex.JK, CellIndex.Center,
-                CellIndex.Center, CellIndex.Center
+                Direction.Center, Direction.JK, Direction.J, Direction.JK, Direction.Center,
+                Direction.Center, Direction.Center
             },
             {
-                CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.Center, CellIndex.I,
-                CellIndex.IK, CellIndex.I
+                Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.I,
+                Direction.IK, Direction.I
             },
             {
-                CellIndex.Center, CellIndex.K, CellIndex.Center, CellIndex.Center, CellIndex.IK,
-                CellIndex.IK, CellIndex.Center
+                Direction.Center, Direction.K, Direction.Center, Direction.Center, Direction.IK,
+                Direction.IK, Direction.Center
             },
             {
-                CellIndex.Center, CellIndex.Center, CellIndex.IJ, CellIndex.Center, CellIndex.I,
-                CellIndex.Center, CellIndex.IJ
+                Direction.Center, Direction.Center, Direction.IJ, Direction.Center, Direction.I,
+                Direction.Center, Direction.IJ
             }
         };
 

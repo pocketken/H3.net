@@ -8,22 +8,22 @@ namespace H3.Test {
     public class CoordIJKTests {
 
         [Test]
-        [TestCase(0, 0, 0, CellIndex.Center)]
-        [TestCase(0, 0, 1, CellIndex.K)]
-        [TestCase(0, 1, 0, CellIndex.J)]
-        [TestCase(0, 1, 1, CellIndex.JK)]
-        [TestCase(1, 0, 0, CellIndex.I)]
-        [TestCase(1, 0, 1, CellIndex.IK)]
-        [TestCase(1, 1, 0, CellIndex.IJ)]
-        [TestCase(2, 2, 2, CellIndex.Center)]
-        [TestCase(2, 2, 3, CellIndex.K)]
-        [TestCase(8, 1, 8, CellIndex.Invalid)]
-        public void Test_CoordIJK_UnitVector_Matching(int i, int j, int k, CellIndex expectedIndex) {
+        [TestCase(0, 0, 0, Direction.Center)]
+        [TestCase(0, 0, 1, Direction.K)]
+        [TestCase(0, 1, 0, Direction.J)]
+        [TestCase(0, 1, 1, Direction.JK)]
+        [TestCase(1, 0, 0, Direction.I)]
+        [TestCase(1, 0, 1, Direction.IK)]
+        [TestCase(1, 1, 0, Direction.IJ)]
+        [TestCase(2, 2, 2, Direction.Center)]
+        [TestCase(2, 2, 3, Direction.K)]
+        [TestCase(8, 1, 8, Direction.Invalid)]
+        public void Test_CoordIJK_UnitVector_Matching(int i, int j, int k, Direction expectedIndex) {
             // Arrange
             CoordIJK coord = new CoordIJK(i, j, k);
 
             // Act
-            var cell = (CellIndex)coord;
+            var cell = (Direction)coord;
 
             // Assert
             Assert.AreEqual(expectedIndex, cell);

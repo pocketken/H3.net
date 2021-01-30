@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using H3.Extensions;
 using H3.Model;
 
 #nullable enable
@@ -116,7 +117,7 @@ namespace H3.Algorithms {
             // break out to the requested ring
             int rotations = 0;
             for (int ring = 0; ring < k; ring +=1 ) {
-                index = index.NeighbourRotations(LookupTables.NextRingDirection, ref rotations);
+                index = index.GetDirectNeighbour(LookupTables.NextRingDirection, ref rotations);
                 if (index == H3Index.Invalid) return (HexRingResult.KSequence, result);
                 if (index.IsPentagon) return (HexRingResult.Pentagon, result);
             }
@@ -127,7 +128,7 @@ namespace H3.Algorithms {
             for (int direction = 0; direction < 6; direction += 1) {
                 // TODO not sure i get this second loop to k...?
                 for (int pos = 0; pos < k; pos += 1) {
-                    index = index.NeighbourRotations(LookupTables.CounterClockwiseDirections[direction], ref rotations);
+                    index = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], ref rotations);
                     if (index == H3Index.Invalid) return (HexRingResult.KSequence, result);
 
                     // Skip the very last index, it was already added. We do
@@ -234,7 +235,7 @@ namespace H3.Algorithms {
             for (int i = 0; i < 6; i += 1) {
                 int rotations = 0;
                 ForEachKRingIndex(
-                    index.NeighbourRotations(LookupTables.CounterClockwiseDirections[i], ref rotations),
+                    index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[i], ref rotations),
                     k,
                     callback,
                     curK + 1
@@ -290,7 +291,7 @@ namespace H3.Algorithms {
                 if (direction == 0 && i == 0) {
                     // Not putting in the output set as it will be done later, at
                     // the end of this ring.
-                    index = index.NeighbourRotations(LookupTables.NextRingDirection, ref rotations);
+                    index = index.GetDirectNeighbour(LookupTables.NextRingDirection, ref rotations);
                     if (index == H3Index.Invalid) {
                         // Should not be possible because `origin` would have to be a pentagon
                         return HexRingResult.KSequence;
@@ -302,7 +303,7 @@ namespace H3.Algorithms {
                     }
                 }
 
-                index = index.NeighbourRotations(LookupTables.CounterClockwiseDirections[direction], ref rotations);
+                index = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], ref rotations);
                 if (index == H3Index.Invalid) {
                     // Should not be possible because `origin` would have to be a pentagon
                     return HexRingResult.Pentagon;

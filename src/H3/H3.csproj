@@ -15,6 +15,7 @@
   <ItemGroup>
     <Folder Include="Model\" />
     <Folder Include="Algorithms\" />
+    <Folder Include="Extensions\" />
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>
