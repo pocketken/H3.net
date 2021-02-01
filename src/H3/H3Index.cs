@@ -39,7 +39,7 @@ namespace H3 {
          * Typically used to initialize the creation of an H3 cell index, which
          * expects all direction digits to be 7 beyond the cell's resolution.
         */
-        private const ulong H3_INIT = 35184372088831UL;
+        internal const ulong H3_INIT = 35184372088831UL;
         #endregion constants
 
         #region properties
@@ -179,7 +179,7 @@ namespace H3 {
         public void RotatePentagonCounterClockwise() =>
             RotatePentagon(RotateCounterClockwise, cell => cell.RotateCounterClockwise());
 
-        public void RotatePentagoClockwise() =>
+        public void RotatePentagonClockwise() =>
             RotatePentagon(RotateClockwise, cell => cell.RotateClockwise());
 
         public void RotateCounterClockwise() {

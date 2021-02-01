@@ -25,7 +25,7 @@ namespace H3.Model {
             J = ijk.J - ijk.K
         };
 
-        public CoordIJK ToHexCoordIJK() => new CoordIJK(I, J, 0).Normalize();
+        public CoordIJK ToCoordIJK() => new CoordIJK(I, J, 0).Normalize();
 
         public override bool Equals(object? other) => other is CoordIJ c && I == c.I && J == c.J;
 

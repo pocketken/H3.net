@@ -8,6 +8,8 @@ namespace H3.Test.Extensions {
     [TestFixture]
     public class H3HierarchyExtensionsTests {
 
+        // TODO copy relevant tests from upstream
+
         [Test]
         public void Test_KnownIndexValue_Children() {
             // Arrange

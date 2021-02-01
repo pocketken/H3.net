@@ -235,14 +235,14 @@ namespace H3.Model {
         }
 
         public CoordIJK Cube() {
-            I += K;
+            I = -I + K;
             J -= K;
-            K -= J;
+            K = -I - J;
             return this;
         }
 
         public CoordIJK Uncube() {
-            I -= -I;
+            I = -I;
             K = 0;
             return Normalize();
         }
@@ -306,6 +306,32 @@ namespace H3.Model {
 
         public static CoordIJK DownAperature3Clockwise(CoordIJK source) =>
             new CoordIJK(source).DownAperature3Clockwise();
+
+        /// <summary>
+        /// Given cube coords as doubles, round to valid integer coordinates. Algorithm
+        /// from https://www.redblobgames.com/grids/hexagons/#rounding
+        /// </summary>
+        /// <param name="i"></param>
+        /// <param name="j"></param>
+        /// <param name="k"></param>
+        /// <returns></returns>
+        public static CoordIJK CubeRound(double i, double j, double k) {
+            CoordIJK coord = new CoordIJK((int)Math.Round(i), (int)Math.Round(j), (int)Math.Round(k));
+            double iDiff = Math.Abs(coord.I - i);
+            double jDiff = Math.Abs(coord.J - j);
+            double kDiff = Math.Abs(coord.K - k);
+
+            // Round, maintaining valid cube coords
+            if (iDiff > jDiff && iDiff > kDiff) {
+                coord.I = -coord.J - coord.K;
+            } else if (jDiff > kDiff) {
+                coord.J = -coord.I - coord.K;
+            } else {
+                coord.K = -coord.I - coord.J;
+            }
+
+            return coord;
+        }
 
         public static implicit operator Direction(CoordIJK h) =>
             LookupTables.UnitVectorToDirection.GetValueOrDefault(Normalize(h), Direction.Invalid);
