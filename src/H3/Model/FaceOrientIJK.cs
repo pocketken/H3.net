@@ -1,5 +1,4 @@
 ﻿using System;
-using static H3.Constants;
 
 #nullable enable
 
@@ -22,6 +21,12 @@ namespace H3.Model {
             Translate = new CoordIJK(i, j, k);
             CounterClockwiseRotations = rotation;
         }
+
+        public static bool operator ==(FaceOrientIJK a, FaceOrientIJK b) =>
+            a.Face == b.Face && a.Translate == b.Translate && a.CounterClockwiseRotations == b.CounterClockwiseRotations;
+
+        public static bool operator !=(FaceOrientIJK a, FaceOrientIJK b) =>
+            a.Face != b.Face || a.Translate != b.Translate || a.CounterClockwiseRotations != b.CounterClockwiseRotations;
 
         public override bool Equals(object? other) {
             return other is FaceOrientIJK f && Face == f.Face && Translate == f.Translate &&

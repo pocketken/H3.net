@@ -10,6 +10,9 @@ namespace H3.Test.Extensions {
 
         public static readonly H3Index PentagonIndex = TestHelpers.CreateIndex(0, 4, 0);
 
+        // result of select h3_experimental_h3_to_local_ij('8e48e1d7038d527'::h3index, '8e48e1d7038952f'::h3index)
+        public static readonly CoordIJ TestLocalIJ = new CoordIJ(-247608, -153923);
+
         [Test]
         [TestCase(0, 15, Direction.Center)]
         public void Test_H3IndexToLocalIJK_BaseCell(int resolution, int baseCell, Direction direction) {
@@ -34,8 +37,7 @@ namespace H3.Test.Extensions {
             var localIj = start.ToLocalIJ(end);
 
             // Assert
-            Assert.AreEqual(-247608, localIj.I, "I should be -247608");
-            Assert.AreEqual(-153923, localIj.J, "J should be -153923");
+            Assert.IsTrue(localIj == TestLocalIJ, "should be equal");
         }
 
     }

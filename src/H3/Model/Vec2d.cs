@@ -54,6 +54,10 @@ namespace H3.Model {
             return GeoCoord.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
         }
 
+        public static bool operator ==(Vec2d a, Vec2d b) => a.X == b.X & a.Y == b.Y;
+
+        public static bool operator !=(Vec2d a, Vec2d b) => a.X != b.X || a.Y != b.Y;
+
         public override bool Equals(object? other) => other is Vec2d v && X == v.X && Y == v.Y;
 
         public override int GetHashCode() => HashCode.Combine(X, Y);

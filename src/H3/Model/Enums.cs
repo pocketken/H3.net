@@ -14,6 +14,12 @@ namespace H3.Model {
     }
 
     public static class DirectionExtensions {
+        /// <summary>
+        /// Returns the Direction that is 60 degrees clockwise to the current
+        /// direction.
+        /// </summary>
+        /// <param name="direction"></param>
+        /// <returns></returns>
         public static Direction RotateClockwise(this Direction direction) => direction switch {
             Direction.K => Direction.JK,
             Direction.JK => Direction.J,
@@ -24,6 +30,12 @@ namespace H3.Model {
             _ => direction
         };
 
+        /// <summary>
+        /// Returns the Direction that is 60 degrees counter-clockwise to the current
+        /// direction.
+        /// </summary>
+        /// <param name="direction"></param>
+        /// <returns></returns>
         public static Direction RotateCounterClockwise(this Direction direction) => direction switch {
             Direction.K => Direction.IK,
             Direction.IK => Direction.I,
