@@ -20,21 +20,21 @@ namespace H3.Test {
         };
 
         // Cell index values for resolutions 1 -> 14 for TestIndexValue
-        public static readonly CellIndex[] TestIndexCellIndexPerResolution = new CellIndex[14] {
-            CellIndex.JK,
-            CellIndex.I,
-            CellIndex.K,
-            CellIndex.IJ,
-            CellIndex.IK,
-            CellIndex.IJ,
-            CellIndex.Center,
-            CellIndex.K,
-            CellIndex.IJ,
-            CellIndex.K,
-            CellIndex.IK,
-            CellIndex.J,
-            CellIndex.I,
-            CellIndex.I
+        public static readonly Direction[] TestIndexDirectionPerResolution = new Direction[14] {
+            Direction.JK,
+            Direction.I,
+            Direction.K,
+            Direction.IJ,
+            Direction.IK,
+            Direction.IJ,
+            Direction.Center,
+            Direction.K,
+            Direction.IJ,
+            Direction.K,
+            Direction.IK,
+            Direction.J,
+            Direction.I,
+            Direction.I
         };
 
         // select h3_k_ring_distances('8e48e1d7038d527'::h3index, 2);
@@ -59,6 +59,21 @@ namespace H3.Test {
             (0x8e48e1d7038dcf7, 2),
             (0x8e48e1d7038dcaf, 2),
         };
+
+        public static H3Index CreateIndex(int resolution, int baseCell, Direction direction) {
+            H3Index index = new H3Index(H3Index.H3_INIT) {
+                Mode = Mode.Hexagon,
+                Resolution = resolution,
+                Direction = direction,
+                BaseCellNumber = baseCell
+            };
+
+            if (index.BaseCellNumber != baseCell) throw new Exception("ZONK");
+
+            for (int r = 1; r <= resolution; r += 1) index.SetDirectionForResolution(r, direction);
+
+            return index;
+        }
 
     }
 }

@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using H3.Model;
+using static H3.Constants;
 using static H3.Utils;
 
 #nullable enable
 
-namespace H3 {
+namespace H3.Extensions {
 
-	public static class H3IndexExtensions {
+    /// <summary>
+    /// Extends the H3Index class with support for bitwise hierarchial queries.
+    /// </summary>
+    public static class H3HierarchyExtensions {
 
         /// <summary>
         /// Returns the hexagon index neighboring the origin, in the direction dir.
@@ -24,14 +27,14 @@ namespace H3 {
         /// (such as when crossing a face edge.)</param>
         /// <returns>H3Index of the specified neighbor or H3_NULL if deleted k-subsequence
         /// distortion is encountered.</returns>
-        public static H3Index NeighbourRotations(this H3Index origin, CellIndex direction, ref int rotations) {
+        public static H3Index GetDirectNeighbour(this H3Index origin, Direction direction, ref int rotations) {
             H3Index outIndex = new H3Index(origin);
 
             BaseCell? oldBaseCell = origin.BaseCell;
             if (oldBaseCell == null) throw new Exception("origin is not a valid base cell");
 
-            CellIndex oldLeadingIndex = origin.LeadingNonZeroCellIndex;
-            CellIndex curIndex = direction;
+            Direction oldLeadingIndex = origin.LeadingNonZeroDirection;
+            Direction curIndex = direction;
             for (int r = 0; r < rotations; r += 1) curIndex.RotateCounterClockwise();
 
             int newRotations = 0;
@@ -46,8 +49,8 @@ namespace H3 {
                     if (outIndex.BaseCellNumber == LookupTables.INVALID_BASE_CELL) {
                         // Adjust for the deleted k vertex at the base cell level.
                         // This edge actually borders a different neighbor.
-                        outIndex.BaseCellNumber = LookupTables.Neighbours[origin.BaseCellNumber, (int)CellIndex.IK];
-                        newRotations = LookupTables.NeighbourCounterClockwiseRotations[origin.BaseCellNumber, (int)CellIndex.IK];
+                        outIndex.BaseCellNumber = LookupTables.Neighbours[origin.BaseCellNumber, (int)Direction.IK];
+                        newRotations = LookupTables.NeighbourCounterClockwiseRotations[origin.BaseCellNumber, (int)Direction.IK];
 
                         // perform the adjustment for the k-subsequence we're skipping
                         // over.
@@ -57,25 +60,25 @@ namespace H3 {
 
                     break;
                 } else {
-                    CellIndex oldIndex = outIndex.GetCellIndexForResolution(resolution + 1);
-                    CellIndex nextIndex;
+                    Direction oldIndex = outIndex.GetDirectionForResolution(resolution + 1);
+                    Direction nextIndex;
 
                     // TODO are these swapped...?
                     if (IsResolutionClass3(resolution + 1)) {
-                        outIndex.SetCellIndexForResolution(
+                        outIndex.SetDirectionForResolution(
                             resolution + 1,
                             LookupTables.NewDirectionClass2[(int)oldIndex, (int)curIndex]
                         );
                         nextIndex = LookupTables.NewAdjustmentClass2[(int)oldIndex, (int)curIndex];
                     } else {
-                        outIndex.SetCellIndexForResolution(
+                        outIndex.SetDirectionForResolution(
                             resolution + 1,
                             LookupTables.NewDirectionClass3[(int)oldIndex, (int)curIndex]
                         );
                         nextIndex = LookupTables.NewAdjustmentClass3[(int)oldIndex, (int)curIndex];
                     }
 
-                    if (nextIndex != CellIndex.Center) {
+                    if (nextIndex != Direction.Center) {
                         curIndex = nextIndex;
                         resolution--;
                     } else {
@@ -93,7 +96,7 @@ namespace H3 {
                 bool alreadyAdjustedKSubsequence = false;
 
                 // force rotation out of missing k-axes sub-sequence
-                if (outIndex.LeadingNonZeroCellIndex == CellIndex.K) {
+                if (outIndex.LeadingNonZeroDirection == Direction.K) {
                     if (oldBaseCell != newBaseCell) {
                         // in this case, we traversed into the deleted
                         // k subsequence of a pentagon base cell.
@@ -111,16 +114,16 @@ namespace H3 {
                         // In this case, we traversed into the deleted
                         // k subsequence from within the same pentagon
                         // base cell.
-                        if (oldLeadingIndex == CellIndex.Center) {
+                        if (oldLeadingIndex == Direction.Center) {
                             // Undefined: the k direction is deleted from here
                             return H3Index.Invalid;
-                        } else if (oldLeadingIndex == CellIndex.JK) {
+                        } else if (oldLeadingIndex == Direction.JK) {
                             // Rotate out of the deleted k subsequence
                             // We also need an additional change to the direction we're
                             // moving in
                             outIndex.RotateCounterClockwise();
                             rotations += 1;
-                        } else if (oldLeadingIndex == CellIndex.IK) {
+                        } else if (oldLeadingIndex == Direction.IK) {
                             // Rotate out of the deleted k subsequence
                             // We also need an additional change to the direction we're
                             // moving in
@@ -141,10 +144,10 @@ namespace H3 {
                     if (newBaseCell.IsPolarPentagon) {
                         // 'polar' base cells behave differently because they have all
                         // i neighbors.
-                        if (oldBaseCell.Cell != 118 && oldBaseCell.Cell != 8 && outIndex.LeadingNonZeroCellIndex != CellIndex.IK && !alreadyAdjustedKSubsequence) {
+                        if (oldBaseCell.Cell != 118 && oldBaseCell.Cell != 8 && outIndex.LeadingNonZeroDirection != Direction.IK && !alreadyAdjustedKSubsequence) {
                             rotations += 1;
                         }
-                    } else if (outIndex.LeadingNonZeroCellIndex == CellIndex.IK && !alreadyAdjustedKSubsequence) {
+                    } else if (outIndex.LeadingNonZeroDirection == Direction.IK && !alreadyAdjustedKSubsequence) {
                         // account for distortion introduced to the 5 neighbor by the
                         // deleted k subsequence.
                         rotations += 1;
@@ -161,7 +164,7 @@ namespace H3 {
 
         /// <summary>
         /// Get the direction from the origin to a given neighbor. This is effectively
-        /// the reverse operation for NeighborRotations. Returns CellIndex.Invalid if the
+        /// the reverse operation for NeighborRotations. Returns Direction.Invalid if the
         /// cells are not neighbors.
         ///
         /// TODO: This is currently a brute-force algorithm, but as it's O(6) that's
@@ -170,56 +173,123 @@ namespace H3 {
         /// <param name="origin"></param>
         /// <param name="destination"></param>
         /// <returns></returns>
-        public static CellIndex DirectionForNeighbour(this H3Index origin, H3Index destination) {
+        public static Direction DirectionForNeighbour(this H3Index origin, H3Index destination) {
             bool isPentagon = origin.IsPentagon;
 
-            for (CellIndex dir = isPentagon ? CellIndex.J : CellIndex.K; dir < CellIndex.Invalid; dir +=1) {
+            for (Direction dir = isPentagon ? Direction.J : Direction.K; dir < Direction.Invalid; dir += 1) {
                 int rotations = 0;
-                H3Index neighbour = origin.NeighbourRotations(dir, ref rotations);
+                H3Index neighbour = origin.GetDirectNeighbour(dir, ref rotations);
                 if (neighbour == destination) return dir;
             }
 
-            return CellIndex.Invalid;
+            return Direction.Invalid;
         }
 
-#if ZARDOZ
-        public static H3Index[] Compact(H3Index[] h3Set) {
-            if (h3Set.Length == 0) {
-                return Array.Empty<H3Index>();
-            }
+        /// <summary>
+        /// Produces the parent index for a given H3 index at the specified
+        /// resolution.
+        /// </summary>
+        /// <param name="origin">origin index</param>
+        /// <param name="parentResolution">parent resolution, must be &gt;= 0 &lt; resolution</param>
+        /// <returns>H3Index of parent</returns>
+        public static H3Index GetParentForResolution(this H3Index origin, int parentResolution) {
+            int resolution = origin.Resolution;
 
-            int resolution = h3Set[0].Resolution;
-            if (!h3Set.Skip(1).All(h3 => h3.Resolution == resolution)) {
-                throw new ArgumentException("all input indicies must be the same resolution");
-            }
+            // ask for an invalid resolution or resolution greater than ours?
+            if (parentResolution < 0 || parentResolution > MAX_H3_RES || parentResolution > resolution) return H3Index.Invalid;
 
-            H3Index[] remainingHexes = new H3Index[h3Set.Length];
-            H3Index[] hashSetArray = new H3Index[h3Set.Length];
-            Array.Copy(h3Set, 0, remainingHexes, 0, h3Set.Length);
+            // if its the same resolution, then we are our father.  err. yeah.
+            if (resolution == parentResolution) return origin;
 
-            // no compaction possible; just return the whole input set
-            if (resolution == 0) {
-                return h3Set;
-            }
+            // return the parent index
+            H3Index parentIndex = new H3Index(origin) {
+                Resolution = parentResolution
+            };
 
-            int numRemainingHexes = h3Set.Length;
-            H3Index[] compactedSet = new H3Index[h3Set.Length];
-            int compactedOffset = 0;
+            for (int r = parentResolution + 1; r <= resolution; r += 1)
+                parentIndex.SetDirectionForResolution(r, Direction.Invalid);
 
-            while (numRemainingHexes > 0) {
-                resolution = remainingHexes[0].Resolution;
-                int parentRes = resolution - 1;
-                for (int i = 0; i < numRemainingHexes; i += 1) {
-                    H3Index currIndex = remainingHexes[i];
-                    if (currIndex != 0) {
-                        H3Index parent = currIndex.GetParentForResolution(parentRes);
-                        int loc = (int)(parent % (ulong)numRemainingHexes);
-                    }
-                }
-            }
-
+            return parentIndex;
         }
 
-#endif
+        /// <summary>
+        /// Returns the immediate child index based on the specified cell number.
+        /// Bit operations only, could generate invalid indexes if not careful
+        /// (deleted cell under a pentagon).
+        /// </summary>
+        /// <param name="origin">origin index</param>
+        /// <param name="direction">direction to travel</param>
+        /// <returns></returns>
+        public static H3Index GetDirectChild(this H3Index origin, Direction direction) => new H3Index(origin) {
+            Resolution = origin.Resolution + 1,
+            Direction = direction
+        };
+
+        /// <summary>
+        /// Produces the center child index for a given H3 index at the specified
+        /// resolution.
+        /// </summary>
+        /// <param name="origin">origin index to find center of</param>
+        /// <param name="childResolution">the resolution to switch to, must be &gt; resolution &lt;= MAX_H3_RES</param>
+        /// <returns>H3Index of the center child, or H3Index.Invalid if you actually asked for a parent</returns>
+        public static H3Index GetChildCenterForResolution(this H3Index origin, int childResolution) {
+            int resolution = origin.Resolution;
+            if (!IsValidChildResolution(resolution, childResolution)) return H3Index.Invalid;
+            if (resolution == childResolution) return origin;
+
+            H3Index childIndex = new H3Index(origin) {
+                Resolution = childResolution
+            };
+
+            for (int r = resolution + 1; r <= childResolution; r += 1) {
+                childIndex.SetDirectionForResolution(r, Direction.Center);
+            }
+
+            return childIndex;
+        }
+
+        /// <summary>
+        /// Returns the maximum number of children possible for a given child resolution.
+        /// </summary>
+        /// <param name="origin">index to find children for</param>
+        /// <param name="childResolution">resolution of child level</param>
+        /// <returns></returns>
+        public static long GetMaxChildrenSizeForResolution(this H3Index origin, int childResolution) {
+            int parentResolution = origin.Resolution;
+            if (!IsValidChildResolution(parentResolution, childResolution)) return 0;
+            // TODO this is changing upstream to be pentago aware; port changes assuming we
+            //      need this method at all.  @see https://github.com/uber/h3/issues/412
+            return IPow(7, childResolution - parentResolution);
+        }
+
+        /// <summary>
+        /// Takes the given hexagon id and generates all of the children at the specified
+        /// resolution.
+        /// </summary>
+        /// <param name="origin">index to find children for</param>
+        /// <param name="childResolution">resolution of child level</param>
+        /// <returns></returns>
+        public static IEnumerable<H3Index> GetChildrenAtResolution(this H3Index origin, int childResolution) {
+            List<H3Index> children = new();
+            int resolution = origin.Resolution;
+
+            if (!IsValidChildResolution(resolution, childResolution)) {
+                return children;
+            }
+
+            if (resolution == childResolution) {
+                children.Add(origin);
+                return children;
+            }
+
+            bool pentagon = origin.IsPentagon;
+            for (Direction i = 0; i < Direction.Invalid; i += 1) {
+                if (pentagon && i == Direction.K) continue;
+                children.AddRange(origin.GetDirectChild(i).GetChildrenAtResolution(childResolution));
+            }
+
+            return children;
+        }
+
     }
 }

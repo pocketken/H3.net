@@ -39,7 +39,7 @@ namespace H3 {
          * Typically used to initialize the creation of an H3 cell index, which
          * expects all direction digits to be 7 beyond the cell's resolution.
         */
-        private const ulong H3_INIT = 35184372088831UL;
+        public const ulong H3_INIT = 35184372088831UL;
         #endregion constants
 
         #region properties
@@ -68,9 +68,9 @@ namespace H3 {
             set => Value = (Value & H3_RES_MASK_NEGATIVE) | ((ulong)value << H3_RES_OFFSET);
         }
 
-        public CellIndex CellIndex {
-            get => GetCellIndexForResolution(Resolution);
-            set => SetCellIndexForResolution(Resolution, value);
+        public Direction Direction {
+            get => GetDirectionForResolution(Resolution);
+            set => SetDirectionForResolution(Resolution, value);
         }
 
         public int ReservedBits {
@@ -92,41 +92,41 @@ namespace H3 {
 
                 bool foundFirstNonZeroDigit = false;
                 for (int r = 1; r <= resolution; r += 1) {
-                    CellIndex idx = GetCellIndexForResolution(r);
+                    Direction idx = GetDirectionForResolution(r);
 
-                    if (!foundFirstNonZeroDigit && idx != CellIndex.Center) {
+                    if (!foundFirstNonZeroDigit && idx != Direction.Center) {
                         foundFirstNonZeroDigit = true;
-                        if (!LookupTables.BaseCells[baseCell].IsPentagon && idx == CellIndex.K) {
+                        if (!LookupTables.BaseCells[baseCell].IsPentagon && idx == Direction.K) {
                             return false;
                         }
                     }
 
-                    if (idx < CellIndex.Center || idx >= CellIndex.Invalid) {
+                    if (idx < Direction.Center || idx >= Direction.Invalid) {
                         return false;
                     }
                 }
 
                 for (int r = resolution + 1; r <= MAX_H3_RES; r += 1)
-                    if (GetCellIndexForResolution(r) != CellIndex.Invalid) return false;
+                    if (GetDirectionForResolution(r) != Direction.Invalid) return false;
 
                 return true;
             }
         }
 
-        public CellIndex LeadingNonZeroCellIndex {
+        public Direction LeadingNonZeroDirection {
             get {
                 int resolution = Resolution;
                 for (int r = 1; r <= resolution; r += 1) {
-                    var idx = GetCellIndexForResolution(r);
-                    if (idx != CellIndex.Center) return idx;
+                    var idx = GetDirectionForResolution(r);
+                    if (idx != Direction.Center) return idx;
                 }
 
-                return CellIndex.Center;
+                return Direction.Center;
             }
         }
 
         public bool IsPentagon => LookupTables.BaseCells[BaseCellNumber].IsPentagon &&
-            LeadingNonZeroCellIndex != CellIndex.Center;
+            LeadingNonZeroDirection != Direction.Center;
 
         #endregion properties
 
@@ -140,94 +140,20 @@ namespace H3 {
             if (ulong.TryParse(value, NumberStyles.HexNumber, null, out ulong parsed)) Value = parsed;
         }
 
-        #region hierarchy
-
-        public H3Index GetParentForResolution(int parentResolution) {
-            int resolution = Resolution;
-
-            // ask for an invalid resolution or resolution greater than ours?
-            if (parentResolution < 0 || parentResolution > MAX_H3_RES || parentResolution > resolution) return Invalid;
-
-            // if its the same resolution, then we are our father.  err. yeah.
-            if (resolution == parentResolution) return this;
-
-            // return the parent index
-            H3Index parentIndex = new H3Index(this) {
-                Resolution = parentResolution
-            };
-
-            for (int r = parentResolution + 1; r <= resolution; r += 1)
-                parentIndex.SetCellIndexForResolution(r, CellIndex.Invalid);
-
-            return parentIndex;
-        }
-
-        public H3Index GetDirectChild(CellIndex cellIndex) => new H3Index(this) {
-            Resolution = Resolution + 1,
-            CellIndex = cellIndex
-        };
-
-        public H3Index GetChildCenterForResolution(int childResolution) {
-            int resolution = Resolution;
-            if (!IsValidChildResolution(resolution, childResolution)) return Invalid;
-            if (resolution == childResolution) return this;
-
-            H3Index childIndex = new H3Index(this) {
-                Resolution = childResolution
-            };
-
-            for (int r = resolution + 1; r <= childResolution; r += 1) {
-                childIndex.SetCellIndexForResolution(r, CellIndex.Center);
-            }
-
-            return childIndex;
-        }
-
-        public long GetMaxChildrenSizeForResolution(int childResolution) {
-            int parentResolution = Resolution;
-            if (!IsValidChildResolution(parentResolution, childResolution)) return 0;
-            // TODO this is changing upstream to be pentago aware; port changes assuming we
-            //      need this method at all.  @see https://github.com/uber/h3/issues/412
-            return IPow(7, childResolution - parentResolution);
-        }
-
-        public IEnumerable<H3Index> GetChildrenAtResolution(int childResolution) {
-            List<H3Index> children = new();
-            int resolution = Resolution;
-
-            if (!IsValidChildResolution(resolution, childResolution)) {
-                return children;
-            }
-
-            if (resolution == childResolution) {
-                children.Add(this);
-                return children;
-            }
-
-            bool pentagon = IsPentagon;
-            for (CellIndex i = 0; i < CellIndex.Invalid; i += 1) {
-                if (pentagon && i == CellIndex.K) continue;
-                children.AddRange(GetDirectChild(i).GetChildrenAtResolution(childResolution));
-            }
-
-            return children;
-        }
-
-        #endregion hierarchy
-
         #region manipulations
 
-        public CellIndex GetCellIndexForResolution(int resolution) {
+        public Direction GetDirectionForResolution(int resolution) {
             var v = (int)((Value >> ((MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET)) & H3_DIGIT_MASK);
-            return (CellIndex)v;
+            return (Direction)v;
         }
 
-        public void SetCellIndexForResolution(int resolution, CellIndex cellIndex) {
-            Value = (Value & ~(H3_DIGIT_MASK << ((MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET))) |
-                (((ulong)cellIndex) << ((MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET));
+        public void SetDirectionForResolution(int resolution, Direction direction) {
+            int offset = (MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET;
+            Value = (Value & ~(H3_DIGIT_MASK << (offset))) |
+                (((ulong)direction) << (offset));
         }
 
-        private void RotatePentagon(Action rotateIndex, Func<CellIndex, CellIndex> rotateCell) {
+        private void RotatePentagon(Action rotateIndex, Func<Direction, Direction> rotateCell) {
             // rotate in place; skips any leading 1 digits (k-axis)
 
             int resolution = Resolution;
@@ -235,16 +161,16 @@ namespace H3 {
 
             for (int r = 1; r <= resolution; r += 1) {
                 // rotate digit
-                SetCellIndexForResolution(r, rotateCell(GetCellIndexForResolution(r)));
+                SetDirectionForResolution(r, rotateCell(GetDirectionForResolution(r)));
 
                 // look for the first non-zero digit so we
                 // can adjust for deleted k-axes sequence
                 // if necessary
-                if (!foundFirstNonZeroDigit && GetCellIndexForResolution(r) != CellIndex.Center) {
+                if (!foundFirstNonZeroDigit && GetDirectionForResolution(r) != Direction.Center) {
                     foundFirstNonZeroDigit = true;
 
                     // adjust for deleted k-axes sequence
-                    if (LeadingNonZeroCellIndex == CellIndex.K) {
+                    if (LeadingNonZeroDirection == Direction.K) {
                         rotateIndex();
                     }
                 }
@@ -254,36 +180,36 @@ namespace H3 {
         public void RotatePentagonCounterClockwise() =>
             RotatePentagon(RotateCounterClockwise, cell => cell.RotateCounterClockwise());
 
-        public void RotatePentagoClockwise() =>
+        public void RotatePentagonClockwise() =>
             RotatePentagon(RotateClockwise, cell => cell.RotateClockwise());
 
         public void RotateCounterClockwise() {
             // rotate in place
             int resolution = Resolution;
             for (int r = 1; r <= resolution; r += 1)
-                SetCellIndexForResolution(r, GetCellIndexForResolution(r).RotateCounterClockwise());
+                SetDirectionForResolution(r, GetDirectionForResolution(r).RotateCounterClockwise());
         }
 
         public void RotateClockwise() {
             // rotate in place
             int resolution = Resolution;
             for (int r = 1; r <= resolution; r += 1)
-                SetCellIndexForResolution(r, GetCellIndexForResolution(r).RotateClockwise());
+                SetDirectionForResolution(r, GetDirectionForResolution(r).RotateClockwise());
         }
 
         #endregion manipulations
 
         #region conversions
 
-        public static H3Index CreateIndex(int resolution, int baseCell, CellIndex cellIndex) {
+        public static H3Index CreateIndex(int resolution, int baseCell, Direction direction) {
             H3Index index = new H3Index(H3_INIT) {
                 Mode = Mode.Hexagon,
                 Resolution = resolution,
                 BaseCellNumber = baseCell,
-                CellIndex = cellIndex
+                Direction = direction
             };
 
-            for (int r = 1; r < resolution; r += 1) index.SetCellIndexForResolution(r, cellIndex);
+            for (int r = 1; r < resolution; r += 1) index.SetDirectionForResolution(r, direction);
 
             return index;
         }
@@ -325,7 +251,7 @@ namespace H3 {
                 }
 
                 CoordIJK diff = (last - lastCenter).Normalize();
-                index.SetCellIndexForResolution(r + 1, diff);
+                index.SetDirectionForResolution(r + 1, diff);
             }
 
             if (ijk.BaseCellRotation == null) {
@@ -341,7 +267,7 @@ namespace H3 {
             // for this base cell
             if (baseCell.IsPentagon) {
                 // force rotation out of missing k-axes sub-sequence
-                if (index.LeadingNonZeroCellIndex == CellIndex.K) {
+                if (index.LeadingNonZeroDirection == Direction.K) {
                     // check for a cw/ ccw offset face; default is ccw
                     if (baseCell.FaceMatchesOffset(ijk.Face)) {
                         index.RotateClockwise();
@@ -380,6 +306,14 @@ namespace H3 {
         public override string ToString() => $"{Value:x}".ToLowerInvariant();
 
         #endregion conversions
+
+        public static bool operator ==(H3Index a, H3Index b) => a.Value == b.Value;
+
+        public static bool operator !=(H3Index a, H3Index b) => a.Value != b.Value;
+
+        public static bool operator ==(H3Index a, ulong b) => a.Value == b;
+
+        public static bool operator !=(H3Index a, ulong b) => a.Value != b;
 
         public override bool Equals(object? other) => (other is H3Index i && Value == i.Value) ||
             (other is ulong l && Value == l);

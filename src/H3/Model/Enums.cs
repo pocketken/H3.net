@@ -2,7 +2,7 @@
 
 namespace H3.Model {
 
-    public enum CellIndex {
+    public enum Direction {
         Center = 0,
         K = 1,
         J = 2,
@@ -13,25 +13,25 @@ namespace H3.Model {
         Invalid = 7
     }
 
-    public static class CellIndexExtensions {
-        public static CellIndex RotateClockwise(this CellIndex cell) => cell switch {
-            CellIndex.K => CellIndex.JK,
-            CellIndex.JK => CellIndex.J,
-            CellIndex.J => CellIndex.IJ,
-            CellIndex.IJ => CellIndex.I,
-            CellIndex.I => CellIndex.IK,
-            CellIndex.IK => CellIndex.K,
-            _ => cell
+    public static class DirectionExtensions {
+        public static Direction RotateClockwise(this Direction direction) => direction switch {
+            Direction.K => Direction.JK,
+            Direction.JK => Direction.J,
+            Direction.J => Direction.IJ,
+            Direction.IJ => Direction.I,
+            Direction.I => Direction.IK,
+            Direction.IK => Direction.K,
+            _ => direction
         };
 
-        public static CellIndex RotateCounterClockwise(this CellIndex cell) => cell switch {
-            CellIndex.K => CellIndex.IK,
-            CellIndex.IK => CellIndex.I,
-            CellIndex.I => CellIndex.IJ,
-            CellIndex.IJ => CellIndex.J,
-            CellIndex.J => CellIndex.JK,
-            CellIndex.JK => CellIndex.K,
-            _ => cell
+        public static Direction RotateCounterClockwise(this Direction direction) => direction switch {
+            Direction.K => Direction.IK,
+            Direction.IK => Direction.I,
+            Direction.I => Direction.IJ,
+            Direction.IJ => Direction.J,
+            Direction.J => Direction.JK,
+            Direction.JK => Direction.K,
+            _ => direction
         };
     }
 

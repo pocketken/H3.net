@@ -165,17 +165,17 @@ namespace H3.Model {
         }
 
         public CoordIJK RotateCounterClockwise() {
-            CoordIJK iVec = LookupTables.IndexToUnitVector[CellIndex.IJ] * I;
-            CoordIJK jVec = LookupTables.IndexToUnitVector[CellIndex.JK] * J;
-            CoordIJK kVec = LookupTables.IndexToUnitVector[CellIndex.IK] * K;
+            CoordIJK iVec = LookupTables.DirectionToUnitVector[Direction.IJ] * I;
+            CoordIJK jVec = LookupTables.DirectionToUnitVector[Direction.JK] * J;
+            CoordIJK kVec = LookupTables.DirectionToUnitVector[Direction.IK] * K;
 
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
 
         public CoordIJK RotateClockwise() {
-            CoordIJK iVec = LookupTables.IndexToUnitVector[CellIndex.IK] * I;
-            CoordIJK jVec = LookupTables.IndexToUnitVector[CellIndex.IJ] * J;
-            CoordIJK kVec = LookupTables.IndexToUnitVector[CellIndex.JK] * K;
+            CoordIJK iVec = LookupTables.DirectionToUnitVector[Direction.IK] * I;
+            CoordIJK jVec = LookupTables.DirectionToUnitVector[Direction.IJ] * J;
+            CoordIJK kVec = LookupTables.DirectionToUnitVector[Direction.JK] * K;
 
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
@@ -235,21 +235,21 @@ namespace H3.Model {
         }
 
         public CoordIJK Cube() {
-            I += K;
+            I = -I + K;
             J -= K;
-            K -= J;
+            K = -I - J;
             return this;
         }
 
         public CoordIJK Uncube() {
-            I -= -I;
+            I = -I;
             K = 0;
             return Normalize();
         }
 
-        public CoordIJK ToNeighbour(CellIndex cellIndex) {
-            if (cellIndex > CellIndex.Center && cellIndex < CellIndex.Invalid) {
-                SetFrom(this + LookupTables.IndexToUnitVector[cellIndex]).Normalize();
+        public CoordIJK ToNeighbour(Direction direction) {
+            if (direction > Direction.Center && direction < Direction.Invalid) {
+                SetFrom(this + LookupTables.DirectionToUnitVector[direction]).Normalize();
             }
             return this;
         }
@@ -280,7 +280,7 @@ namespace H3.Model {
         public static CoordIJK Normalize(CoordIJK source) =>
             new CoordIJK(source).Normalize();
 
-        public static CoordIJK ToNeighbour(CoordIJK source, CellIndex direction) =>
+        public static CoordIJK ToNeighbour(CoordIJK source, Direction direction) =>
             new CoordIJK(source).ToNeighbour(direction);
 
         public static CoordIJK RotateCounterClockwise(CoordIJK source) =>
@@ -307,8 +307,34 @@ namespace H3.Model {
         public static CoordIJK DownAperature3Clockwise(CoordIJK source) =>
             new CoordIJK(source).DownAperature3Clockwise();
 
-        public static implicit operator CellIndex(CoordIJK h) =>
-            LookupTables.UnitVectorToIndex.GetValueOrDefault(Normalize(h), CellIndex.Invalid);
+        /// <summary>
+        /// Given cube coords as doubles, round to valid integer coordinates. Algorithm
+        /// from https://www.redblobgames.com/grids/hexagons/#rounding
+        /// </summary>
+        /// <param name="i"></param>
+        /// <param name="j"></param>
+        /// <param name="k"></param>
+        /// <returns></returns>
+        public static CoordIJK CubeRound(double i, double j, double k) {
+            CoordIJK coord = new CoordIJK((int)Math.Round(i), (int)Math.Round(j), (int)Math.Round(k));
+            double iDiff = Math.Abs(coord.I - i);
+            double jDiff = Math.Abs(coord.J - j);
+            double kDiff = Math.Abs(coord.K - k);
+
+            // Round, maintaining valid cube coords
+            if (iDiff > jDiff && iDiff > kDiff) {
+                coord.I = -coord.J - coord.K;
+            } else if (jDiff > kDiff) {
+                coord.J = -coord.I - coord.K;
+            } else {
+                coord.K = -coord.I - coord.J;
+            }
+
+            return coord;
+        }
+
+        public static implicit operator Direction(CoordIJK h) =>
+            LookupTables.UnitVectorToDirection.GetValueOrDefault(Normalize(h), Direction.Invalid);
 
         public static CoordIJK operator +(CoordIJK a, CoordIJK b) {
             return new CoordIJK {
@@ -334,7 +360,14 @@ namespace H3.Model {
             };
         }
 
-        public override bool Equals(object? other) => other is CoordIJK c && I == c.I && J == c.J && K == c.K;
+        public static bool operator ==(CoordIJK a, CoordIJK b) =>
+            a.I == b.I && a.J == b.J && a.K == b.K;
+
+        public static bool operator !=(CoordIJK a, CoordIJK b) =>
+            a.I != b.I || a.J != b.J || a.K != b.K;
+
+        public override bool Equals(object? other) =>
+            other is CoordIJK c && I == c.I && J == c.J && K == c.K;
 
         public override int GetHashCode() => HashCode.Combine(I, J, K);
     }
