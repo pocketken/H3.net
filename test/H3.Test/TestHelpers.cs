@@ -60,5 +60,20 @@ namespace H3.Test {
             (0x8e48e1d7038dcaf, 2),
         };
 
+        public static H3Index CreateIndex(int resolution, int baseCell, Direction direction) {
+            H3Index index = new H3Index(H3Index.H3_INIT) {
+                Mode = Mode.Hexagon,
+                Resolution = resolution,
+                Direction = direction,
+                BaseCellNumber = baseCell
+            };
+
+            if (index.BaseCellNumber != baseCell) throw new Exception("ZONK");
+
+            for (int r = 1; r <= resolution; r += 1) index.SetDirectionForResolution(r, direction);
+
+            return index;
+        }
+
     }
 }

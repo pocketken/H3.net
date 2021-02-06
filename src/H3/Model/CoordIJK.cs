@@ -360,7 +360,14 @@ namespace H3.Model {
             };
         }
 
-        public override bool Equals(object? other) => other is CoordIJK c && I == c.I && J == c.J && K == c.K;
+        public static bool operator ==(CoordIJK a, CoordIJK b) =>
+            a.I == b.I && a.J == b.J && a.K == b.K;
+
+        public static bool operator !=(CoordIJK a, CoordIJK b) =>
+            a.I != b.I || a.J != b.J || a.K != b.K;
+
+        public override bool Equals(object? other) =>
+            other is CoordIJK c && I == c.I && J == c.J && K == c.K;
 
         public override int GetHashCode() => HashCode.Combine(I, J, K);
     }

@@ -71,7 +71,7 @@ namespace H3.Extensions {
         /// <param name="origin">an anchoring index for the IJ coordinate system</param>
         /// <param name="index">index to generate IJ coordinates for</param>
         /// <returns>local IJ coordinates</returns>
-        internal static CoordIJK ToLocalIJK(H3Index origin, H3Index index) {
+        public static CoordIJK ToLocalIJK(H3Index origin, H3Index index) {
             int resolution = origin.Resolution;
             if (resolution != index.Resolution) {
                 throw new ArgumentOutOfRangeException(nameof(index), "must be same resolution as origin");
@@ -200,7 +200,7 @@ namespace H3.Extensions {
         /// <param name="index"></param>
         /// <param name="ijk"></param>
         /// <returns></returns>
-        internal static H3Index FromLocalIJK(H3Index origin, CoordIJK ijk) {
+        public static H3Index FromLocalIJK(H3Index origin, CoordIJK ijk) {
             int resolution = origin.Resolution;
             BaseCell? originBaseCell = origin.BaseCell;
             if (originBaseCell == null) throw new Exception("origin is not a valid base cell");

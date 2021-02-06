@@ -30,6 +30,19 @@ namespace H3.Test {
         }
 
         [Test]
+        [TestCase(0, 1, 0, 2)]
+        public void Test_CoordIJK_Equals(int i, int j, int k, int expectedIndex) {
+            // Arrange
+            CoordIJK coord = new CoordIJK(i, j, k);
+
+            // Act
+            var result = coord == LookupTables.UnitVectors[expectedIndex];
+
+            // Assert
+            Assert.IsTrue(result, "should be equal");
+        }
+
+        [Test]
         public void Test_CoordIJK_Addition() {
             // Arrange
             CoordIJK a = new CoordIJK(1, 1, 0);

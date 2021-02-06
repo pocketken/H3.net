@@ -39,7 +39,7 @@ namespace H3 {
          * Typically used to initialize the creation of an H3 cell index, which
          * expects all direction digits to be 7 beyond the cell's resolution.
         */
-        internal const ulong H3_INIT = 35184372088831UL;
+        public const ulong H3_INIT = 35184372088831UL;
         #endregion constants
 
         #region properties
@@ -148,8 +148,9 @@ namespace H3 {
         }
 
         public void SetDirectionForResolution(int resolution, Direction direction) {
-            Value = (Value & ~(H3_DIGIT_MASK << ((MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET))) |
-                (((ulong)direction) << ((MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET));
+            int offset = (MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET;
+            Value = (Value & ~(H3_DIGIT_MASK << (offset))) |
+                (((ulong)direction) << (offset));
         }
 
         private void RotatePentagon(Action rotateIndex, Func<Direction, Direction> rotateCell) {
@@ -305,6 +306,14 @@ namespace H3 {
         public override string ToString() => $"{Value:x}".ToLowerInvariant();
 
         #endregion conversions
+
+        public static bool operator ==(H3Index a, H3Index b) => a.Value == b.Value;
+
+        public static bool operator !=(H3Index a, H3Index b) => a.Value != b.Value;
+
+        public static bool operator ==(H3Index a, ulong b) => a.Value == b;
+
+        public static bool operator !=(H3Index a, ulong b) => a.Value != b;
 
         public override bool Equals(object? other) => (other is H3Index i && Value == i.Value) ||
             (other is ulong l && Value == l);
