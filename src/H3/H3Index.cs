@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using H3.Model;
 using NetTopologySuite.Geometries;
@@ -14,7 +13,6 @@ namespace H3 {
         #region constants
         public static readonly H3Index Invalid = new H3Index(0);
 
-        private const int H3_NUM_BITS = 64;
         private const int H3_MAX_OFFSET = 63;
         private const int H3_MODE_OFFSET = 59;
         private const int H3_BC_OFFSET = 45;
@@ -32,7 +30,6 @@ namespace H3 {
         private const ulong H3_RESERVED_MASK = (ulong)7 << H3_RESERVED_OFFSET;
         private const ulong H3_RESERVED_MASK_NEGATIVE = ~H3_RESERVED_MASK;
         private const ulong H3_DIGIT_MASK = 7;
-        private const ulong H3_DIGIT_MASK_NEGATIVE = ~H3_DIGIT_MASK;
 
         /**
          * H3 index with mode 0, res 0, base cell 0, and 7 for all index digits.
@@ -46,7 +43,7 @@ namespace H3 {
 
         private ulong Value { get; set; } = 0;
 
-        public BaseCell? BaseCell => IsValid ? LookupTables.BaseCells[BaseCellNumber] : null;
+        public BaseCell BaseCell => LookupTables.BaseCells[BaseCellNumber];
 
         public int HighBit {
             get => (int)((Value & H3_HIGH_BIT_MASK) >> H3_MAX_OFFSET);
@@ -200,19 +197,6 @@ namespace H3 {
         #endregion manipulations
 
         #region conversions
-
-        public static H3Index CreateIndex(int resolution, int baseCell, Direction direction) {
-            H3Index index = new H3Index(H3_INIT) {
-                Mode = Mode.Hexagon,
-                Resolution = resolution,
-                BaseCellNumber = baseCell,
-                Direction = direction
-            };
-
-            for (int r = 1; r < resolution; r += 1) index.SetDirectionForResolution(r, direction);
-
-            return index;
-        }
 
         public static H3Index FromFaceIJK(FaceIJK face, int resolution) {
             if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;

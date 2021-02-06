@@ -27,15 +27,15 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_H3IndexToLocalIJ_MatchesPg() {
             // Arrange
-            H3Index start = 0x85285aa7fffffff;
-            H3Index end = 0x851d9b1bfffffff;
+            H3Index start = 0x8e48e1d7038d527;
+            H3Index end = 0x8e48e1d7038952f;
 
             // Act
             var localIj = start.ToLocalIJ(end);
 
             // Assert
-            Assert.AreEqual(64, localIj.I, "I should be 64");
-            Assert.AreEqual(0, localIj.J, "J should be 0");
+            Assert.AreEqual(-247608, localIj.I, "I should be -247608");
+            Assert.AreEqual(-153923, localIj.J, "J should be -153923");
         }
 
     }
