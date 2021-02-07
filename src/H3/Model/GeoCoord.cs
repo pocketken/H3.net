@@ -110,6 +110,10 @@ namespace H3.Model {
 
         public bool AlmostEquals(GeoCoord p2) => AlmostEqualsThreshold(p2, EPSILON_RAD);
 
+        public static bool operator ==(GeoCoord a, GeoCoord b) => a.Latitude == b.Latitude && a.Longitude == b.Longitude;
+
+        public static bool operator !=(GeoCoord a, GeoCoord b) => a.Latitude != b.Latitude || a.Longitude != b.Longitude;
+
         public override bool Equals(object? other) {
             return other is GeoCoord c && Latitude == c.Latitude && Longitude == c.Longitude;
         }

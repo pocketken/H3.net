@@ -32,6 +32,12 @@ namespace H3.Model {
                     ? point.Longitude >= West || point.Longitude <= East
                     : point.Longitude >= West && point.Longitude <= East;
 
+        public static bool operator ==(BBox a, BBox b) =>
+            a.North == b.North && a.South == b.South && a.East == b.East && a.West == b.West;
+
+        public static bool operator !=(BBox a, BBox b) =>
+            a.North != b.North || a.South != b.South || a.East != b.East || a.West != b.West;
+
         public override bool Equals(object? other) =>
             other is BBox b && North == b.North && South == b.South && East == b.East && West == b.West;
 

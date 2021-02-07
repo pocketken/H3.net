@@ -27,6 +27,10 @@ namespace H3.Model {
 
         public CoordIJK ToCoordIJK() => new CoordIJK(I, J, 0).Normalize();
 
+        public static bool operator ==(CoordIJ a, CoordIJ b) => a.I == b.I && a.J == b.J;
+
+        public static bool operator !=(CoordIJ a, CoordIJ b) => a.I != b.I || a.J != b.J;
+
         public override bool Equals(object? other) => other is CoordIJ c && I == c.I && J == c.J;
 
         public override int GetHashCode() => HashCode.Combine(I, J);

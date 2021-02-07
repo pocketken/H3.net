@@ -46,7 +46,7 @@ namespace H3.Test.Algorithms {
             var line = start.LineTo(end).ToArray();
 
             // Assert
-            AssertLinesAreEqual(TestLineIndicies, line);
+            TestHelpers.AssertAll(TestLineIndicies, line);
         }
 
         [Test]
@@ -60,13 +60,6 @@ namespace H3.Test.Algorithms {
 
             // Assert
             Assert.AreEqual(-1, lineSize, "line size should be -1");
-        }
-
-        private static void AssertLinesAreEqual(H3Index[] expected, H3Index[] actual) {
-            Assert.AreEqual(expected.Length, actual.Length, "should have same length");
-            for (int i = 0; i < expected.Length; i += 1) {
-                Assert.IsTrue((ulong)expected[i] == (ulong)actual[i], $"index {i + 1} should equal {expected[i]}, not {actual[i]}");
-            }
         }
 
     }

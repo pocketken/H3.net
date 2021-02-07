@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using H3.Model;
 using NetTopologySuite.Geometries;
@@ -11,73 +10,100 @@ using static H3.Utils;
 namespace H3 {
 
     public class H3Index {
+
         #region constants
+
+        public const int H3_MAX_OFFSET = 63;
+        public const int H3_MODE_OFFSET = 59;
+        public const int H3_BC_OFFSET = 45;
+        public const int H3_RES_OFFSET = 52;
+        public const int H3_RESERVED_OFFSET = 56;
+        public const int H3_PER_DIGIT_OFFSET = 3;
+        public const ulong H3_HIGH_BIT_MASK = (ulong)1 << H3_MAX_OFFSET;
+        public const ulong H3_HIGH_BIT_MASK_NEGATIVE = ~H3_HIGH_BIT_MASK;
+        public const ulong H3_MODE_MASK = (ulong)15 << H3_MODE_OFFSET;
+        public const ulong H3_MODE_MASK_NEGATIVE = ~H3_MODE_MASK;
+        public const ulong H3_BC_MASK = (ulong)127 << H3_BC_OFFSET;
+        public const ulong H3_BC_MASK_NEGATIVE = ~H3_BC_MASK;
+        public const ulong H3_RES_MASK = (ulong)15 << H3_RES_OFFSET;
+        public const ulong H3_RES_MASK_NEGATIVE = ~H3_RES_MASK;
+        public const ulong H3_RESERVED_MASK = (ulong)7 << H3_RESERVED_OFFSET;
+        public const ulong H3_RESERVED_MASK_NEGATIVE = ~H3_RESERVED_MASK;
+        public const ulong H3_DIGIT_MASK = 7;
+
+        /// <summary>
+        /// H3 index with mode 0, res 0, base cell 0, and 7 for all index digits.
+        /// Typically used to initialize the creation of an H3 cell index, which
+        /// expects all direction digits to be 7 beyond the cell's resolution.
+        /// </summary>
+        public const ulong H3_INIT = 35184372088831UL;
+
+        /// <summary>
+        /// H3 index with a value of 0; aka H3_NULL
+        /// </summary>
         public static readonly H3Index Invalid = new H3Index(0);
 
-        private const int H3_NUM_BITS = 64;
-        private const int H3_MAX_OFFSET = 63;
-        private const int H3_MODE_OFFSET = 59;
-        private const int H3_BC_OFFSET = 45;
-        private const int H3_RES_OFFSET = 52;
-        private const int H3_RESERVED_OFFSET = 56;
-        private const int H3_PER_DIGIT_OFFSET = 3;
-        private const ulong H3_HIGH_BIT_MASK = (ulong)1 << H3_MAX_OFFSET;
-        private const ulong H3_HIGH_BIT_MASK_NEGATIVE = ~H3_HIGH_BIT_MASK;
-        private const ulong H3_MODE_MASK = (ulong)15 << H3_MODE_OFFSET;
-        private const ulong H3_MODE_MASK_NEGATIVE = ~H3_MODE_MASK;
-        private const ulong H3_BC_MASK = (ulong)127 << H3_BC_OFFSET;
-        private const ulong H3_BC_MASK_NEGATIVE = ~H3_BC_MASK;
-        private const ulong H3_RES_MASK = (ulong)15 << H3_RES_OFFSET;
-        private const ulong H3_RES_MASK_NEGATIVE = ~H3_RES_MASK;
-        private const ulong H3_RESERVED_MASK = (ulong)7 << H3_RESERVED_OFFSET;
-        private const ulong H3_RESERVED_MASK_NEGATIVE = ~H3_RESERVED_MASK;
-        private const ulong H3_DIGIT_MASK = 7;
-        private const ulong H3_DIGIT_MASK_NEGATIVE = ~H3_DIGIT_MASK;
-
-        /**
-         * H3 index with mode 0, res 0, base cell 0, and 7 for all index digits.
-         * Typically used to initialize the creation of an H3 cell index, which
-         * expects all direction digits to be 7 beyond the cell's resolution.
-        */
-        public const ulong H3_INIT = 35184372088831UL;
         #endregion constants
 
         #region properties
 
         private ulong Value { get; set; } = 0;
 
-        public BaseCell? BaseCell => IsValid ? LookupTables.BaseCells[BaseCellNumber] : null;
+        public BaseCell BaseCell => LookupTables.BaseCells[BaseCellNumber];
 
+        /// <summary>
+        /// The highest bit value of the index.
+        /// </summary>
         public int HighBit {
             get => (int)((Value & H3_HIGH_BIT_MASK) >> H3_MAX_OFFSET);
             set => Value = (Value & H3_HIGH_BIT_MASK_NEGATIVE) | ((ulong)value << H3_MAX_OFFSET);
         }
 
+        /// <summary>
+        /// The Mode of the index.
+        /// </summary>
         public Mode Mode {
             get => (Mode)((Value & H3_MODE_MASK) >> H3_MODE_OFFSET);
             set => Value = (Value & H3_MODE_MASK_NEGATIVE) | ((ulong)value << H3_MODE_OFFSET);
         }
 
+        /// <summary>
+        /// The base cell number of the index.  Must be >= 0 < NUM_BASE_CELLS
+        /// </summary>
         public int BaseCellNumber {
             get => (int)((Value & H3_BC_MASK) >> H3_BC_OFFSET);
             set => Value = (Value & H3_BC_MASK_NEGATIVE) | ((ulong)value << H3_BC_OFFSET);
         }
 
+        /// <summary>
+        /// The resolution of the index.  Must be >= 0 <= MAX_H3_RES
+        /// </summary>
         public int Resolution {
             get => (int)((Value & H3_RES_MASK) >> H3_RES_OFFSET);
             set => Value = (Value & H3_RES_MASK_NEGATIVE) | ((ulong)value << H3_RES_OFFSET);
         }
 
+        /// <summary>
+        /// The Direction "digit" for the index at its base resolution, e.g.
+        /// this is the result of <code>GetDirectionForResolution(Resolution)</code>
+        /// </summary>
         public Direction Direction {
             get => GetDirectionForResolution(Resolution);
             set => SetDirectionForResolution(Resolution, value);
         }
 
+        /// <summary>
+        /// The reserved bit value of the index.  Setting to non-zero may invalidate
+        /// the index.
+        /// </summary>
         public int ReservedBits {
             get => (int)((Value & H3_RESERVED_MASK) >> H3_RESERVED_OFFSET);
             set => Value = (Value & H3_RESERVED_MASK_NEGATIVE) | ((ulong)value << H3_RESERVED_OFFSET);
         }
 
+        /// <summary>
+        /// Whether or not the index is valid.
+        /// </summary>
         public bool IsValid {
             get {
                 if (HighBit != 0) return false;
@@ -113,6 +139,9 @@ namespace H3 {
             }
         }
 
+        /// <summary>
+        /// The leading non-zero Direction "digit" of the index.
+        /// </summary>
         public Direction LeadingNonZeroDirection {
             get {
                 int resolution = Resolution;
@@ -125,6 +154,9 @@ namespace H3 {
             }
         }
 
+        /// <summary>
+        /// Whether or not this index should be considered as a pentagon.
+        /// </summary>
         public bool IsPentagon => LookupTables.BaseCells[BaseCellNumber].IsPentagon &&
             LeadingNonZeroDirection != Direction.Center;
 
@@ -142,11 +174,22 @@ namespace H3 {
 
         #region manipulations
 
+        /// <summary>
+        /// Gets the Direction "digit" for the index at the specified resolution.
+        /// </summary>
+        /// <param name="resolution"></param>
+        /// <returns></returns>
         public Direction GetDirectionForResolution(int resolution) {
             var v = (int)((Value >> ((MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET)) & H3_DIGIT_MASK);
             return (Direction)v;
         }
 
+        /// <summary>
+        /// Sets the Direction "digit" for the index at the specified resolution
+        /// to the specifiied value.
+        /// </summary>
+        /// <param name="resolution"></param>
+        /// <param name="direction"></param>
         public void SetDirectionForResolution(int resolution, Direction direction) {
             int offset = (MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET;
             Value = (Value & ~(H3_DIGIT_MASK << (offset))) |
@@ -177,12 +220,21 @@ namespace H3 {
             }
         }
 
+        /// <summary>
+        /// Performs an in-place 60 degree counter-clockwise pentagonal rotation of the index.
+        /// </summary>
         public void RotatePentagonCounterClockwise() =>
             RotatePentagon(RotateCounterClockwise, cell => cell.RotateCounterClockwise());
 
+        /// <summary>
+        /// Performs an in-place 60 degree clockwise pentagonal rotation of the index.
+        /// </summary>
         public void RotatePentagonClockwise() =>
             RotatePentagon(RotateClockwise, cell => cell.RotateClockwise());
 
+        /// <summary>
+        /// Performs an in-place 60 degree counter-clockwise rotation of the index.
+        /// </summary>
         public void RotateCounterClockwise() {
             // rotate in place
             int resolution = Resolution;
@@ -190,6 +242,9 @@ namespace H3 {
                 SetDirectionForResolution(r, GetDirectionForResolution(r).RotateCounterClockwise());
         }
 
+        /// <summary>
+        /// Performs an in-place 60 degree clockwise rotation of the index.
+        /// </summary>
         public void RotateClockwise() {
             // rotate in place
             int resolution = Resolution;
@@ -200,19 +255,6 @@ namespace H3 {
         #endregion manipulations
 
         #region conversions
-
-        public static H3Index CreateIndex(int resolution, int baseCell, Direction direction) {
-            H3Index index = new H3Index(H3_INIT) {
-                Mode = Mode.Hexagon,
-                Resolution = resolution,
-                BaseCellNumber = baseCell,
-                Direction = direction
-            };
-
-            for (int r = 1; r < resolution; r += 1) index.SetDirectionForResolution(r, direction);
-
-            return index;
-        }
 
         public static H3Index FromFaceIJK(FaceIJK face, int resolution) {
             if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;

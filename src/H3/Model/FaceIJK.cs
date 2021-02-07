@@ -253,6 +253,10 @@ namespace H3.Model {
             return new Polygon(new LinearRing(coordinates.ToArray()));
         }
 
+        public static bool operator ==(FaceIJK a, FaceIJK b) => a.Face == b.Face && a.Coord == b.Coord;
+
+        public static bool operator !=(FaceIJK a, FaceIJK b) => a.Face != b.Face || a.Coord != b.Coord;
+
         public override bool Equals(object? other) => other is FaceIJK f && Face == f.Face && Coord == f.Coord;
 
         public override int GetHashCode() => HashCode.Combine(Face, Coord);

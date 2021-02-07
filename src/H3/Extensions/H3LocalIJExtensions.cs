@@ -379,7 +379,6 @@ namespace H3.Extensions {
     }
 
     public static class LocalCoordIJ {
-
         /// <summary>
         /// Produces ij coordinates for an index anchored by an origin.
         ///

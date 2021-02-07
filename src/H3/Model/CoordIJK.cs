@@ -126,6 +126,11 @@ namespace H3.Model {
             return this;
         }
 
+        /// <summary>
+        /// Normalizes ijk coordinates by setting the components to the smallest possible
+        /// values.  Works in place.
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK Normalize() {
             // remove any negative values
             if (I < 0) {
@@ -164,6 +169,10 @@ namespace H3.Model {
             return this;
         }
 
+        /// <summary>
+        /// Rotates ijk coordinates 60 degrees counter-clockwise.  Works in place.
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK RotateCounterClockwise() {
             CoordIJK iVec = LookupTables.DirectionToUnitVector[Direction.IJ] * I;
             CoordIJK jVec = LookupTables.DirectionToUnitVector[Direction.JK] * J;
@@ -172,6 +181,10 @@ namespace H3.Model {
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
 
+        /// <summary>
+        /// Rotates ijk coordinates 60 degrees clockwise.  Works in place.
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK RotateClockwise() {
             CoordIJK iVec = LookupTables.DirectionToUnitVector[Direction.IK] * I;
             CoordIJK jVec = LookupTables.DirectionToUnitVector[Direction.IJ] * J;
@@ -180,6 +193,11 @@ namespace H3.Model {
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
 
+        /// <summary>
+        /// Find the normalized ijk coordinates of the indexing parent of a cell in a
+        /// counter-clockwise aperture 7 grid.  Works in place.
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK UpAperature7CounterClockwise() {
             int i = I - K;
             int j = J - K;
@@ -191,6 +209,11 @@ namespace H3.Model {
             return Normalize();
         }
 
+        /// <summary>
+        /// Find the normalized ijk coordinates of the indexing parent of a cell in a
+        /// clockwise aperture 7 grid.  Works in place.
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK UpAperature7Clockwise() {
             int i = I - K;
             int j = J - K;
@@ -202,6 +225,12 @@ namespace H3.Model {
             return Normalize();
         }
 
+        /// <summary>
+        /// Find the normalized ijk coordinates of the hex centered on the indicated
+        /// hex at the next finer aperture 7 counter-clockwise resolution.  Works in
+        /// place.
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK DownAperature7CounterClockwise() {
             CoordIJK iVec = new CoordIJK(3, 0, 1) * I;
             CoordIJK jVec = new CoordIJK(1, 3, 0) * J;
@@ -210,6 +239,11 @@ namespace H3.Model {
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
 
+        /// <summary>
+        /// Find the normalized ijk coordinates of the hex centered on the indicated
+        /// hex at the next finer aperture 7 clockwise resolution.  Works in place.
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK DownAperature7Clockwise() {
             CoordIJK iVec = new CoordIJK(3, 1, 0) * I;
             CoordIJK jVec = new CoordIJK(0, 3, 1) * J;
@@ -218,6 +252,12 @@ namespace H3.Model {
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
 
+        /// <summary>
+        /// Find the normalized ijk coordinates of the hex centered on the indicated
+        /// hex at the next finer aperture 3 counter-clockwise resolution.  Works in
+        /// place.
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK DownAperature3CounterClockwise() {
             CoordIJK iVec = new CoordIJK(2, 0, 1) * I;
             CoordIJK jVec = new CoordIJK(1, 2, 0) * J;
@@ -226,6 +266,11 @@ namespace H3.Model {
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
 
+        /// <summary>
+        /// Find the normalized ijk coordinates of the hex centered on the indicated
+        /// hex at the next finer aperture 3 clockwise resolution.  Works in place.
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK DownAperature3Clockwise() {
             CoordIJK iVec = new CoordIJK(2, 1, 0) * I;
             CoordIJK jVec = new CoordIJK(0, 2, 1) * J;
@@ -234,6 +279,10 @@ namespace H3.Model {
             return SetFrom(iVec + jVec + kVec).Normalize();
         }
 
+        /// <summary>
+        /// Convert IJK coordinates to cube coordinates, in place.
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK Cube() {
             I = -I + K;
             J -= K;
@@ -241,12 +290,22 @@ namespace H3.Model {
             return this;
         }
 
+        /// <summary>
+        /// Convert cube coordinates to IJK coordinates, in place
+        /// </summary>
+        /// <returns></returns>
         public CoordIJK Uncube() {
             I = -I;
             K = 0;
             return Normalize();
         }
 
+        /// <summary>
+        /// Find the normalized ijk coordinates of the hex in the specified digit
+        /// direction from the specified ijk coordinates.  Works in place.
+        /// </summary>
+        /// <param name="direction">The digit direction from the original ijk coordinates.</param>
+        /// <returns></returns>
         public CoordIJK ToNeighbour(Direction direction) {
             if (direction > Direction.Center && direction < Direction.Invalid) {
                 SetFrom(this + LookupTables.DirectionToUnitVector[direction]).Normalize();
@@ -254,6 +313,11 @@ namespace H3.Model {
             return this;
         }
 
+        /// <summary>
+        /// Finds the grid distance between the two coordinates.
+        /// </summary>
+        /// <param name="h2"></param>
+        /// <returns></returns>
         public int GetDistanceTo(CoordIJK h2) {
             var diff = (this - h2).Normalize();
             return Math.Max(Math.Abs(diff.I), Math.Max(Math.Abs(diff.J), Math.Abs(diff.K)));
@@ -333,9 +397,20 @@ namespace H3.Model {
             return coord;
         }
 
+        /// <summary>
+        /// Determines the H3 digit corresponding to a unit vector in ijk coordinates.
+        /// </summary>
+        /// <param name="h"></param>
         public static implicit operator Direction(CoordIJK h) =>
             LookupTables.UnitVectorToDirection.GetValueOrDefault(Normalize(h), Direction.Invalid);
 
+        /// <summary>
+        /// Returns a new ijk coordinate containing the sum of two ijk
+        /// coordinates.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static CoordIJK operator +(CoordIJK a, CoordIJK b) {
             return new CoordIJK {
                 I = a.I + b.I,
@@ -344,6 +419,13 @@ namespace H3.Model {
             };
         }
 
+        /// <summary>
+        /// Returns a new ijk coordinate containing the difference of
+        /// two ijk coordinates.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static CoordIJK operator -(CoordIJK a, CoordIJK b) {
             return new CoordIJK {
                 I = a.I - b.I,
@@ -352,6 +434,13 @@ namespace H3.Model {
             };
         }
 
+        /// <summary>
+        /// Returns a new ijk coordinate that has been scaled by the
+        /// specified factor.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="factor"></param>
+        /// <returns></returns>
         public static CoordIJK operator *(CoordIJK a, int factor) {
             return new CoordIJK {
                 I = a.I * factor,
