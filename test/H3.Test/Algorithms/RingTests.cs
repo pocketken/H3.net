@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using H3;
 using H3.Algorithms;
 using NUnit.Framework;
 

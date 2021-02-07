@@ -19,14 +19,7 @@ namespace H3.Test.Extensions {
             H3Index[] children = h3.GetChildrenAtResolution(15).ToArray();
 
             // Assert
-            AssertChildren(TestHelpers.TestIndexChildrenAtRes15, children);
-        }
-
-        private static void AssertChildren(ulong[] expectedChildren, H3Index[] actualChildren) {
-            Assert.AreEqual(expectedChildren.Length, actualChildren.Length, "should have same length");
-            for (int i = 0; i < expectedChildren.Length; i += 1) {
-                Assert.IsTrue(expectedChildren[i] == actualChildren[i], "should be same child");
-            }
+            TestHelpers.AssertAll(TestHelpers.TestIndexChildrenAtRes15, children);
         }
 
     }

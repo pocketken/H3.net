@@ -82,5 +82,12 @@ namespace H3.Test {
                 Assert.IsTrue(expected[i] == actual[i], $"index {i} should be {expected[i]} not {actual[i]}");
             }
         }
+
+        public static void AssertAll(ulong[] expected, H3Index[] actual) {
+            Assert.AreEqual(expected.Length, actual.Length, "should have same Length");
+            for (int i = 0; i < expected.Length; i += 1) {
+                Assert.IsTrue(expected[i] == actual[i], $"index {i} should be {expected[i]} not {actual[i]}");
+            }
+        }
     }
 }
