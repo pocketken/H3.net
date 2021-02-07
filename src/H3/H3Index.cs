@@ -13,23 +13,23 @@ namespace H3 {
 
         #region constants
 
-        private const int H3_MAX_OFFSET = 63;
-        private const int H3_MODE_OFFSET = 59;
-        private const int H3_BC_OFFSET = 45;
-        private const int H3_RES_OFFSET = 52;
-        private const int H3_RESERVED_OFFSET = 56;
-        private const int H3_PER_DIGIT_OFFSET = 3;
-        private const ulong H3_HIGH_BIT_MASK = (ulong)1 << H3_MAX_OFFSET;
-        private const ulong H3_HIGH_BIT_MASK_NEGATIVE = ~H3_HIGH_BIT_MASK;
-        private const ulong H3_MODE_MASK = (ulong)15 << H3_MODE_OFFSET;
-        private const ulong H3_MODE_MASK_NEGATIVE = ~H3_MODE_MASK;
-        private const ulong H3_BC_MASK = (ulong)127 << H3_BC_OFFSET;
-        private const ulong H3_BC_MASK_NEGATIVE = ~H3_BC_MASK;
-        private const ulong H3_RES_MASK = (ulong)15 << H3_RES_OFFSET;
-        private const ulong H3_RES_MASK_NEGATIVE = ~H3_RES_MASK;
-        private const ulong H3_RESERVED_MASK = (ulong)7 << H3_RESERVED_OFFSET;
-        private const ulong H3_RESERVED_MASK_NEGATIVE = ~H3_RESERVED_MASK;
-        private const ulong H3_DIGIT_MASK = 7;
+        public const int H3_MAX_OFFSET = 63;
+        public const int H3_MODE_OFFSET = 59;
+        public const int H3_BC_OFFSET = 45;
+        public const int H3_RES_OFFSET = 52;
+        public const int H3_RESERVED_OFFSET = 56;
+        public const int H3_PER_DIGIT_OFFSET = 3;
+        public const ulong H3_HIGH_BIT_MASK = (ulong)1 << H3_MAX_OFFSET;
+        public const ulong H3_HIGH_BIT_MASK_NEGATIVE = ~H3_HIGH_BIT_MASK;
+        public const ulong H3_MODE_MASK = (ulong)15 << H3_MODE_OFFSET;
+        public const ulong H3_MODE_MASK_NEGATIVE = ~H3_MODE_MASK;
+        public const ulong H3_BC_MASK = (ulong)127 << H3_BC_OFFSET;
+        public const ulong H3_BC_MASK_NEGATIVE = ~H3_BC_MASK;
+        public const ulong H3_RES_MASK = (ulong)15 << H3_RES_OFFSET;
+        public const ulong H3_RES_MASK_NEGATIVE = ~H3_RES_MASK;
+        public const ulong H3_RESERVED_MASK = (ulong)7 << H3_RESERVED_OFFSET;
+        public const ulong H3_RESERVED_MASK_NEGATIVE = ~H3_RESERVED_MASK;
+        public const ulong H3_DIGIT_MASK = 7;
 
         /// <summary>
         /// H3 index with mode 0, res 0, base cell 0, and 7 for all index digits.

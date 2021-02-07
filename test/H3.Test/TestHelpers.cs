@@ -1,5 +1,6 @@
 ﻿using System;
 using H3.Model;
+using NUnit.Framework;
 
 namespace H3.Test {
 
@@ -75,5 +76,11 @@ namespace H3.Test {
             return index;
         }
 
+        public static void AssertAll(H3Index[] expected, H3Index[] actual) {
+            Assert.AreEqual(expected.Length, actual.Length, "should have same Length");
+            for (int i = 0; i < expected.Length; i+= 1) {
+                Assert.IsTrue(expected[i] == actual[i], $"index {i} should be {expected[i]} not {actual[i]}");
+            }
+        }
     }
 }
