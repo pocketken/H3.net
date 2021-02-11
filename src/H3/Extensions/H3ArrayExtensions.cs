@@ -18,7 +18,7 @@ namespace H3.Extensions {
         /// <param name="indexes">set of hexagons</param>
         /// <returns>array of compressed hexagons</returns>
         public static H3Index[] Compact(this H3Index[] indexes) {
-            // TODO this algogirthm presently requires 3x allocating the size of the
+            // TODO this algorithm presently requires allocating 3x the size of the
             // input array in order to produce the compressed set of indexes.  Can't
             // we do better?
             if (!indexes.AreOfSameResolution()) {
@@ -168,7 +168,6 @@ namespace H3.Extensions {
                 numRemaining = compactableCount;
             }
 
-            // TODO plus 1?
             Array.Resize(ref compactedSet, compactedSetOffset + 1);
             return compactedSet;
         }

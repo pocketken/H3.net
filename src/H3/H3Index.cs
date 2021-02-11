@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
-using H3.Model;
 using NetTopologySuite.Geometries;
+using H3.Model;
 using static H3.Constants;
 using static H3.Utils;
 
@@ -158,7 +158,14 @@ namespace H3 {
         /// Whether or not this index should be considered as a pentagon.
         /// </summary>
         public bool IsPentagon => LookupTables.BaseCells[BaseCellNumber].IsPentagon &&
-            LeadingNonZeroDirection != Direction.Center;
+            //LeadingNonZeroDirection != Direction.Center;
+            LeadingNonZeroDirection == Direction.Center;
+
+        /// <summary>
+        /// The maximum number of possible icosahedron faces the index
+        /// may intersect.
+        /// </summary>
+        public int MaximumFaceCount => IsPentagon ? 5 : 2;
 
         #endregion properties
 
@@ -196,9 +203,15 @@ namespace H3 {
                 (((ulong)direction) << (offset));
         }
 
+        /// <summary>
+        /// Rotates the index in place; skips any leading 1 digits (k-axis)
+        /// </summary>
+        /// <param name="rotateIndex">Callback to be fired in order to actually perform
+        /// index rotation (eg clockwise or counter-clockwise)</param>
+        /// <param name="rotateCell">Callback to be fired in order to actually perform
+        /// direction digit rotation around the cell (eg clockwise or counter-clockwise)
+        /// </param>
         private void RotatePentagon(Action rotateIndex, Func<Direction, Direction> rotateCell) {
-            // rotate in place; skips any leading 1 digits (k-axis)
-
             int resolution = Resolution;
             bool foundFirstNonZeroDigit = false;
 
@@ -256,6 +269,94 @@ namespace H3 {
 
         #region conversions
 
+        /// <summary>
+        /// Convert an H3Index to the FaceIJK address on a specified icosahedral face.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public (FaceIJK, bool) ToFaceWithInitializedFijk(FaceIJK inputFaceIjk) {
+            FaceIJK faceIjk = new FaceIJK(inputFaceIjk);
+            int resolution = Resolution;
+
+            // center base cell hierarchy is entirely on this face
+            bool possibleOverage = true;
+            if (!BaseCell.IsPentagon && (resolution == 0 || (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0))) {
+                possibleOverage = false;
+            }
+
+            for (int r = 1; r <= resolution; r += 1) {
+                if (IsResolutionClass3(r)) {
+                    faceIjk.Coord.DownAperature7CounterClockwise();
+                } else {
+                    faceIjk.Coord.DownAperature7Clockwise();
+                }
+
+                faceIjk.Coord.ToNeighbour(GetDirectionForResolution(r));
+            }
+
+            return (faceIjk, possibleOverage);
+        }
+
+        /// <summary>
+        /// Convert an H3Index to a FaceIJK address.
+        /// </summary>
+        /// <returns></returns>
+        public FaceIJK ToFaceIJK() {
+            H3Index index = new H3Index(this);
+
+            if (BaseCell.IsPentagon && LeadingNonZeroDirection == Direction.IK) {
+                index.RotateClockwise();
+            }
+
+            // start with the "home" face and ijk+ coordinates for the base cell of c
+            var (fijk, overage) = index.ToFaceWithInitializedFijk(BaseCell.Home);
+
+            // no overage is possible; h lies on this face
+            if (!overage) return fijk;
+
+            // if we're here we have the potential for an "overage"; i.e., it is
+            // possible that c lies on an adjacent face
+            CoordIJK origIJK = new CoordIJK(fijk.Coord);
+
+            int resolution = index.Resolution;
+            if (IsResolutionClass3(resolution)) {
+                fijk.Coord.DownAperature7Clockwise();
+                resolution++;
+            }
+
+            // adjust for overage if needed
+            // a pentagon base cell with a leading 4 digit requires special handling
+            bool pentLeading4 = BaseCell.IsPentagon && index.LeadingNonZeroDirection == Direction.I;
+            if (fijk.AdjustOverageClass2(resolution, pentLeading4, false) != Overage.None) {
+                // if the base cell is a pentagon we have the potential for secondary
+                // overages
+                if (BaseCell.IsPentagon) {
+                    while (fijk.AdjustOverageClass2(resolution, false, false) != Overage.None)
+                        continue;
+                }
+
+                if (resolution != Resolution) {
+                    fijk.Coord.UpAperature7Clockwise();
+                }
+            } else if (resolution != Resolution) {
+                fijk.Coord = origIJK;
+            }
+
+            return fijk;
+        }
+
+        /// <summary>
+        /// Determines the spherical coordinates of the center point of an H3 index.
+        /// </summary>
+        /// <returns></returns>
+        public GeoCoord ToGeoCoord() => ToFaceIJK().ToGeoCoord(Resolution);
+
+        /// <summary>
+        /// Convert an FaceIJK address to the corresponding H3Index.
+        /// </summary>
+        /// <param name="face">The FaceIJK address</param>
+        /// <param name="resolution">The cell resolution</param>
+        /// <returns></returns>
         public static H3Index FromFaceIJK(FaceIJK face, int resolution) {
             if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;
 
@@ -330,6 +431,13 @@ namespace H3 {
             return index;
         }
 
+        /// <summary>
+        /// Encodes a coordinate on the sphere to the H3 index of the containing cell at
+        /// the specified resolution.
+        /// </summary>
+        /// <param name="geoCoord">The spherical coordinates to encode</param>
+        /// <param name="resolution">The desired H3 resolution for the encoding</param>
+        /// <returns>Returns H3Index.Invalid (H3_NULL) on invalid input</returns>
         public static H3Index FromGeoCoord(GeoCoord geoCoord, int resolution) {
             if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;
 

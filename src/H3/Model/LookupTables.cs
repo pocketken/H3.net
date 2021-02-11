@@ -387,7 +387,7 @@ namespace H3.Model {
 
         /// <summary>
         /// Resolution 0 base cell lookup table for each face.
-        /// 
+        ///
         /// Given the face number and a resolution 0 ijk+ coordinate in that face's
         /// face-centered ijk coordinate system, gives the base cell located at that
         /// coordinate and the number of 60 ccw rotations to rotate into that base
@@ -821,15 +821,21 @@ namespace H3.Model {
 
         #region coordinates + unit vectors
         public static readonly CoordIJK[] UnitVectors = new CoordIJK[7] {
-            new CoordIJK(0, 0, 0),
-            new CoordIJK(0, 0, 1),
-            new CoordIJK(0, 1, 0),
-            new CoordIJK(0, 1, 1),
-            new CoordIJK(1, 0, 0),
-            new CoordIJK(1, 0, 1),
-            new CoordIJK(1, 1, 0)
+            new CoordIJK(0, 0, 0),  // Center
+            new CoordIJK(0, 0, 1),  // K
+            new CoordIJK(0, 1, 0),  // J
+            new CoordIJK(0, 1, 1),  // JK
+            new CoordIJK(1, 0, 0),  // I
+            new CoordIJK(1, 0, 1),  // IK
+            new CoordIJK(1, 1, 0)   // IJ
         };
 
+        /// <summary>
+        /// The vertexes of an origin-centered cell in a Class II resolution on a
+        /// substrate grid with aperture sequence 33r. The aperture 3 gets us the
+        /// vertices, and the 3r gets us back to Class II.  vertices listed ccw
+        /// from the i-axes
+        /// </summary>
         public static readonly CoordIJK[] Class2HexVertices = new CoordIJK[NUM_HEX_VERTS] {
             new CoordIJK(2, 1, 0),
             new CoordIJK(1, 2, 0),
@@ -839,6 +845,12 @@ namespace H3.Model {
             new CoordIJK(2, 0, 1)
         };
 
+        /// <summary>
+        /// the vertexes of an origin-centered cell in a Class III resolution on a
+        /// substrate grid with aperture sequence 33r7r. The aperture 3 gets us the
+        /// vertices, and the 3r7r gets us to Class II.  vertices listed ccw from
+        /// the i-axes
+        /// </summary>
         public static readonly CoordIJK[] Class3HexVertices = new CoordIJK[NUM_HEX_VERTS] {
             new CoordIJK(5, 4, 0),
             new CoordIJK(1, 5, 0),
@@ -848,6 +860,12 @@ namespace H3.Model {
             new CoordIJK(5, 0, 1)
         };
 
+        /// <summary>
+        /// the vertexes of an origin-centered pentagon in a Class II resolution on a
+        /// substrate grid with aperture sequence 33r. The aperture 3 gets us the
+        /// vertices, and the 3r gets us back to Class II.  vertices listed ccw from
+        /// the i-axes
+        /// </summary>
         public static readonly CoordIJK[] Class2PentagonVertices = new CoordIJK[NUM_PENT_VERTS] {
             new CoordIJK(2, 1, 0),
             new CoordIJK(1, 2, 0),
@@ -856,6 +874,12 @@ namespace H3.Model {
             new CoordIJK(1, 0, 2)
         };
 
+        /// <summary>
+        /// the vertexes of an origin-centered pentagon in a Class III resolution on
+        /// a substrate grid with aperture sequence 33r7r. The aperture 3 gets us the
+        /// vertices, and the 3r7r gets us to Class II. vertices listed ccw from the
+        /// i-axes
+        /// </summary>
         public static readonly CoordIJK[] Class3PentagonVertices = new CoordIJK[NUM_PENT_VERTS] {
             new CoordIJK(5, 4, 0),
             new CoordIJK(1, 5, 0),
@@ -948,151 +972,146 @@ namespace H3.Model {
              -1, -1, -1, -1, JK, IJ, -1, -1, KI, 0}    // face 19
         };
 
-        private static readonly CoordIJK Translate1 = new CoordIJK(0, 0, 0);
-        private static readonly CoordIJK Translate2 = new CoordIJK(2, 0, 2);
-        private static readonly CoordIJK Translate3 = new CoordIJK(2, 2, 0);
-        private static readonly CoordIJK Translate4 = new CoordIJK(0, 2, 2);
-
         public static readonly FaceOrientIJK[,] OrientedFaceNeighbours = new FaceOrientIJK[NUM_ICOSA_FACES, 4] {
             {
                 // face 0
-                new FaceOrientIJK(0, Translate1, 0),  // central face
-                new FaceOrientIJK(4, Translate2, 1),  // ij quadrant
-                new FaceOrientIJK(1, Translate3, 5),  // ki quadrant
-                new FaceOrientIJK(5, Translate4, 3)   // jk quadrant
+                (0, (0, 0, 0), 0),  // central face
+                (4, (2, 0, 2), 1),  // ij quadrant
+                (1, (2, 2, 0), 5),  // ki quadrant
+                (5, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 1
-                new FaceOrientIJK(1, Translate1, 0),  // central face
-                new FaceOrientIJK(0, Translate2, 1),  // ij quadrant
-                new FaceOrientIJK(2, Translate3, 5),  // ki quadrant
-                new FaceOrientIJK(6, Translate4, 3)   // jk quadrant
+                (1, (0, 0, 0), 0),  // central face
+                (0, (2, 0, 2), 1),  // ij quadrant
+                (2, (2, 2, 0), 5),  // ki quadrant
+                (6, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 2
-                new FaceOrientIJK(2, Translate1, 0),  // central face
-                new FaceOrientIJK(1, Translate2, 1),  // ij quadrant
-                new FaceOrientIJK(3, Translate3, 5),  // ki quadrant
-                new FaceOrientIJK(7, Translate4, 3)   // jk quadrant
+                (2, (0, 0, 0), 0),  // central face
+                (1, (2, 0, 2), 1),  // ij quadrant
+                (3, (2, 2, 0), 5),  // ki quadrant
+                (7, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 3
-                new FaceOrientIJK(3, Translate1, 0),  // central face
-                new FaceOrientIJK(2, Translate2, 1),  // ij quadrant
-                new FaceOrientIJK(4, Translate3, 5),  // ki quadrant
-                new FaceOrientIJK(8, Translate4, 3)   // jk quadrant
+                (3, (0, 0, 0), 0),  // central face
+                (2, (2, 0, 2), 1),  // ij quadrant
+                (4, (2, 2, 0), 5),  // ki quadrant
+                (8, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 4
-                new FaceOrientIJK(4, Translate1, 0),  // central face
-                new FaceOrientIJK(3, Translate2, 1),  // ij quadrant
-                new FaceOrientIJK(0, Translate3, 5),  // ki quadrant
-                new FaceOrientIJK(9, Translate4, 3)   // jk quadrant
+                (4, (0, 0, 0), 0),  // central face
+                (3, (2, 0, 2), 1),  // ij quadrant
+                (0, (2, 2, 0), 5),  // ki quadrant
+                (9, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 5
-                new FaceOrientIJK(5, Translate1, 0),   // central face
-                new FaceOrientIJK(10, Translate3, 3),  // ij quadrant
-                new FaceOrientIJK(14, Translate2, 3),  // ki quadrant
-                new FaceOrientIJK(0, Translate4, 3)    // jk quadrant
+                (5, (0, 0, 0), 0),   // central face
+                (10, (2, 2, 0), 3),  // ij quadrant
+                (14, (2, 0, 2), 3),  // ki quadrant
+                (0, (0, 2, 2), 3)    // jk quadrant
             },
             {
                 // face 6
-                new FaceOrientIJK(6, Translate1, 0),   // central face
-                new FaceOrientIJK(11, Translate3, 3),  // ij quadrant
-                new FaceOrientIJK(10, Translate2, 3),  // ki quadrant
-                new FaceOrientIJK(1, Translate4, 3)    // jk quadrant
+                (6, (0, 0, 0), 0),   // central face
+                (11, (2, 2, 0), 3),  // ij quadrant
+                (10, (2, 0, 2), 3),  // ki quadrant
+                (1, (0, 2, 2), 3)    // jk quadrant
             },
             {
                 // face 7
-                new FaceOrientIJK(7, Translate1, 0),   // central face
-                new FaceOrientIJK(12, Translate3, 3),  // ij quadrant
-                new FaceOrientIJK(11, Translate2, 3),  // ki quadrant
-                new FaceOrientIJK(2, Translate4, 3)    // jk quadrant
+                (7, (0, 0, 0), 0),   // central face
+                (12, (2, 2, 0), 3),  // ij quadrant
+                (11, (2, 0, 2), 3),  // ki quadrant
+                (2, (0, 2, 2), 3)    // jk quadrant
             },
             {
                 // face 8
-                new FaceOrientIJK(8, Translate1, 0),   // central face
-                new FaceOrientIJK(13, Translate3, 3),  // ij quadrant
-                new FaceOrientIJK(12, Translate2, 3),  // ki quadrant
-                new FaceOrientIJK(3, Translate4, 3)    // jk quadrant
+                (8, (0, 0, 0), 0),   // central face
+                (13, (2, 2, 0), 3),  // ij quadrant
+                (12, (2, 0, 2), 3),  // ki quadrant
+                (3, (0, 2, 2), 3)    // jk quadrant
             },
             {
                 // face 9
-                new FaceOrientIJK(9, Translate1, 0),   // central face
-                new FaceOrientIJK(14, Translate3, 3),  // ij quadrant
-                new FaceOrientIJK(13, Translate2, 3),  // ki quadrant
-                new FaceOrientIJK(4, Translate4, 3)    // jk quadrant
+                (9, (0, 0, 0), 0),   // central face
+                (14, (2, 2, 0), 3),  // ij quadrant
+                (13, (2, 0, 2), 3),  // ki quadrant
+                (4, (0, 2, 2), 3)    // jk quadrant
             },
             {
                 // face 10
-                new FaceOrientIJK(10, Translate1, 0),  // central face
-                new FaceOrientIJK(5, Translate3, 3),   // ij quadrant
-                new FaceOrientIJK(6, Translate2, 3),   // ki quadrant
-                new FaceOrientIJK(15, Translate4, 3)   // jk quadrant
+                (10, (0, 0, 0), 0),  // central face
+                (5, (2, 2, 0), 3),   // ij quadrant
+                (6, (2, 0, 2), 3),   // ki quadrant
+                (15, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 11
-                new FaceOrientIJK(11, Translate1, 0),  // central face
-                new FaceOrientIJK(6, Translate3, 3),   // ij quadrant
-                new FaceOrientIJK(7, Translate2, 3),   // ki quadrant
-                new FaceOrientIJK(16, Translate4, 3)   // jk quadrant
+                (11, (0, 0, 0), 0),  // central face
+                (6, (2, 2, 0), 3),   // ij quadrant
+                (7, (2, 0, 2), 3),   // ki quadrant
+                (16, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 12
-                new FaceOrientIJK(12, Translate1, 0),  // central face
-                new FaceOrientIJK(7, Translate3, 3),   // ij quadrant
-                new FaceOrientIJK(8, Translate2, 3),   // ki quadrant
-                new FaceOrientIJK(17, Translate4, 3)   // jk quadrant
+                (12, (0, 0, 0), 0),  // central face
+                (7, (2, 2, 0), 3),   // ij quadrant
+                (8, (2, 0, 2), 3),   // ki quadrant
+                (17, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 13
-                new FaceOrientIJK(13, Translate1, 0),  // central face
-                new FaceOrientIJK(8, Translate3, 3),   // ij quadrant
-                new FaceOrientIJK(9, Translate2, 3),   // ki quadrant
-                new FaceOrientIJK(18, Translate4, 3)   // jk quadrant
+                (13, (0, 0, 0), 0),  // central face
+                (8, (2, 2, 0), 3),   // ij quadrant
+                (9, (2, 0, 2), 3),   // ki quadrant
+                (18, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 14
-                new FaceOrientIJK(14, Translate1, 0),  // central face
-                new FaceOrientIJK(9, Translate3, 3),   // ij quadrant
-                new FaceOrientIJK(5, Translate2, 3),   // ki quadrant
-                new FaceOrientIJK(19, Translate4, 3)   // jk quadrant
+                (14, (0, 0, 0), 0),  // central face
+                (9, (2, 2, 0), 3),   // ij quadrant
+                (5, (2, 0, 2), 3),   // ki quadrant
+                (19, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 15
-                new FaceOrientIJK(15, Translate1, 0),  // central face
-                new FaceOrientIJK(16, Translate2, 1),  // ij quadrant
-                new FaceOrientIJK(19, Translate3, 5),  // ki quadrant
-                new FaceOrientIJK(10, Translate4, 3)   // jk quadrant
+                (15, (0, 0, 0), 0),  // central face
+                (16, (2, 0, 2), 1),  // ij quadrant
+                (19, (2, 2, 0), 5),  // ki quadrant
+                (10, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 16
-                new FaceOrientIJK(16, Translate1, 0),  // central face
-                new FaceOrientIJK(17, Translate2, 1),  // ij quadrant
-                new FaceOrientIJK(15, Translate3, 5),  // ki quadrant
-                new FaceOrientIJK(11, Translate4, 3)   // jk quadrant
+                (16, (0, 0, 0), 0),  // central face
+                (17, (2, 0, 2), 1),  // ij quadrant
+                (15, (2, 2, 0), 5),  // ki quadrant
+                (11, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 17
-                new FaceOrientIJK(17, Translate1, 0),  // central face
-                new FaceOrientIJK(18, Translate2, 1),  // ij quadrant
-                new FaceOrientIJK(16, Translate3, 5),  // ki quadrant
-                new FaceOrientIJK(12, Translate4, 3)   // jk quadrant
+                (17, (0, 0, 0), 0),  // central face
+                (18, (2, 0, 2), 1),  // ij quadrant
+                (16, (2, 2, 0), 5),  // ki quadrant
+                (12, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 18
-                new FaceOrientIJK(18, Translate1, 0),  // central face
-                new FaceOrientIJK(19, Translate2, 1),  // ij quadrant
-                new FaceOrientIJK(17, Translate3, 5),  // ki quadrant
-                new FaceOrientIJK(13, Translate4, 3)   // jk quadrant
+                (18, (0, 0, 0), 0),  // central face
+                (19, (2, 0, 2), 1),  // ij quadrant
+                (17, (2, 2, 0), 5),  // ki quadrant
+                (13, (0, 2, 2), 3)   // jk quadrant
             },
             {
                 // face 19
-                new FaceOrientIJK(19, Translate1, 0),  // central face
-                new FaceOrientIJK(15, Translate2, 1),  // ij quadrant
-                new FaceOrientIJK(18, Translate3, 5),  // ki quadrant
-                new FaceOrientIJK(14, Translate4, 3)   // jk quadrant
+                (19, (0, 0, 0), 0),  // central face
+                (15, (2, 0, 2), 1),  // ij quadrant
+                (18, (2, 2, 0), 5),  // ki quadrant
+                (14, (0, 2, 2), 3)   // jk quadrant
             }
         };
 
@@ -1438,6 +1457,60 @@ namespace H3.Model {
             {false, false, true, true, false, false, false},    // 4
             {false, false, true, false, false, false, true},    // 5
             {false, false, false, true, false, true, false},    // 6
+        };
+
+        /// <summary>
+        /// A list of all hex indexes that are pentagons at each resolution.
+        /// </summary>
+        public static readonly Dictionary<int, IEnumerable<H3Index>> PentagonIndexesPerResolution = Enumerable.Range(0, MAX_H3_RES)
+            .ToDictionary(resolution => resolution, resolution =>
+                Enumerable.Range(0, NUM_BASE_CELLS - 1)
+                    .Where(baseCellNumber => BaseCells[baseCellNumber].IsPentagon)
+                    .Select(baseCellNumber => new H3Index(H3Index.H3_INIT) {
+                        BaseCellNumber = baseCellNumber,
+                        Resolution = resolution,
+                        Direction = Direction.Center
+                    })
+            );
+
+        /// <summary>
+        /// The area of hexagon cells at each resolution in km^2
+        /// </summary>
+        public static readonly double[] HexgonAreasInKm2 = new double[16] {
+            4250546.848, 607220.9782, 86745.85403, 12392.26486,
+            1770.323552, 252.9033645, 36.1290521,  5.1612932,
+            0.7373276,   0.1053325,   0.0150475,   0.0021496,
+            0.0003071,   0.0000439,   0.0000063,   0.0000009
+        };
+
+        /// <summary>
+        /// The area of hexagon cells at each resolution in m^2
+        /// </summary>
+        public static readonly double[] HexagonAreasInM2 = new double[16] {
+            4.25055E+12, 6.07221E+11, 86745854035, 12392264862,
+            1770323552,  252903364.5, 36129052.1,  5161293.2,
+            737327.6,    105332.5,    15047.5,     2149.6,
+            307.1,       43.9,        6.3,         0.9
+        };
+
+        /// <summary>
+        /// TODO figure out what these are actually used for and doc accordingly
+        /// </summary>
+        public static readonly double[] EdgeLengthsInKm = new double[16] {
+            1107.712591, 418.6760055, 158.2446558, 59.81085794,
+            22.6063794,  8.544408276, 3.229482772, 1.220629759,
+            0.461354684, 0.174375668, 0.065907807, 0.024910561,
+            0.009415526, 0.003559893, 0.001348575, 0.000509713
+        };
+
+        /// <summary>
+        /// TODO figure out what these are actually used for and doc accordingly
+        /// </summary>
+        public static readonly double[] EdgeLengthsInM = new double[16] {
+            1107712.591, 418676.0055, 158244.6558, 59810.85794,
+            22606.3794,  8544.408276, 3229.482772, 1220.629759,
+            461.3546837, 174.3756681, 65.90780749, 24.9105614,
+            9.415526211, 3.559893033, 1.348574562, 0.509713273
         };
 
         #endregion other

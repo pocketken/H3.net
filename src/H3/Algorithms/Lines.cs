@@ -49,9 +49,8 @@ namespace H3.Algorithms {
         /// <returns>all points from start to end, inclusive; empty if could not
         /// compute a line</returns>
         public static IEnumerable<H3Index> LineTo(this H3Index origin, H3Index destination) {
-            List<H3Index> line = new();
             int distance = origin.DistanceTo(destination);
-            if (distance < 0) return line;
+            if (distance < 0) yield break;
 
             // Get IJK coords for the start and end. We've already confirmed
             // that these can be calculated with the distance check above.
@@ -71,10 +70,8 @@ namespace H3.Algorithms {
                     startIjk.J + jStep * n,
                     startIjk.K + kStep * n
                 ).Uncube();
-                line.Add(LocalCoordIJK.FromLocalIJK(origin, currentIjk));
+                yield return LocalCoordIJK.FromLocalIJK(origin, currentIjk);
             }
-
-            return line;
         }
 
     }

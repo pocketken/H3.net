@@ -116,5 +116,22 @@ namespace H3.Test {
             Assert.AreEqual(2, result.K, "K should be 2");
         }
 
+        [Test]
+        [TestCase(Direction.Center, 0, 0, 0)]
+        [TestCase(Direction.I, 1, 0, 0)]
+        [TestCase(Direction.Invalid, 0, 0, 0)]
+        public void Test_CoordIJK_Neighbour(Direction direction, int expectedI, int expectedJ, int expectedK) {
+            // Arrange
+            CoordIJK ijk = new CoordIJK();
+
+            // Act
+            var neighbour = ijk.ToNeighbour(direction);
+
+            // Assert
+            Assert.AreEqual(expectedI, neighbour.I, $"I should be {expectedI}");
+            Assert.AreEqual(expectedJ, neighbour.J, $"J should be {expectedJ}");
+            Assert.AreEqual(expectedK, neighbour.K, $"K should be {expectedK}");
+        }
+
     }
 }

@@ -34,10 +34,10 @@ namespace H3.Model {
         public GeoCoord ToFaceGeoCoord(int face, int resolution, bool isSubstrate) {
             double r = Magitude;
             if (r < EPSILON) {
-                return LookupTables.GeoFaceCenters[0];
+                return new GeoCoord(LookupTables.GeoFaceCenters[face]);
             }
 
-            double theta = Math.Atan2(X, Y);
+            double theta = Math.Atan2(Y, X);
 
             for (var i = 0; i < resolution; i += 1) r /= M_SQRT7;
             if (isSubstrate) {
