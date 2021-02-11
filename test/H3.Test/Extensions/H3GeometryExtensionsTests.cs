@@ -11,13 +11,13 @@ namespace H3.Test.Extensions {
     [TestFixture]
     public class H3GeometryExtensionsTests {
 
-        public static readonly H3Index[] PentagonFaceIndicies = new H3Index[] {
+        private static readonly H3Index[] PentagonFaceIndicies = new H3Index[] {
             TestHelpers.CreateIndex(1, 4, 0),
             TestHelpers.CreateIndex(2, 4, 0),
             TestHelpers.CreateIndex(15, 4, 0)
         };
 
-        public static readonly double[] CellAreasInKm2 = new double[] {
+        private static readonly double[] CellAreasInKm2 = new double[] {
             2.562182162955496e+06, 4.476842018179411e+05, 6.596162242711056e+04,
             9.228872919002590e+03, 1.318694490797110e+03, 1.879593512281298e+02,
             2.687164354763186e+01, 3.840848847060638e+00, 5.486939641329893e-01,
@@ -28,17 +28,17 @@ namespace H3.Test.Extensions {
 
         // select st_astext(h3_to_geo_boundary_geometry('8075fffffffffff'::h3index));
         // and discarding final polygon point
-        public static readonly Point[] Res0BoundaryVertices = new Point[] {
+        private static readonly Point[] Res0BoundaryVertices = new Point[] {
             new Point(-4.01399844347047, 11.5452959754148),
-            new Point( -13.708146703918, 6.27096513627577),
-            new Point( -11.6647475421264, -4.46703160978452),
+            new Point(-13.708146703918, 6.27096513627577),
+            new Point(-11.6647475421264, -4.46703160978452),
             new Point(-0.782839175105521, -5.88992175431391),
             new Point(3.94303615578645, 3.96879697660958),
         };
 
         // select st_astext(h3_to_geo_boundary_geometry('8e48e1d7038d527'::h3index));
         // and discarding final polygon point
-        public static readonly Point[] TestPointRes14BoundaryVertices = new Point[] {
+        private static readonly Point[] TestPointRes14BoundaryVertices = new Point[] {
             new Point(-110.000000429101, 29.9999892327449),
             new Point(-109.99998660383, 29.9999986861296),
             new Point(-109.999989152051, 30.0000137159278),
@@ -46,6 +46,13 @@ namespace H3.Test.Extensions {
             new Point(-110.00001935082, 30.0000098389545),
             new Point(-110.000016802594, 29.9999948091569)
         };
+
+        // select st_astext(h3_to_geo_boundary_geometry('8e48e1d7038d527'::h3index));
+        public const string TestPointBoundaryPolygonWkt = "POLYGON ((-110.000000429101 "
+            + "29.9999892327449, -109.99998660383 29.9999986861296, -109.999989152051 "
+            + "30.0000137159278, -110.000005525548 30.0000192923406, -110.00001935082 "
+            + "30.0000098389545, -110.000016802594 29.9999948091569, -110.000000429101 "
+            + "29.9999892327449))";
 
         [Test]
         public void Test_GetCellBoundaryVertices_AtRes0() {
@@ -70,17 +77,26 @@ namespace H3.Test.Extensions {
         }
 
         [Test]
+        public void Test_GetCellBoundary_PolygonWktMatchesPg() {
+            // Act
+            var polygon = new H3Index(TestHelpers.TestIndexValue).GetCellBoundary();
+
+            // Assert
+            Assert.AreEqual(TestPointBoundaryPolygonWkt, polygon.ToString(), "should be equal");
+        }
+
+        [Test]
         public void Test_GetCellAreaInKm2() {
             // Arrange
             GeoCoord c = new GeoCoord(0, 0);
-            var indexes = Enumerable.Range(0, MAX_H3_RES).Select(r => H3Index.FromGeoCoord(c, r)).ToArray();
+            var indexes = Enumerable.Range(0, MAX_H3_RES + 1).Select(r => H3Index.FromGeoCoord(c, r)).ToArray();
 
             // Act
             var areas = indexes.Select(index => index.CellAreaInKmSquared()).ToArray();
 
             // Assert
             for (int i = 0; i < CellAreasInKm2.Length; i += 1) {
-                Assert.IsTrue(Math.Abs(areas[i] - CellAreasInKm2[i]) < 1e-8, $"{indexes[i]} should be {CellAreasInKm2[i]} not {areas[i]}");
+                Assert.IsTrue(Math.Abs(areas[i] - CellAreasInKm2[i]) < 0.01, $"{indexes[i]} should be {CellAreasInKm2[i]} not {areas[i]}");
             }
         }
 

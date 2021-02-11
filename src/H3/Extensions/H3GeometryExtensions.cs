@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using GeoAPI.Geometries;
 using H3.Model;
+using NetTopologySuite.Geometries;
 using static H3.Constants;
 using static H3.Utils;
 
@@ -10,6 +12,8 @@ using static H3.Utils;
 namespace H3.Extensions {
 
     public static class H3GeometryExtensions {
+        private static readonly GeometryFactory DefaultGeometryFactory =
+            new GeometryFactory(new PrecisionModel(1 / EPSILON), 4236);
 
         /// <summary>
         /// Find all icosahedron faces intersected by a given H3 index, represented
@@ -115,8 +119,19 @@ namespace H3.Extensions {
             CellAreaInKmSquared(index) * 1000.0 * 1000.0;
 
         /// <summary>
+        /// Determines the radius of a given hexagon in Km
+        /// </summary>
+        /// <param name="index">H3Index to get area for</param>
+        /// <returns></returns>
+        public static double GetRadiusInKm(this H3Index index) {
+            GeoCoord center = index.ToGeoCoord();
+            GeoCoord firstVertex = index.GetCellBoundaryVertices().First();
+            return center.GetPointDistanceInKm(firstVertex);
+        }
+
+        /// <summary>
         /// Determines the cell boundary vertices in spherical coordinates for
-        /// an H3 index.
+        /// a given H3 index.
         /// </summary>
         /// <param name="index">H3Index to get boundary for</param>
         /// <returns>boundary coordinates</returns>
@@ -129,16 +144,22 @@ namespace H3.Extensions {
         }
 
         /// <summary>
-        /// Determines the radius of a given hexagon in Km
+        /// Generates a Polygon of the cell boundary for a given H3 index.
         /// </summary>
-        /// <param name="index">H3Index to get area for</param>
-        /// <returns></returns>
-        public static double GetRadiusInKm(this H3Index index) {
-            GeoCoord center = index.ToGeoCoord();
-            GeoCoord firstVertex = index.GetCellBoundaryVertices().First();
-            return center.GetPointDistanceInKm(firstVertex);
+        /// <param name="index"></param>
+        /// <param name="geomFactory">Optional GeometryFactory to be used to create
+        /// Polygon instance.  Note that vertex coordinates are provided in EPSG
+        /// 4326 (WGS84)</param>
+        /// <returns>Polygon for cell boundary</returns>
+        public static IPolygon GetCellBoundary(this H3Index index, GeometryFactory? geomFactory = null) {
+            // get vertices and copy first onto the end to close the hole
+            var polyVertices = GetCellBoundaryVertices(index).ToList();
+            polyVertices.Add(polyVertices.First());
+            var gf = geomFactory ?? DefaultGeometryFactory;
+            return gf.CreatePolygon(
+                polyVertices.Select(vert => new Coordinate(vert.LongitudeDegrees, vert.LatitudeDegrees))
+                    .ToArray());
         }
-
     }
 
 }
