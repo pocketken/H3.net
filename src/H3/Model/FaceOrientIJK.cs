@@ -22,6 +22,9 @@ namespace H3.Model {
             CounterClockwiseRotations = rotation;
         }
 
+        public static implicit operator FaceOrientIJK((int, (int, int, int), int) args) =>
+            new FaceOrientIJK(args.Item1, args.Item2, args.Item3);
+
         public static bool operator ==(FaceOrientIJK a, FaceOrientIJK b) =>
             a.Face == b.Face && a.Translate == b.Translate && a.CounterClockwiseRotations == b.CounterClockwiseRotations;
 

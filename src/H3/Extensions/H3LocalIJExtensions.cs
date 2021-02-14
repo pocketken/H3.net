@@ -117,7 +117,7 @@ namespace H3.Extensions {
                 }
             }
 
-            var (indexFijk, _) = ToFaceWithInitializedFijk(index);
+            var (indexFijk, _) = index.ToFaceWithInitializedFijk(new FaceIJK());
             if (dir != Direction.Center) {
                 if (originBaseCell == baseCell) throw new Exception("assertion failed; origin should not equal index cell");
                 if (originOnPent && indexOnPent) throw new Exception("assertion failed; origin and index cannot both be on a pentagon");
@@ -206,7 +206,7 @@ namespace H3.Extensions {
             if (originBaseCell == null) throw new Exception("origin is not a valid base cell");
             bool originOnPent = origin.IsPentagon;
 
-            H3Index index = new H3Index(H3Index.H3_INIT) {
+            H3Index index = new H3Index {
                 Mode = Mode.Hexagon,
                 Resolution = resolution
             };
@@ -341,39 +341,6 @@ namespace H3.Extensions {
             index.BaseCellNumber = baseCell.Cell;
 
             return index;
-        }
-
-        /// <summary>
-        /// Convert an H3Index to the FaceIJK address on a specified icosahedral face.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        private static (FaceIJK, bool) ToFaceWithInitializedFijk(H3Index index) {
-            FaceIJK faceIjk = new FaceIJK();
-            BaseCell? baseCell = index.BaseCell;
-
-            if (baseCell == null) throw new ArgumentException("index is not a base cell");
-
-            int resolution = index.Resolution;
-
-            // center base cell hierarchy is entirely on this face
-            // TODO face coord checks seem silly here, of course its 0 we created it as such
-            bool possibleOverage = true;
-            if (!baseCell.IsPentagon && (resolution == 0 || (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0))) {
-                possibleOverage = false;
-            }
-
-            for (int r = 1; r <= resolution; r += 1) {
-                if (IsResolutionClass3(r)) {
-                    faceIjk.Coord.DownAperature7CounterClockwise();
-                } else {
-                    faceIjk.Coord.DownAperature7Clockwise();
-                }
-
-                faceIjk.Coord.ToNeighbour(index.GetDirectionForResolution(r));
-            }
-
-            return (faceIjk, possibleOverage);
         }
 
     }

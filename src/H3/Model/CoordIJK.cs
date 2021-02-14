@@ -398,6 +398,13 @@ namespace H3.Model {
         }
 
         /// <summary>
+        /// Creates a new CoordIJK from a tuple containing 3 integers (I, J, K).
+        /// </summary>
+        /// <param name="coordinates"></param>
+        public static implicit operator CoordIJK((int, int, int) coordinates) =>
+            new CoordIJK(coordinates.Item1, coordinates.Item2, coordinates.Item3);
+
+        /// <summary>
         /// Determines the H3 digit corresponding to a unit vector in ijk coordinates.
         /// </summary>
         /// <param name="h"></param>

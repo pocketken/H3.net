@@ -62,7 +62,7 @@ namespace H3.Test {
         };
 
         public static H3Index CreateIndex(int resolution, int baseCell, Direction direction) {
-            H3Index index = new H3Index(H3Index.H3_INIT) {
+            H3Index index = new H3Index {
                 Mode = Mode.Hexagon,
                 Resolution = resolution,
                 Direction = direction,

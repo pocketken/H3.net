@@ -9,31 +9,31 @@ namespace H3.Test.Algorithms {
     public class RingTests {
 
         [Test]
-        public void Test_GetHexDistances_KnownValue() {
+        public void Test_GetKRingSlow_KnownValue() {
             // Act
-            var (hexDistanceResult, hexDistanceList) = new H3Index(TestHelpers.TestIndexValue).GetHexRangeDistances(2);
+            var actual = new H3Index(TestHelpers.TestIndexValue).GetKRingSlow(2);
 
             // Assert
-            Assert.AreEqual(HexRingResult.Success, hexDistanceResult, "should be successful");
-
-            var hexDistances = hexDistanceList.ToArray();
-            Assert.AreEqual(TestHelpers.TestIndexKRingsTo2.Length, hexDistances.Length, "should be same length");
-            for (int i = 0; i < TestHelpers.TestIndexKRingsTo2.Length; i += 1) {
-                var expected = TestHelpers.TestIndexKRingsTo2[i];
-                var actual = hexDistances[i];
-
-                Assert.IsTrue(expected.Item1 == actual.Index, $"should be same index {expected.Item1}");
-                Assert.AreEqual(expected.Item2, actual.Distance, $"should be same distance {expected.Item2}");
-            }
+            AssertRing(TestHelpers.TestIndexKRingsTo2, actual.ToArray());
         }
 
         [Test]
-        public void Test_GetKRingDistances_KnownValue() {
+        public void Test_GetKRingFast_KnownValue() {
             // Act
-            var ringDistanceList = new H3Index(TestHelpers.TestIndexValue).GetKRingDistances(2);
+            var ringDistanceList = new H3Index(TestHelpers.TestIndexValue).GetKRingFast(2);
 
             // Assert
-            Assert.IsNotEmpty(ringDistanceList, "should not be empty");
+            AssertRing(TestHelpers.TestIndexKRingsTo2, ringDistanceList.ToArray());
+        }
+
+        private static void AssertRing((ulong, int)[] expectedRing, RingCell[] actualRing) {
+            Assert.AreEqual(expectedRing.Length, actualRing.Length, "should be same length");
+            for (int i = 0; i < expectedRing.Length; i += 1) {
+                var expected = expectedRing[i];
+                var actual = actualRing[i];
+
+                Assert.IsNotNull(actualRing.Where(cell => cell.Index == expected.Item1 && cell.Distance == expected.Item2).First(), $"can't find {expected.Item1:x} at k {expected.Item2}");
+            }
         }
 
     }

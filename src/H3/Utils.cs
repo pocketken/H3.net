@@ -1,9 +1,11 @@
 ﻿using System;
-
+using NetTopologySuite.Geometries;
 using static H3.Constants;
 
 namespace H3 {
     public static class Utils {
+        public static readonly GeometryFactory DefaultGeometryFactory =
+            new GeometryFactory(new PrecisionModel(1 / EPSILON), 4236);
 
         public static bool IsFinite(this double d) => !double.IsInfinity(d) && !double.IsNaN(d);
 

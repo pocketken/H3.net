@@ -270,25 +270,22 @@ namespace H3.Extensions {
         /// <param name="childResolution">resolution of child level</param>
         /// <returns></returns>
         public static IEnumerable<H3Index> GetChildrenAtResolution(this H3Index origin, int childResolution) {
-            List<H3Index> children = new();
             int resolution = origin.Resolution;
 
             if (!IsValidChildResolution(resolution, childResolution)) {
-                return children;
+                yield break;
             }
 
             if (resolution == childResolution) {
-                children.Add(origin);
-                return children;
+                yield return origin;
+            } else {
+                bool pentagon = origin.IsPentagon;
+                for (Direction i = 0; i < Direction.Invalid; i += 1) {
+                    if (pentagon && i == Direction.K) continue;
+                    foreach (var child in origin.GetDirectChild(i).GetChildrenAtResolution(childResolution))
+                        yield return child;
+                }
             }
-
-            bool pentagon = origin.IsPentagon;
-            for (Direction i = 0; i < Direction.Invalid; i += 1) {
-                if (pentagon && i == Direction.K) continue;
-                children.AddRange(origin.GetDirectChild(i).GetChildrenAtResolution(childResolution));
-            }
-
-            return children;
         }
 
     }
