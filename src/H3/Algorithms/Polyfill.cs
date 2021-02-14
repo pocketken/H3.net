@@ -14,7 +14,7 @@ namespace H3.Algorithms {
     public static class Polyfill {
         /// <summary>
         /// Returns all of the H3 indexes that are contained within the provided
-        /// Polygon at the specified resolution.
+        /// Polygon at the specified resolution.  Supports Polygons with holes.
         /// </summary>
         /// <param name="polygon">Containment polygon</param>
         /// <param name="resolution">H3 resolution</param>
@@ -37,8 +37,8 @@ namespace H3.Algorithms {
         }
 
         /// <summary>
-        /// Gets all of the H3 indexes that define the boundary and holes of
-        /// the provided polygon.  This is used to seed the k ring search /
+        /// Gets all of the H3 indexes that define the boundary of the
+        /// provided polygon.  This is used to seed the k ring search /
         /// point in polygon testing phase.
         /// </summary>
         /// <param name="polygon"></param>
@@ -59,7 +59,7 @@ namespace H3.Algorithms {
                 var count = GeoCoord.FromCoordinate(vertA)
                     .LineHexEstimate(GeoCoord.FromCoordinate(vertB), resolution);
 
-                for (int j = 0; j <= count; j += 1) {
+                for (int j = 1; j <= count; j += 1) {
                     // interpolate line
                     var interpolated = LinearLocation.PointAlongSegmentByFraction(vertA, vertB, j / count);
                     var index = H3Index.FromCoordinate(interpolated, resolution);
@@ -67,7 +67,6 @@ namespace H3.Algorithms {
                 }
             }
 
-            // TODO do we need to handle holes?  or does NTS's containment handle them?
             return indicies;
         }
 
