@@ -206,7 +206,7 @@ namespace H3.Extensions {
             if (originBaseCell == null) throw new Exception("origin is not a valid base cell");
             bool originOnPent = origin.IsPentagon;
 
-            H3Index index = new H3Index(H3Index.H3_INIT) {
+            H3Index index = new H3Index {
                 Mode = Mode.Hexagon,
                 Resolution = resolution
             };

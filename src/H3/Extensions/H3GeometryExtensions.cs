@@ -12,9 +12,6 @@ using static H3.Utils;
 namespace H3.Extensions {
 
     public static class H3GeometryExtensions {
-        private static readonly GeometryFactory DefaultGeometryFactory =
-            new GeometryFactory(new PrecisionModel(1 / EPSILON), 4236);
-
         /// <summary>
         /// Find all icosahedron faces intersected by a given H3 index, represented
         /// as integers from 0-19. The results are sparse; since 0 is a valid value,

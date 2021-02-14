@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Globalization;
-using NetTopologySuite.Geometries;
 using H3.Model;
 using static H3.Constants;
 using static H3.Utils;
+using GeoAPI.Geometries;
+using NetTopologySuite.Geometries;
 
 #nullable enable
 
 namespace H3 {
 
-    public class H3Index {
+    public class H3Index : IComparable<H3Index> {
 
         #region constants
 
@@ -36,7 +37,7 @@ namespace H3 {
         /// Typically used to initialize the creation of an H3 cell index, which
         /// expects all direction digits to be 7 beyond the cell's resolution.
         /// </summary>
-        public const ulong H3_INIT = 35184372088831UL;
+        private const ulong H3_INIT = 35184372088831UL;
 
         /// <summary>
         /// H3 index with a value of 0; aka H3_NULL
@@ -169,7 +170,9 @@ namespace H3 {
 
         #endregion properties
 
-        private H3Index() { }
+        public H3Index() {
+            Value = H3_INIT;
+        }
 
         public H3Index(ulong value) {
             Value = value;
@@ -346,10 +349,22 @@ namespace H3 {
         }
 
         /// <summary>
-        /// Determines the spherical coordinates of the center point of an H3 index.
+        /// Determines the spherical coordinates of the center point of a H3
+        /// index.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Center point GeoCoord</returns>
         public GeoCoord ToGeoCoord() => ToFaceIJK().ToGeoCoord(Resolution);
+
+        /// <summary>
+        /// Determines the spherical coordinates of the center point of a H3
+        /// index, and returns it as a NTS Point.
+        /// </summary>
+        /// <param name="geometryFactory">GeometryFactory to be used to create
+        /// point; defaults to DefaultGeometryFactory.  Note that coordinates
+        /// are provided in degrees and SRS is assumed to be EPSG:4326.</param>
+        /// <returns></returns>
+        public IPoint ToPoint(GeometryFactory? geometryFactory = null) =>
+            ToGeoCoord().ToPoint(geometryFactory);
 
         /// <summary>
         /// Convert an FaceIJK address to the corresponding H3Index.
@@ -360,7 +375,7 @@ namespace H3 {
         public static H3Index FromFaceIJK(FaceIJK face, int resolution) {
             if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;
 
-            H3Index index = new H3Index(H3_INIT) {
+            H3Index index = new H3Index {
                 Mode = Mode.Hexagon,
                 Resolution = resolution
             };
@@ -446,8 +461,11 @@ namespace H3 {
             return FromFaceIJK(FaceIJK.FromGeoCoord(geoCoord, resolution), resolution);
         }
 
-        public static H3Index FromPoint(Point point, int resolution) =>
+        public static H3Index FromPoint(IPoint point, int resolution) =>
             FromGeoCoord(GeoCoord.FromPoint(point), resolution);
+
+        public static H3Index FromCoordinate(Coordinate coordinate, int resolution) =>
+            FromGeoCoord(GeoCoord.FromPoint(new Point(coordinate.X, coordinate.Y)), resolution);
 
         public static implicit operator ulong(H3Index index) => index.Value;
 
@@ -457,18 +475,34 @@ namespace H3 {
 
         #endregion conversions
 
-        public static bool operator ==(H3Index a, H3Index b) => a.Value == b.Value;
+        public int CompareTo(H3Index? other) {
+            if (other == null) return 1;
 
-        public static bool operator !=(H3Index a, H3Index b) => a.Value != b.Value;
+            // start with base cell
+            var c = BaseCellNumber.CompareTo(other.BaseCellNumber);
+            if (c != 0) return c;
 
-        public static bool operator ==(H3Index a, ulong b) => a.Value == b;
+            // equal, so next by resolution
+            c = Resolution.CompareTo(other.Resolution);
+            if (c != 0) return c;
 
-        public static bool operator !=(H3Index a, ulong b) => a.Value != b;
+            // lastly, direction
+            return Direction.CompareTo(other.Direction);
+        }
+
+        public static bool operator ==(H3Index? a, H3Index? b) => a?.Value == b?.Value;
+
+        public static bool operator !=(H3Index? a, H3Index? b) => a?.Value != b?.Value;
+
+        public static bool operator ==(H3Index? a, ulong b) => a?.Value == b;
+
+        public static bool operator !=(H3Index? a, ulong b) => a?.Value != b;
 
         public override bool Equals(object? other) => (other is H3Index i && Value == i.Value) ||
             (other is ulong l && Value == l);
 
         public override int GetHashCode() => Value.GetHashCode();
+
     }
 
 }

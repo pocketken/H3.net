@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using GeoAPI.Geometries;
 using H3.Extensions;
 using NetTopologySuite.Geometries;
 using static H3.Constants;
@@ -26,10 +27,17 @@ namespace H3.Model {
             Longitude = source.Longitude;
         }
 
-        public static GeoCoord FromPoint(Point p) => new GeoCoord {
+        /// <summary>
+        /// Creates a GeoCoord from a NTS Point.
+        /// </summary>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        public static GeoCoord FromPoint(IPoint p) => new GeoCoord {
             Latitude = p.Y * M_PI_180,
             Longitude = p.X * M_PI_180
         };
+
+        public static GeoCoord FromCoordinate(Coordinate c) => FromPoint(new Point(c.X, c.Y));
 
         /// <summary>
         /// Computes the point on the sphere a specified azimuth and distance from
@@ -104,7 +112,25 @@ namespace H3.Model {
                 c.GetPointDistanceInRadians(a)
             );
 
-        public Point ToPoint() => new Point(LongitudeDegrees, LatitudeDegrees);
+        /// <summary>
+        /// Return the NTS Point representation of this coordinate.
+        /// </summary>
+        /// <param name="geometryFactory"></param>
+        /// <returns></returns>
+        public IPoint ToPoint(GeometryFactory? geometryFactory = null) {
+            var gf = geometryFactory ?? DefaultGeometryFactory;
+            return gf.CreatePoint(new Coordinate(LongitudeDegrees, LatitudeDegrees));
+        }
+
+        /// <summary>
+        /// Return the NTS Coordinate representation of this coordinate.
+        /// </summary>
+        /// <param name="geometryFactory"></param>
+        /// <returns></returns>
+        public Coordinate ToCoordinate(GeometryFactory? geometryFactory = null) {
+            var point = ToPoint(geometryFactory);
+            return point.Coordinate;
+        }
 
         /// <summary>
         /// Determines the azimuth to p2 from p1 in radians.
@@ -174,6 +200,8 @@ namespace H3.Model {
             Math.Abs(Latitude - p2.Latitude) < threshold && Math.Abs(Longitude - p2.Longitude) < threshold;
 
         public bool AlmostEquals(GeoCoord p2) => AlmostEqualsThreshold(p2, EPSILON_RAD);
+
+        public static implicit operator GeoCoord((double, double) c) => new GeoCoord(c.Item1, c.Item2);
 
         public static bool operator ==(GeoCoord a, GeoCoord b) => a.Latitude == b.Latitude && a.Longitude == b.Longitude;
 
