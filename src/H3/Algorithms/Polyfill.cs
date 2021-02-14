@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GeoAPI.Geometries;
 using H3.Model;
+using H3.Extensions;
 using NetTopologySuite.LinearReferencing;
 
 namespace H3.Algorithms {
@@ -27,8 +28,8 @@ namespace H3.Algorithms {
                 var index = toSearch.Pop();
 
                 if (index != H3Index.Invalid) {
-                    yield return index;
                     foreach (var neighbour in GetKRingInPolygon(index, polygon, searched)) {
+                        yield return neighbour;
                         toSearch.Push(neighbour);
                     }
                 }
