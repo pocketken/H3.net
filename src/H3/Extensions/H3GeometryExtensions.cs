@@ -157,6 +157,18 @@ namespace H3.Extensions {
                 polyVertices.Select(vert => new Coordinate(vert.LongitudeDegrees, vert.LatitudeDegrees))
                     .ToArray());
         }
+
+        /// <summary>
+        /// Generates a Multi-Polygon containing all of the cell boundaries for
+        /// a given set of H3 indicies.
+        /// </summary>
+        /// <param name="indicies"></param>
+        /// <param name="geomFactory"></param>
+        /// <returns></returns>
+        public static IMultiPolygon GetCellBoundaries(this IEnumerable<H3Index> indicies, GeometryFactory? geomFactory = null) {
+            var gf = geomFactory ?? DefaultGeometryFactory;
+            return gf.CreateMultiPolygon(indicies.Select(index => index.GetCellBoundary()).ToArray());
+        }
     }
 
 }
