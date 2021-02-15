@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using H3.Model;
+using H3.Algorithms;
 using static H3.Constants;
 using static H3.Utils;
+using System.Linq;
 
 #nullable enable
 
@@ -183,6 +185,52 @@ namespace H3.Extensions {
             }
 
             return Direction.Invalid;
+        }
+
+        /// <summary>
+        /// Returns whether or not the provided H3Indexes are neighbors.
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="destination"></param>
+        /// <returns></returns>
+        public static bool IsNeighbour(this H3Index origin, H3Index destination) {
+            // must be in hexagon mode
+            if (origin.Mode != Mode.Hexagon || destination.Mode != Mode.Hexagon) {
+                return false;
+            }
+
+            // can't be equal
+            if (origin == destination) {
+                return false;
+            }
+
+            // must be the same resolution
+            int resolution = origin.Resolution;
+            if (resolution != destination.Resolution) {
+                return false;
+            }
+
+            // H3 Indexes that share the same parent are very likely to be neighbors
+            // Child 0 is neighbor with all of its parent's 'offspring', the other
+            // children are neighbors with 3 of the 7 children. So a simple comparison
+            // of origin and destination parents and then a lookup table of the children
+            // is a super-cheap way to possibly determine they are neighbors.
+            int parentRes = resolution - 1;
+            if (parentRes > 0 && origin.GetParentForResolution(parentRes) == destination.GetParentForResolution(parentRes)) {
+                Direction originResDigit = origin.Direction;
+                Direction destResDigit = destination.Direction;
+
+                if (originResDigit == Direction.Center || destResDigit == Direction.Center) {
+                    return true;
+                }
+
+                if (originResDigit.RotateClockwise() == destResDigit || originResDigit.RotateCounterClockwise() == destResDigit) {
+                    return true;
+                }
+            }
+
+            // Otherwise, we have to determine the neighbor relationship the "hard" way.
+            return origin.GetKRingFast(1).Any(cell => cell.Index == destination);
         }
 
         /// <summary>
