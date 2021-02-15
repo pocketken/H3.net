@@ -188,11 +188,11 @@ namespace H3.Extensions {
         }
 
         /// <summary>
-        /// Returns whether or not the provided H3Indexes are neighbors.
+        /// Returns whether or not the provided H3Indexes are neighbours.
         /// </summary>
-        /// <param name="origin"></param>
-        /// <param name="destination"></param>
-        /// <returns></returns>
+        /// <param name="origin">Origin H3 index</param>
+        /// <param name="destination">Destination H3 index</param>
+        /// <returns>true if indexes are neighbours, false if not</returns>
         public static bool IsNeighbour(this H3Index origin, H3Index destination) {
             // must be in hexagon mode
             if (origin.Mode != Mode.Hexagon || destination.Mode != Mode.Hexagon) {
