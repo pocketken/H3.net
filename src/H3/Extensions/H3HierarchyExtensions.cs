@@ -326,12 +326,25 @@ namespace H3.Extensions {
 
             if (resolution == childResolution) {
                 yield return origin;
-            } else {
-                bool pentagon = origin.IsPentagon;
+                yield break;
+            }
+
+            // process children in a FIFO manner
+            Queue<H3Index> queue = new();
+            queue.Enqueue(origin);
+
+            while (queue.Count != 0) {
+                var index = queue.Dequeue();
+                bool pentagon = index.IsPentagon;
+
                 for (Direction i = 0; i < Direction.Invalid; i += 1) {
                     if (pentagon && i == Direction.K) continue;
-                    foreach (var child in origin.GetDirectChild(i).GetChildrenAtResolution(childResolution))
+                    var child = index.GetDirectChild(i);
+                    if (child.Resolution != childResolution) {
+                        queue.Enqueue(child);
+                    } else {
                         yield return child;
+                    }
                 }
             }
         }
