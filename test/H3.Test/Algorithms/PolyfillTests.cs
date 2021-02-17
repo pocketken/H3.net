@@ -174,7 +174,6 @@ namespace H3.Test.Algorithms {
                 Longitude = coord.Longitude - EdgeLength2
             };
             var polygon = CreatePolygon(new[] { topLeft, topRight, bottomRight, bottomLeft, topLeft });
-            Console.WriteLine($"{DefaultGeometryFactory.CreateMultiPolygon(new[] { polygon, index.GetCellBoundary() })}");
 
             // Act
             var filled = polygon.Fill(9).ToArray();

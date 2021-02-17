@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using H3.Model;
 
 #nullable enable
@@ -94,6 +95,30 @@ namespace H3.Extensions {
         /// <returns></returns>
         public static (H3Index, H3Index) GetIndexesFromUnidirectionalEdge(this H3Index edge) =>
             (edge.GetOriginFromUnidirectionalEdge(), edge.GetDestinationFromUnidirectionalEdge());
+
+        /// <summary>
+        /// Provides the coordinates defining the unidirectional edge.
+        /// </summary>
+        /// <param name="edge"></param>
+        /// <returns></returns>
+        public static IEnumerable<GeoCoord> GetUniversalEdgeBoundaryVertices(this H3Index edge) {
+            Direction direction = (Direction)edge.ReservedBits;
+            H3Index origin = edge.GetOriginFromUnidirectionalEdge();
+
+            // get the start vertex for the edge
+            int startVertex = origin.VertexNumberForDirection(direction);
+            if (startVertex == H3VertexExtensions.InvalidVertex) {
+                return Enumerable.Empty<GeoCoord>();
+            }
+
+            FaceIJK face = origin.ToFaceIJK();
+            int resolution = origin.Resolution;
+
+            return origin.IsPentagon
+                ? face.GetPentagonBoundary(resolution, startVertex, 2)
+                : face.GetBoundary(resolution, startVertex, 2);
+
+        }
 
         /// <summary>
         /// Determines if the provided H3Index is a valid unidirectional edge index.

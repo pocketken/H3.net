@@ -101,7 +101,7 @@ namespace H3.Extensions {
         /// <param name="direction"></param>
         /// <returns>The number for the first topological vertex, or INVALID_VERTEX_NUM
         /// if the direction is not valid for this cell</returns>
-        private static int VertexNumberForDirection(this H3Index origin, Direction direction) {
+        public static int GetVertexNumberForDirection(this H3Index origin, Direction direction) {
             bool isPentagon = origin.IsPentagon;
 
             // check for invalid directions
@@ -126,7 +126,7 @@ namespace H3.Extensions {
         /// <param name="vertexNum"></param>
         /// <returns>The direction for this vertex, or INVALID_DIGIT if the vertex
         /// number is invalid.</returns>
-        private static Direction DirectionForVertexNumber(this H3Index origin, int vertexNum) {
+        private static Direction GetDirectionForVertexNumber(this H3Index origin, int vertexNum) {
             bool isPentagon = origin.IsPentagon;
 
             // check for invalid vertexes
@@ -171,7 +171,7 @@ namespace H3.Extensions {
             // the lowest index of any neighbor, so we can skip determining the owner
             if (res == 0 || cell.Direction != Direction.Center) {
                 // Get the left neighbor of the vertex, with its rotations
-                Direction left = DirectionForVertexNumber(cell, vertexNum);
+                Direction left = GetDirectionForVertexNumber(cell, vertexNum);
 
                 if (left == Direction.Invalid) {
                     return H3Index.Invalid;
@@ -189,7 +189,7 @@ namespace H3.Extensions {
                 if (res == 0 || leftNeighbour.Direction != Direction.Center) {
                     // Get the right neighbor of the vertex, with its rotations
                     // Note that vertex - 1 is the right side, as vertex numbers are CCW
-                    Direction right = DirectionForVertexNumber(cell, (vertexNum - 1 + cellNumVerts) % cellNumVerts);
+                    Direction right = GetDirectionForVertexNumber(cell, (vertexNum - 1 + cellNumVerts) % cellNumVerts);
 
                     if (right == Direction.Invalid) {
                         return H3Index.Invalid;
@@ -204,7 +204,7 @@ namespace H3.Extensions {
                         Direction dir = owner.IsPentagon
                             ? owner.DirectionForNeighbour(cell)
                             : HexDirections[((HexNeighbourDirections[(int)right] + rRotations) % rRotations) % NUM_HEX_VERTS];
-                        ownerVertexNum = VertexNumberForDirection(owner, dir);
+                        ownerVertexNum = GetVertexNumberForDirection(owner, dir);
                     }
                 }
 
@@ -217,7 +217,7 @@ namespace H3.Extensions {
 
                     // For the left neighbor, we need the second vertex of the
                     // edge, which may involve looping around the vertex nums
-                    ownerVertexNum = VertexNumberForDirection(owner, dir) + 1;
+                    ownerVertexNum = GetVertexNumberForDirection(owner, dir) + 1;
 
                     if (ownerVertexNum == NUM_HEX_VERTS || (ownerIsPentagon && ownerVertexNum == NUM_PENT_VERTS)) {
                         ownerVertexNum = 0;
