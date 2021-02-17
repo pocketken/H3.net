@@ -44,6 +44,15 @@ namespace H3.Test.Algorithms {
             (-0.005, -M_PI + 0.005),
             (0.005, -M_PI + 0.005),
         };
+        private static readonly GeoCoord[] TransMeridianComplexVerts = new GeoCoord[] {
+            (0.1, -M_PI + 0.00001),
+            (0.1, M_PI - 0.00001),
+            (0.05, M_PI - 0.2),
+            (-0.1, M_PI - 0.00001),
+            (-0.1, -M_PI + 0.00001),
+            (-0.05, -M_PI + 0.2),
+            (0.1, -M_PI + 0.00001)
+        };
 
         // select h3_polyfill(h3_to_geo_boundary_geography('8e48e1d7038d527'::h3index), 15);
         private static readonly H3Index[] KnownValuePolyfillAtRes15 = new H3Index[7] {
@@ -123,10 +132,56 @@ namespace H3.Test.Algorithms {
             var polygon = CreatePolygonWithHole(TransMeridianVerts, TransMeridianHoleVerts);
 
             // Act
-            var filled = polygon.Fill(7).ToArray();
+            var filledCount = polygon.Fill(7).Count();
 
             // Assert
-            Assert.AreEqual(3176, filled.Length, "should return 3176 indicies");
+            Assert.AreEqual(3176, filledCount, "should return 3176 indicies");
+        }
+
+        [Test]
+        public void Test_Polyfill_TransMeridianComplex() {
+            // Arrange
+            var polygon = CreatePolygon(TransMeridianComplexVerts);
+
+            // Act
+            var filledCount = polygon.Fill(4).Count();
+
+            // Assert
+            Assert.AreEqual(1204, filledCount, "should return 1204 indicies");
+        }
+
+        private const double EdgeLength2 = 0.001 * M_PI_180;
+
+        [Test]
+        public void Test_Polyfill_Pentagon() {
+            // Arrange
+            var index = TestHelpers.CreateIndex(9, 24, 0);
+            GeoCoord coord = index.ToGeoCoord();
+            GeoCoord topRight = new GeoCoord {
+                Latitude = coord.Latitude + EdgeLength2,
+                Longitude = coord.Longitude + EdgeLength2
+            };
+            GeoCoord topLeft = new GeoCoord {
+                Latitude = coord.Latitude + EdgeLength2,
+                Longitude = coord.Longitude - EdgeLength2
+            };
+            GeoCoord bottomRight = new GeoCoord {
+                Latitude = coord.Latitude - EdgeLength2,
+                Longitude = coord.Longitude + EdgeLength2
+            };
+            GeoCoord bottomLeft = new GeoCoord {
+                Latitude = coord.Latitude - EdgeLength2,
+                Longitude = coord.Longitude - EdgeLength2
+            };
+            var polygon = CreatePolygon(new[] { topLeft, topRight, bottomRight, bottomLeft, topLeft });
+            Console.WriteLine($"{DefaultGeometryFactory.CreateMultiPolygon(new[] { polygon, index.GetCellBoundary() })}");
+
+            // Act
+            var filled = polygon.Fill(9).ToArray();
+
+            // Assert
+            Assert.AreEqual(1, filled.Length, "should return 1 index");
+            Assert.IsTrue(filled[0].IsPentagon, "should be a pentagon index");
         }
 
         /// <summary>
