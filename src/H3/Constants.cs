@@ -39,6 +39,9 @@ namespace H3 {
         // The number of H3 base cells
         public const int NUM_BASE_CELLS = 122;
 
+        // The number of pentagon cells
+        public const int NUM_PENTAGONS = 12;
+
         // The number of vertices in a hexagon
         public const int NUM_HEX_VERTS = 6;
 

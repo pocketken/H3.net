@@ -37,6 +37,11 @@ namespace H3.Model {
             Longitude = p.X * M_PI_180
         };
 
+        /// <summary>
+        /// Creates a GeoCoord from a NTS Coordinate.
+        /// </summary>
+        /// <param name="c"></param>
+        /// <returns></returns>
         public static GeoCoord FromCoordinate(Coordinate c) => FromPoint(new Point(c.X, c.Y));
 
         /// <summary>

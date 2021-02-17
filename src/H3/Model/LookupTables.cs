@@ -1160,6 +1160,27 @@ namespace H3.Model {
             new Vec3d(0.2139234834501420, -0.1478171829550704, -0.9656017935214205),   // face 18
             new Vec3d(-0.1092625278784796, 0.4811951572873210, -0.8697775121287253),   // face 19
         };
+
+        /// <summary>
+        /// Table of direction-to-face mapping for each pentagon.   Note that
+        /// faces are in directional order, starting at J_AXES_DIGIT.
+        /// </summary>
+        public static readonly PentagonDirectionToFaceMapping[] PentagonDirectionFaces = new PentagonDirectionToFaceMapping[NUM_PENTAGONS] {
+            (4, (4, 0, 2, 1, 3)),
+            (14, (6, 11, 2, 7, 1)),
+            (24, (5, 10, 1, 6, 0)),
+            (38, (7, 12, 3, 8, 2)),
+            (49, (9, 14, 0, 5, 4)),
+            (58, (8, 13, 4, 9, 3)),
+            (63, (11, 6, 15, 10, 16)),
+            (72, (12, 7, 16, 11, 17)),
+            (83, (10, 5, 19, 14, 15)),
+            (97, (13, 8, 17, 12, 18)),
+            (107, (14, 9, 18, 13, 19)),
+            (117, (15, 19, 17, 18, 16))
+        };
+
+
         #endregion faces
 
         #region other
