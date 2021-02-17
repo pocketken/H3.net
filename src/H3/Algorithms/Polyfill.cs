@@ -123,24 +123,6 @@ namespace H3.Algorithms {
         }
 
         /// <summary>
-        /// Whether or not the specified H3 index is located within a polygon as
-        /// determined by the provided IndexedPointInAreaLocator.
-        /// </summary>
-        /// <param name="index">H3 index to check for containment</param>
-        /// <param name="locator">IndexedPointInAreaLocator to use for point-in-poly
-        /// checks</param>
-        /// <param name="needsShift">Whether or not the polygon spans the
-        /// meridian (> 180 deg longitudal arc) and requires we normalize/shift
-        /// index coordinates by 360 degrees longitude when calculating the index
-        /// center point.</param>
-        /// <returns></returns>
-        private static bool WithinPolygon(H3Index index, IndexedPointInAreaLocator locator, bool needsShift) {
-            var coord = index.ToPoint().Coordinate;
-            var location = locator.Locate(needsShift ? coord.ShiftMeridian() : coord);
-            return location == Location.Interior;
-        }
-
-        /// <summary>
         /// Executes a k = 1 neighbour search for the provided H3 index, returning
         /// any neighbours that have center points contained within the provided
         /// polygon and that are not already present within the provided search
@@ -165,7 +147,9 @@ namespace H3.Algorithms {
                         return false;
                     }
                     searched.Add(cell.Index);
-                    return WithinPolygon(cell.Index, locator, needsShift);
+                    var coord = cell.Index.ToPoint().Coordinate;
+                    var location = locator.Locate(needsShift ? coord.ShiftMeridian() : coord);
+                    return location == Location.Interior;
                 })
                 .Select(cell => cell.Index);
 
