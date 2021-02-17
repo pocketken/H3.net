@@ -106,7 +106,7 @@ namespace H3.Extensions {
             H3Index origin = edge.GetOriginFromUnidirectionalEdge();
 
             // get the start vertex for the edge
-            int startVertex = origin.VertexNumberForDirection(direction);
+            int startVertex = origin.GetVertexNumberForDirection(direction);
             if (startVertex == H3VertexExtensions.InvalidVertex) {
                 return Enumerable.Empty<GeoCoord>();
             }
