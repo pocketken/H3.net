@@ -61,6 +61,7 @@ namespace H3.Algorithms {
 
                 if (index != H3Index.Invalid) {
                     foreach (var neighbour in GetKRingInPolygon(index, locator, searched)) {
+                        if (neighbour == H3Index.Invalid) continue;
                         yield return neighbour;
                         toSearch.Push(neighbour);
                     }

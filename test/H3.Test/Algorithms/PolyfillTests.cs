@@ -208,10 +208,10 @@ namespace H3.Test.Algorithms {
 
         [Test]
         [TestCase(0, 122)]
-        [TestCase(1, 843)]
-        [TestCase(2, 5883)]
-        [TestCase(3, 41163)]
-        [TestCase(4, 288123)]
+        [TestCase(1, 842)]
+        [TestCase(2, 5882)]
+        [TestCase(3, 41162)]
+        [TestCase(4, 288122)]
         public void Test_Polyfill_EntireWorldMuhahaha(int resolution, int expectedCount) {
             // Arrange
             var polygon = CreatePolygon(EntireWorld);
@@ -221,6 +221,71 @@ namespace H3.Test.Algorithms {
 
             // Assert
             Assert.AreEqual(expectedCount, filled, $"should have filled {expectedCount}");
+        }
+
+        [Test]
+        public void Test_Upstream_H3jsIssue67_One() {
+            // Arrange
+            double east = -56.25 * M_PI_180;
+            double north = -33.13755119234615 * M_PI_180;
+            double south = -34.30714385628804 * M_PI_180;
+            double west = -57.65625 * M_PI_180;
+
+            var polygon = CreatePolygon(new GeoCoord[] {
+                (north, east),
+                (south, east),
+                (south, west),
+                (north, west),
+                (north, east)
+            });
+
+            // Act
+            var filled = polygon.Fill(7).Count();
+
+            // Arrange
+            Assert.AreEqual(4499, filled, $"should have filled 4499");
+        }
+
+        [Test]
+        public void Test_Upstream_H3jsIssue67_Two() {
+            // Arrange
+            double east = -57.65625 * M_PI_180;
+            double north = -34.30714385628804 * M_PI_180;
+            double south = -35.4606699514953 * M_PI_180;
+            double west = -59.0625 * M_PI_180;
+
+            var polygon = CreatePolygon(new GeoCoord[] {
+                (north, east),
+                (south, east),
+                (south, west),
+                (north, west),
+                (north, east)
+            });
+
+            // Act
+            var filled = polygon.Fill(7).Count();
+
+            // Arrange
+            Assert.AreEqual(4609, filled, $"should have filled 4499");
+        }
+
+        [Test]
+        public void Test_Upstream_H3jsIssue136() {
+            // Arrange
+            GeoCoord[] testVerts = {
+                (0.10068990369902957, 0.8920772174196191),
+                (0.10032914690616246, 0.8915914753447348),
+                (0.10033349237998787, 0.8915860128746426),
+                (0.10069496685903621, 0.8920742194546231),
+                (0.10068990369902957, 0.8920772174196191)
+            };
+            var polygon = CreatePolygon(testVerts);
+
+            // Act
+            var filled = polygon.Fill(13).Count();
+
+            // Arrange
+            Assert.AreEqual(4353, filled, $"should have filled 4353");
         }
 
         /// <summary>
