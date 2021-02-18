@@ -54,6 +54,15 @@ namespace H3.Test.Algorithms {
             (0.1, -M_PI + 0.00001)
         };
 
+        // upstream lib's "entire world" test poly
+        private static readonly GeoCoord[] EntireWorld = new GeoCoord[] {
+            (M_PI_2, -M_PI),
+            (M_PI_2, M_PI),
+            (-M_PI_2, M_PI),
+            (-M_PI_2, -M_PI),
+            (M_PI_2, -M_PI),
+        };
+
         // select h3_polyfill(h3_to_geo_boundary_geography('8e48e1d7038d527'::h3index), 15);
         private static readonly H3Index[] KnownValuePolyfillAtRes15 = new H3Index[7] {
             0x8f48e1d7038d520,
@@ -72,6 +81,20 @@ namespace H3.Test.Algorithms {
 
             // Assert
             Assert.IsEmpty(filled, "should be empty");
+        }
+
+        [Test]
+        public void Test_Polyfill_Exact() {
+            // Arrange
+            var index = H3Index.FromGeoCoord((1, 2), 9);
+            var boundary = index.GetCellBoundary();
+
+            // Act
+            var filled = boundary.Fill(9).ToArray();
+
+            // Assert
+            Assert.AreEqual(1, filled.Length, "should return 1 index");
+            Assert.IsTrue(index == filled[0], $"should be index {index} not {filled[0]}");
         }
 
         [Test]
@@ -181,6 +204,23 @@ namespace H3.Test.Algorithms {
             // Assert
             Assert.AreEqual(1, filled.Length, "should return 1 index");
             Assert.IsTrue(filled[0].IsPentagon, "should be a pentagon index");
+        }
+
+        [Test]
+        [TestCase(0, 122)]
+        [TestCase(1, 843)]
+        [TestCase(2, 5883)]
+        [TestCase(3, 41163)]
+        [TestCase(4, 288123)]
+        public void Test_Polyfill_EntireWorldMuhahaha(int resolution, int expectedCount) {
+            // Arrange
+            var polygon = CreatePolygon(EntireWorld);
+
+            // Act
+            var filled = polygon.Fill(resolution).Count();
+
+            // Assert
+            Assert.AreEqual(expectedCount, filled, $"should have filled {expectedCount}");
         }
 
         /// <summary>

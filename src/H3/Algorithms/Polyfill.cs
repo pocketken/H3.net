@@ -3,14 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using GeoAPI.Geometries;
 using H3.Model;
-using static H3.Utils;
 using NetTopologySuite.Algorithm.Locate;
-using NetTopologySuite.Geometries;
 using NetTopologySuite.LinearReferencing;
 
 #nullable enable
 
 namespace H3.Algorithms {
+
+    sealed internal class PositiveLonFilter : ICoordinateSequenceFilter {
+        public bool Done => false;
+
+        public bool GeometryChanged => true;
+
+        public void Filter(ICoordinateSequence seq, int i) {
+            double x = seq.GetX(i);
+            seq.SetOrdinate(i, Ordinate.X, x < 0 ? x + 360.0 : x);
+        }
+    }
+
+    sealed internal class NegativeLonFilter : ICoordinateSequenceFilter {
+        public bool Done => false;
+
+        public bool GeometryChanged => true;
+
+        public void Filter(ICoordinateSequence seq, int i) {
+            double x = seq.GetX(i);
+            seq.SetOrdinate(i, Ordinate.X, x > 0 ? x - 360.0 : x);
+        }
+    }
 
     /// <summary>
     /// Polyfill algorithms for H3Index.
@@ -25,25 +45,44 @@ namespace H3.Algorithms {
         /// <returns>Indicies where center point is contained within polygon</returns>
         public static IEnumerable<H3Index> Fill(this IPolygon polygon, int resolution) {
             bool isTransMeridian = polygon.IsTransMeridian();
-            var testPoly = isTransMeridian ? ShiftPolygonMeridian(polygon) : polygon;
-            IndexedPointInAreaLocator locator = new(testPoly);
+            var testPoly = isTransMeridian ? SplitPolygon(polygon) : polygon;
 
             HashSet<H3Index> searched = new();
+
             Stack<H3Index> toSearch = new(GetEdgeIndicies(testPoly, resolution));
-            if (toSearch.Count == 0 && !polygon.IsEmpty) {
-                toSearch.Push(H3Index.FromPoint(polygon.Centroid, resolution));
+            if (toSearch.Count == 0 && !testPoly.IsEmpty) {
+                toSearch.Push(H3Index.FromPoint(testPoly.InteriorPoint, resolution));
             }
+
+            IndexedPointInAreaLocator locator = new(testPoly);
 
             while (toSearch.Count != 0) {
                 var index = toSearch.Pop();
 
                 if (index != H3Index.Invalid) {
-                    foreach (var neighbour in GetKRingInPolygon(index, locator, isTransMeridian, searched)) {
+                    foreach (var neighbour in GetKRingInPolygon(index, locator, searched)) {
                         yield return neighbour;
                         toSearch.Push(neighbour);
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Attempts to split a polygon that spans the antemeridian into
+        /// a multipolygon by clipping coordinates on either side of it and
+        /// then unioning them back together again.
+        /// </summary>
+        /// <param name="originalPolygon"></param>
+        /// <returns></returns>
+        private static IGeometry SplitPolygon(IPolygon originalPolygon) {
+            var left = originalPolygon.Copy();
+            left.Apply(new NegativeLonFilter());
+            var right = originalPolygon.Copy();
+            right.Apply(new PositiveLonFilter());
+
+            var polygon = left.Union(right);
+            return polygon.IsEmpty ? originalPolygon : polygon;
         }
 
         /// <summary>
@@ -59,31 +98,6 @@ namespace H3.Algorithms {
         }
 
         /// <summary>
-        /// Shifts the coordinates for a transmeridian polygon such that it no
-        /// longer spans the meridian (shifts all -'ve longitudes by 360 degrees)
-        /// </summary>
-        /// <param name="polygon"></param>
-        /// <param name="geomFactory"></param>
-        /// <returns></returns>
-        public static IPolygon ShiftPolygonMeridian(this IPolygon polygon, GeometryFactory? geomFactory = null) {
-            var gf = geomFactory ?? DefaultGeometryFactory;
-
-            // transform coordinates for shell + holes
-            var shell = new LinearRing(polygon.Shell.Coordinates.Select(ShiftMeridian).ToArray());
-            var holes = polygon.Holes.Select(
-                hole => new LinearRing(hole.Coordinates.Select(ShiftMeridian).ToArray())).ToArray();
-
-            return gf.CreatePolygon(shell, holes);
-        }
-
-        /// <summary>
-        /// Shift a coordinate by 360 degrees longitude.
-        /// </summary>
-        /// <param name="c"></param>
-        /// <returns></returns>
-        private static Coordinate ShiftMeridian(this Coordinate c) => new Coordinate(c.X < 0 ? c.X + 360 : c.X, c.Y);
-
-        /// <summary>
         /// Gets all of the H3 indexes that define the boundary of the
         /// provided polygon.  This is used to seed the k ring search /
         /// point in polygon testing phase.
@@ -91,7 +105,7 @@ namespace H3.Algorithms {
         /// <param name="polygon"></param>
         /// <param name="resolution"></param>
         /// <returns></returns>
-        private static IEnumerable<H3Index> GetEdgeIndicies(IPolygon polygon, int resolution) {
+        private static IEnumerable<H3Index> GetEdgeIndicies(IGeometry polygon, int resolution) {
             // TODO do some testing to see whether or not centroid or something else
             //      does the same trick here so we don't bother having to do all this work
             HashSet<H3Index> indicies = new();
@@ -131,16 +145,12 @@ namespace H3.Algorithms {
         /// <param name="index">H3 index to get neighbours for</param>
         /// <param name="locator">IndexedPointInAreaLocator to use for point-in-poly
         /// checks</param>
-        /// <param name="needsShift">Whether or not the polygon spans the
-        /// meridian (> 180 deg longitudal arc) and requires we normalize/shift
-        /// index coordinates by 360 degrees longitude when calculating the index
-        /// center point.</param>
         /// <param name="searched">Hashset of previously searched indicies; will
         /// be updated to include any newly discovered neighbours automatically.
         /// </param>
         /// <returns>Neighbouring H3 indicies who's center points are contained
         /// within the provided polygon</returns>
-        private static IEnumerable<H3Index> GetKRingInPolygon(H3Index index, IndexedPointInAreaLocator locator, bool needsShift, HashSet<H3Index> searched) =>
+        private static IEnumerable<H3Index> GetKRingInPolygon(H3Index index, IndexedPointInAreaLocator locator, HashSet<H3Index> searched) =>
             index.GetKRing(1)
                 .Where(cell => {
                     if (searched.Contains(cell.Index)) {
@@ -148,7 +158,7 @@ namespace H3.Algorithms {
                     }
                     searched.Add(cell.Index);
                     var coord = cell.Index.ToPoint().Coordinate;
-                    var location = locator.Locate(needsShift ? coord.ShiftMeridian() : coord);
+                    var location = locator.Locate(coord);
                     return location == Location.Interior;
                 })
                 .Select(cell => cell.Index);
