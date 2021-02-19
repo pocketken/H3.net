@@ -1,7 +1,5 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using H3.Algorithms;
-using H3.Extensions;
 using NUnit.Framework;
 
 namespace H3.Test.Algorithms {

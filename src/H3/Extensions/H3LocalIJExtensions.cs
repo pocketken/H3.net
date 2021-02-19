@@ -206,7 +206,7 @@ namespace H3.Extensions {
             if (originBaseCell == null) throw new Exception("origin is not a valid base cell");
             bool originOnPent = origin.IsPentagon;
 
-            H3Index index = new H3Index {
+            H3Index index = new() {
                 Mode = Mode.Hexagon,
                 Resolution = resolution
             };
@@ -224,10 +224,10 @@ namespace H3.Extensions {
             // we need to find the correct base cell offset (if any) for this H3 index;
             // start with the passed in base cell and resolution res ijk coordinates
             // in that base cell's coordinate system
-            CoordIJK ijkCopy = new CoordIJK(ijk);
+            CoordIJK ijkCopy = new(ijk);
 
             for (int r = resolution - 1; r >= 0; r -= 1) {
-                CoordIJK lastIJK = new CoordIJK(ijkCopy);
+                CoordIJK lastIJK = new(ijkCopy);
                 CoordIJK lastCenter;
 
                 if (IsResolutionClass3(r + 1)) {

@@ -477,17 +477,7 @@ namespace H3 {
 
         public int CompareTo(H3Index? other) {
             if (other == null) return 1;
-
-            // start with base cell
-            var c = BaseCellNumber.CompareTo(other.BaseCellNumber);
-            if (c != 0) return c;
-
-            // equal, so next by resolution
-            c = Resolution.CompareTo(other.Resolution);
-            if (c != 0) return c;
-
-            // lastly, direction
-            return Direction.CompareTo(other.Direction);
+            return Value.CompareTo(other.Value);
         }
 
         public static bool operator ==(H3Index? a, H3Index? b) => a?.Value == b?.Value;
