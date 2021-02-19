@@ -30,23 +30,23 @@ namespace H3.Extensions {
         /// <returns>H3Index of the specified neighbor or H3_NULL if deleted k-subsequence
         /// distortion is encountered.</returns>
         public static H3Index GetDirectNeighbour(this H3Index origin, Direction direction, ref int rotations) {
-            H3Index outIndex = new H3Index(origin);
+            H3Index outIndex = new(origin);
+
+            Direction dir = direction;
+            for (int r = 0; r < rotations; r += 1) dir = dir.RotateCounterClockwise();
 
             BaseCell? oldBaseCell = origin.BaseCell;
             if (oldBaseCell == null) throw new Exception("origin is not a valid base cell");
 
-            Direction oldLeadingIndex = origin.LeadingNonZeroDirection;
-            Direction curIndex = direction;
-            for (int r = 0; r < rotations; r += 1) curIndex.RotateCounterClockwise();
-
             int newRotations = 0;
+            Direction oldLeadingIndex = origin.LeadingNonZeroDirection;
 
             // Adjust the indexing digits and, if needed, the base cell.
             int resolution = outIndex.Resolution - 1;
             while (true) {
                 if (resolution == -1) {
-                    outIndex.BaseCellNumber = LookupTables.Neighbours[origin.BaseCellNumber, (int)curIndex];
-                    newRotations = LookupTables.NeighbourCounterClockwiseRotations[origin.BaseCellNumber, (int)curIndex];
+                    outIndex.BaseCellNumber = LookupTables.Neighbours[origin.BaseCellNumber, (int)dir];
+                    newRotations = LookupTables.NeighbourCounterClockwiseRotations[origin.BaseCellNumber, (int)dir];
 
                     if (outIndex.BaseCellNumber == LookupTables.INVALID_BASE_CELL) {
                         // Adjust for the deleted k vertex at the base cell level.
@@ -69,19 +69,19 @@ namespace H3.Extensions {
                     if (IsResolutionClass3(resolution + 1)) {
                         outIndex.SetDirectionForResolution(
                             resolution + 1,
-                            LookupTables.NewDirectionClass2[(int)oldIndex, (int)curIndex]
+                            LookupTables.NewDirectionClass2[(int)oldIndex, (int)dir]
                         );
-                        nextIndex = LookupTables.NewAdjustmentClass2[(int)oldIndex, (int)curIndex];
+                        nextIndex = LookupTables.NewAdjustmentClass2[(int)oldIndex, (int)dir];
                     } else {
                         outIndex.SetDirectionForResolution(
                             resolution + 1,
-                            LookupTables.NewDirectionClass3[(int)oldIndex, (int)curIndex]
+                            LookupTables.NewDirectionClass3[(int)oldIndex, (int)dir]
                         );
-                        nextIndex = LookupTables.NewAdjustmentClass3[(int)oldIndex, (int)curIndex];
+                        nextIndex = LookupTables.NewAdjustmentClass3[(int)oldIndex, (int)dir];
                     }
 
                     if (nextIndex != Direction.Center) {
-                        curIndex = nextIndex;
+                        dir = nextIndex;
                         resolution--;
                     } else {
                         // No more adjustment to perform
@@ -90,9 +90,7 @@ namespace H3.Extensions {
                 }
             }
 
-            BaseCell? newBaseCell = outIndex.BaseCell;
-            // TODO exception instead...?  this doesn't match upstream behaviour
-            if (newBaseCell == null) return H3Index.Invalid;
+            BaseCell newBaseCell = outIndex.BaseCell;
 
             if (newBaseCell.IsPentagon) {
                 bool alreadyAdjustedKSubsequence = false;
@@ -146,7 +144,7 @@ namespace H3.Extensions {
                     if (newBaseCell.IsPolarPentagon) {
                         // 'polar' base cells behave differently because they have all
                         // i neighbors.
-                        if (oldBaseCell.Cell != 118 && oldBaseCell.Cell != 8 && outIndex.LeadingNonZeroDirection != Direction.IK && !alreadyAdjustedKSubsequence) {
+                        if (oldBaseCell.Cell != 118 && oldBaseCell.Cell != 8 && outIndex.LeadingNonZeroDirection != Direction.JK) {
                             rotations += 1;
                         }
                     } else if (outIndex.LeadingNonZeroDirection == Direction.IK && !alreadyAdjustedKSubsequence) {
@@ -250,7 +248,7 @@ namespace H3.Extensions {
             if (resolution == parentResolution) return origin;
 
             // return the parent index
-            H3Index parentIndex = new H3Index(origin) {
+            H3Index parentIndex = new(origin) {
                 Resolution = parentResolution
             };
 
@@ -268,7 +266,7 @@ namespace H3.Extensions {
         /// <param name="origin">origin index</param>
         /// <param name="direction">direction to travel</param>
         /// <returns></returns>
-        public static H3Index GetDirectChild(this H3Index origin, Direction direction) => new H3Index(origin) {
+        public static H3Index GetDirectChild(this H3Index origin, Direction direction) => new(origin) {
             Resolution = origin.Resolution + 1,
             Direction = direction
         };
@@ -285,7 +283,7 @@ namespace H3.Extensions {
             if (!IsValidChildResolution(resolution, childResolution)) return H3Index.Invalid;
             if (resolution == childResolution) return origin;
 
-            H3Index childIndex = new H3Index(origin) {
+            H3Index childIndex = new(origin) {
                 Resolution = childResolution
             };
 
