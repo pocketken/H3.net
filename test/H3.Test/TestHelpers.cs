@@ -9,6 +9,10 @@ namespace H3.Test {
         // result of encoding Point(-110, 30) @ Res14 in PG
         public const ulong TestIndexValue = 0x8e48e1d7038d527;
 
+        // uber sf test point
+        public static readonly GeoCoord SfCoord = (0.659966917655, -2.1364398519396);
+        public static readonly H3Index SfIndex = H3Index.FromGeoCoord(SfCoord, 9);
+
         // result of select h3_to_children('8e48e1d7038d527'::h3index, 15) in PG
         public static readonly ulong[] TestIndexChildrenAtRes15 = new ulong[7] {
             0x8f48e1d7038d520,
@@ -60,21 +64,6 @@ namespace H3.Test {
             (0x8e48e1d7038dcf7, 2),
             (0x8e48e1d7038dcaf, 2),
         };
-
-        public static H3Index CreateIndex(int resolution, int baseCell, Direction direction) {
-            H3Index index = new H3Index {
-                Mode = Mode.Hexagon,
-                Resolution = resolution,
-                Direction = direction,
-                BaseCellNumber = baseCell
-            };
-
-            if (index.BaseCellNumber != baseCell) throw new Exception("ZONK");
-
-            for (int r = 1; r <= resolution; r += 1) index.SetDirectionForResolution(r, direction);
-
-            return index;
-        }
 
         public static void AssertAll(H3Index[] expected, H3Index[] actual) {
             Assert.AreEqual(expected.Length, actual.Length, "should have same Length");

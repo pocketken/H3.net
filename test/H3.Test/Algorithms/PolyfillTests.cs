@@ -178,7 +178,7 @@ namespace H3.Test.Algorithms {
         [Test]
         public void Test_Polyfill_Pentagon() {
             // Arrange
-            var index = TestHelpers.CreateIndex(9, 24, 0);
+            var index = H3Index.Create(9, 24, 0);
             GeoCoord coord = index.ToGeoCoord();
             GeoCoord topRight = new GeoCoord {
                 Latitude = coord.Latitude + EdgeLength2,

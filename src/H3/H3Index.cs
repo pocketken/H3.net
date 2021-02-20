@@ -182,6 +182,19 @@ namespace H3 {
             if (ulong.TryParse(value, NumberStyles.HexNumber, null, out ulong parsed)) Value = parsed;
         }
 
+        public static H3Index Create(int resolution, int baseCell, Direction direction) {
+            H3Index index = new() {
+                Mode = Mode.Hexagon,
+                Resolution = resolution,
+                Direction = direction,
+                BaseCellNumber = baseCell
+            };
+
+            for (int r = 1; r <= resolution; r += 1) index.SetDirectionForResolution(r, direction);
+
+            return index;
+        }
+
         #region manipulations
 
         /// <summary>

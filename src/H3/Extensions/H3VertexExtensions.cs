@@ -301,7 +301,7 @@ namespace H3.Extensions {
             }
 
             int vertexNum = vertex.ReservedBits;
-            H3Index owner = new H3Index(vertex) {
+            H3Index owner = new(vertex) {
                 Mode = Mode.Hexagon,
                 ReservedBits = 0
             };

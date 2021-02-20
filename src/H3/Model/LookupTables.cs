@@ -1483,15 +1483,11 @@ namespace H3.Model {
         /// <summary>
         /// A list of all hex indexes that are pentagons at each resolution.
         /// </summary>
-        public static readonly Dictionary<int, IEnumerable<H3Index>> PentagonIndexesPerResolution = Enumerable.Range(0, MAX_H3_RES + 1)
+        public static readonly Dictionary<int, List<H3Index>> PentagonIndexesPerResolution = Enumerable.Range(0, MAX_H3_RES + 1)
             .ToDictionary(resolution => resolution, resolution =>
                 Enumerable.Range(0, NUM_BASE_CELLS - 1)
                     .Where(baseCellNumber => BaseCells[baseCellNumber].IsPentagon)
-                    .Select(baseCellNumber => new H3Index {
-                        BaseCellNumber = baseCellNumber,
-                        Resolution = resolution,
-                        Direction = Direction.Center
-                    })
+                    .Select(baseCellNumber => H3Index.Create(resolution, baseCellNumber, Direction.Center)).ToList()
             );
 
         /// <summary>

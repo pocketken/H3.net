@@ -49,7 +49,7 @@ namespace H3.Test.Algorithms {
         [Test]
         public void Test_Upstream_GetKRing_PolarPentagonRes0() {
             // Arrange
-            var index = TestHelpers.CreateIndex(0, 4, 0);
+            var index = H3Index.Create(0, 4, 0);
             (ulong, int)[] expected = {
                 (0x8009fffffffffff, 0),
                 (0x8007fffffffffff, 1),
@@ -70,7 +70,7 @@ namespace H3.Test.Algorithms {
         [Test]
         public void Test_Upstream_GetKRing_PolarPentagonRes1() {
             // Arrange
-            var index = TestHelpers.CreateIndex(1, 4, 0);
+            var index = H3Index.Create(1, 4, 0);
             (ulong, int)[] expected = {
                 (0x81083ffffffffff, 0),
                 (0x81093ffffffffff, 1),
