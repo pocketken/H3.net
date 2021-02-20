@@ -25,6 +25,9 @@ namespace H3.Model {
             J = ijk.J - ijk.K
         };
 
+        public static implicit operator CoordIJ((int, int) coord) =>
+            new CoordIJ(coord.Item1, coord.Item2);
+
         public CoordIJK ToCoordIJK() => new CoordIJK(I, J, 0).Normalize();
 
         public static bool operator ==(CoordIJ a, CoordIJ b) => a.I == b.I && a.J == b.J;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using H3.Model;
 using NUnit.Framework;
 
@@ -120,7 +121,7 @@ namespace H3.Test {
         [TestCase(Direction.Center, 0, 0, 0)]
         [TestCase(Direction.I, 1, 0, 0)]
         [TestCase(Direction.Invalid, 0, 0, 0)]
-        public void Test_CoordIJK_Neighbour(Direction direction, int expectedI, int expectedJ, int expectedK) {
+        public void Test_CoordIJK_ToNeighbour(Direction direction, int expectedI, int expectedJ, int expectedK) {
             // Arrange
             CoordIJK ijk = new CoordIJK();
 
@@ -131,6 +132,19 @@ namespace H3.Test {
             Assert.AreEqual(expectedI, neighbour.I, $"I should be {expectedI}");
             Assert.AreEqual(expectedJ, neighbour.J, $"J should be {expectedJ}");
             Assert.AreEqual(expectedK, neighbour.K, $"K should be {expectedK}");
+        }
+
+        [Test]
+        public void Test_Upstream_CubeUncube_Roundtrip() {
+            // Arrange
+            var coords = Enumerable.Range((int)Direction.Center, (int)Direction.Invalid)
+                .Select(dir => new CoordIJK().ToNeighbour((Direction)dir));
+
+            // Act
+            var actual = coords.Select(ijk => ijk.Cube().Uncube());
+
+            // Assert
+            Assert.AreEqual(coords, actual, "should be equal");
         }
 
     }
