@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using H3.Extensions;
 using H3.Model;
 using NUnit.Framework;
@@ -8,11 +9,20 @@ namespace H3.Test.Extensions {
     [TestFixture]
     public class H3LocalIJExtensionsTests {
 
-        public static readonly H3Index BaseCell15 = H3Index.Create(0, 15, 0);
-        public static readonly H3Index PentagonIndex = H3Index.Create(0, 4, 0);
+        private static readonly H3Index BaseCell15 = H3Index.Create(0, 15, 0);      // bc1
+        private static readonly H3Index BaseCell8 = H3Index.Create(0, 8, 0);        // bc2
+        private static readonly H3Index BaseCell31 = H3Index.Create(0, 31, 0);      // bc3
+        private static readonly H3Index PentagonIndex = H3Index.Create(0, 4, 0);    // pent1
 
         // result of select h3_experimental_h3_to_local_ij('8e48e1d7038d527'::h3index, '8e48e1d7038952f'::h3index)
-        public static readonly CoordIJ TestLocalIJ = (-247608, -153923);
+        private static readonly CoordIJ TestLocalIJ = (-247608, -153923);
+
+        private static readonly IEnumerable<object[]> ToLocalIJTestArgs = new List<object[]> {
+            new object[] { BaseCell15, BaseCell15, 0, 0 },      // bc1 -> bc1
+            new object[] { BaseCell15, PentagonIndex, 1, 0 },   // bc1 -> pent1
+            new object[] { BaseCell15, BaseCell8, 0, -1 },      // bc1 -> bc2
+            new object[] { BaseCell15, BaseCell31, -1, 0 }      // bc1 -> bc3
+        };
 
         [Test]
         [TestCase(0, 15, Direction.Center)]
@@ -113,6 +123,25 @@ namespace H3.Test.Extensions {
 
             // Assert
             Assert.AreEqual(expected, actual, "should be equal");
+        }
+
+        [Test]
+        [TestCaseSource(nameof(ToLocalIJTestArgs))]
+        public void Test_Upstream_ToLocalIJ(H3Index originIndex, H3Index destIndex, int expectedI, int expectedJ) {
+            // Arrange
+            CoordIJ expectedCoord = (expectedI, expectedJ);
+
+            // Act
+            var actual = originIndex.ToLocalIJ(destIndex);
+
+            // Assert
+            Assert.AreEqual(expectedCoord, actual, "should be equal");
+        }
+
+        [Test]
+        public void Test_Upstream_ToLocakIJ_FailsIfNotNeighbours() {
+            // Act
+            Assert.Throws<ArgumentException>(() => PentagonIndex.ToLocalIJ(BaseCell31));
         }
 
     }

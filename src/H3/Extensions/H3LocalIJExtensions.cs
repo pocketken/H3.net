@@ -146,7 +146,7 @@ namespace H3.Extensions {
             if (originBaseCell != baseCell) {
                 dir = BaseCell.GetNeighbourDirection(originBaseCell.Cell, baseCell.Cell);
                 if (dir == Direction.Invalid) {
-                    throw new ArgumentException("index is not a neighbour of origin");
+                    throw new ArgumentException($"index cell {baseCell.Cell} is not a neighbour of origin cell {originBaseCell.Cell}");
                 }
 
                 revDir = BaseCell.GetNeighbourDirection(baseCell.Cell, originBaseCell.Cell);
