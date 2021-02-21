@@ -314,7 +314,7 @@ namespace H3.Extensions {
         /// <param name="origin">index to find children for</param>
         /// <param name="childResolution">resolution of child level</param>
         /// <returns></returns>
-        public static IEnumerable<H3Index> GetChildrenAtResolution(this H3Index origin, int childResolution) {
+        public static IEnumerable<H3Index> GetChildrenForResolution(this H3Index origin, int childResolution) {
             int resolution = origin.Resolution;
 
             if (!IsValidChildResolution(resolution, childResolution)) {
