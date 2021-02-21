@@ -1,16 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using H3.Algorithms;
 using H3.Extensions;
 using H3.Model;
 using static H3.Constants;
 using NUnit.Framework;
-using System.Collections.Generic;
 
 namespace H3.Test.Extensions {
 
     [TestFixture]
     public class H3HierarchyExtensionsTests {
+        private static readonly H3Index BaseCell0 = H3Index.Create(0, 0, 0);
 
         [Test]
         public void Test_Upstream_GetParentForResolution() {
@@ -132,7 +133,6 @@ namespace H3.Test.Extensions {
             TestHelpers.AssertAll(TestHelpers.TestIndexChildrenAtRes15, children);
         }
 
-
         [Test]
         public void Test_Upstream_IsNeighbour_NotANeighbourOfThyself() {
             // Act
@@ -140,6 +140,68 @@ namespace H3.Test.Extensions {
 
             // Assert
             Assert.IsFalse(actual, "should not be a neighbour of itself");
+        }
+
+        [Test]
+        public void Test_Upstream_GetChildCenterForResolution() {
+            // Arrange
+            var center = H3Index.Create(8, 4, Direction.J).ToGeoCoord();
+            var indexes = Enumerable.Range(0, MAX_H3_RES)
+                .Select(res => H3Index.FromGeoCoord(center, res));
+            var centers = indexes.ToDictionary(i => i, i => H3Index.FromGeoCoord(i.ToGeoCoord(), i.Resolution + 1));
+
+            // Act
+            var children = indexes.ToDictionary(i => i, i => i.GetChildCenterForResolution(i.Resolution + 1));
+
+            // Assert
+            foreach (var index in indexes) {
+                var child = children[index];
+                Assert.AreEqual(centers[index], child, "should be equal");
+                Assert.AreEqual(index.Resolution + 1, child.Resolution, "should be equal");
+                Assert.AreEqual(index, child.GetParentForResolution(index.Resolution), "should be equal");
+            }
+        }
+
+        [Test]
+        public void Test_Upstream_GetChildCenterForResolution_SameResReturnsSelf() {
+            // Act
+            var actual = TestHelpers.SfIndex.GetChildCenterForResolution(TestHelpers.SfIndex.Resolution);
+
+            // Assert
+            Assert.AreEqual(TestHelpers.SfIndex, actual, "should return self for same resolution");
+        }
+
+        [Test]
+        [TestCase(8)]
+        [TestCase(-1)]
+        [TestCase(17)]
+        public void Test_Upstream_GetChildCenterForResolution_InvalidInputs(int resolution) {
+            // Act
+            var actual = TestHelpers.SfIndex.GetChildCenterForResolution(resolution);
+
+            // Assert
+            Assert.AreEqual(H3Index.Invalid, actual, "should return H3_NULL");
+        }
+
+        [Test]
+        [TestCase(Direction.Center, 0, 0)]
+        [TestCase(Direction.K, 1, 5)]
+        [TestCase(Direction.J, 5, 0)]
+        [TestCase(Direction.JK, 2, 0)]
+        [TestCase(Direction.I, 4, 1)]
+        [TestCase(Direction.IK, 3, 5)]
+        [TestCase(Direction.IJ, 8, 1)]
+        public void Test_GetDirectNeighbour_BaseCells(Direction direction, int expectedBaseCell, int baseRotations) {
+            // Arrange
+            int rotations = 0;
+            int expectedRotations = LookupTables.BaseCells[expectedBaseCell].IsPentagon ? baseRotations + 1 : baseRotations;
+
+            // Act
+            var actual = BaseCell0.GetDirectNeighbour(direction, ref rotations);
+
+            // Assert
+            Assert.AreEqual(expectedBaseCell, actual.BaseCellNumber, $"should be {expectedBaseCell}");
+            Assert.AreEqual(expectedRotations, rotations, $"{actual.BaseCellNumber} should be {expectedRotations} rotations from {expectedBaseCell}");
         }
 
         [Test]
