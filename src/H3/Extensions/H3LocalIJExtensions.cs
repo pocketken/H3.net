@@ -282,6 +282,9 @@ namespace H3.Extensions {
             // in that base cell's coordinate system
             CoordIJK ijkCopy = new(ijk);
 
+            // build the H3Index from finest res up
+            // adjust r for the fact that the res 0 base cell offsets the indexing
+            // digits
             for (int r = resolution - 1; r >= 0; r -= 1) {
                 CoordIJK lastIJK = new(ijkCopy);
                 CoordIJK lastCenter;
@@ -342,7 +345,7 @@ namespace H3.Extensions {
 
                 // Now we can determine the relation between the origin and target base
                 // cell.
-                int baseCellRotations = LookupTables.NeighbourCounterClockwiseRotations[baseCell.Cell, (int)dir];
+                int baseCellRotations = LookupTables.NeighbourCounterClockwiseRotations[originBaseCell.Cell, (int)dir];
                 if (baseCellRotations < 0) throw new Exception("invalid number of base cell rotations");
 
                 // Adjust for pentagon warping within the base cell. The base cell

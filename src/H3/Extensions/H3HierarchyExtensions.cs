@@ -38,20 +38,20 @@ namespace H3.Extensions {
             if (oldBaseCell == null) throw new Exception("origin is not a valid base cell");
 
             int newRotations = 0;
-            Direction oldLeadingIndex = origin.LeadingNonZeroDirection;
+            Direction oldLeadingDir = origin.LeadingNonZeroDirection;
 
             // Adjust the indexing digits and, if needed, the base cell.
             int resolution = outIndex.Resolution - 1;
             while (true) {
                 if (resolution == -1) {
-                    outIndex.BaseCellNumber = LookupTables.Neighbours[origin.BaseCellNumber, (int)dir];
-                    newRotations = LookupTables.NeighbourCounterClockwiseRotations[origin.BaseCellNumber, (int)dir];
+                    outIndex.BaseCellNumber = LookupTables.Neighbours[oldBaseCell.Cell, (int)dir];
+                    newRotations = LookupTables.NeighbourCounterClockwiseRotations[oldBaseCell.Cell, (int)dir];
 
                     if (outIndex.BaseCellNumber == LookupTables.INVALID_BASE_CELL) {
                         // Adjust for the deleted k vertex at the base cell level.
                         // This edge actually borders a different neighbor.
-                        outIndex.BaseCellNumber = LookupTables.Neighbours[origin.BaseCellNumber, (int)Direction.IK];
-                        newRotations = LookupTables.NeighbourCounterClockwiseRotations[origin.BaseCellNumber, (int)Direction.IK];
+                        outIndex.BaseCellNumber = LookupTables.Neighbours[oldBaseCell.Cell, (int)Direction.IK];
+                        newRotations = LookupTables.NeighbourCounterClockwiseRotations[oldBaseCell.Cell, (int)Direction.IK];
 
                         // perform the adjustment for the k-subsequence we're skipping
                         // over.
@@ -61,26 +61,26 @@ namespace H3.Extensions {
 
                     break;
                 } else {
-                    Direction oldIndex = outIndex.GetDirectionForResolution(resolution + 1);
-                    Direction nextIndex;
+                    Direction oldDir = outIndex.GetDirectionForResolution(resolution + 1);
+                    Direction nextDir;
 
                     // TODO are these swapped...?
                     if (IsResolutionClass3(resolution + 1)) {
                         outIndex.SetDirectionForResolution(
                             resolution + 1,
-                            LookupTables.NewDirectionClass2[(int)oldIndex, (int)dir]
+                            LookupTables.NewDirectionClass2[(int)oldDir, (int)dir]
                         );
-                        nextIndex = LookupTables.NewAdjustmentClass2[(int)oldIndex, (int)dir];
+                        nextDir = LookupTables.NewAdjustmentClass2[(int)oldDir, (int)dir];
                     } else {
                         outIndex.SetDirectionForResolution(
                             resolution + 1,
-                            LookupTables.NewDirectionClass3[(int)oldIndex, (int)dir]
+                            LookupTables.NewDirectionClass3[(int)oldDir, (int)dir]
                         );
-                        nextIndex = LookupTables.NewAdjustmentClass3[(int)oldIndex, (int)dir];
+                        nextDir = LookupTables.NewAdjustmentClass3[(int)oldDir, (int)dir];
                     }
 
-                    if (nextIndex != Direction.Center) {
-                        dir = nextIndex;
+                    if (nextDir != Direction.Center) {
+                        dir = nextDir;
                         resolution--;
                     } else {
                         // No more adjustment to perform
@@ -113,16 +113,16 @@ namespace H3.Extensions {
                         // In this case, we traversed into the deleted
                         // k subsequence from within the same pentagon
                         // base cell.
-                        if (oldLeadingIndex == Direction.Center) {
+                        if (oldLeadingDir == Direction.Center) {
                             // Undefined: the k direction is deleted from here
                             return H3Index.Invalid;
-                        } else if (oldLeadingIndex == Direction.JK) {
+                        } else if (oldLeadingDir == Direction.JK) {
                             // Rotate out of the deleted k subsequence
                             // We also need an additional change to the direction we're
                             // moving in
                             outIndex.RotateCounterClockwise();
                             rotations += 1;
-                        } else if (oldLeadingIndex == Direction.IK) {
+                        } else if (oldLeadingDir == Direction.IK) {
                             // Rotate out of the deleted k subsequence
                             // We also need an additional change to the direction we're
                             // moving in
