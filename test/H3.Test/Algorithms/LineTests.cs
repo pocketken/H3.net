@@ -10,7 +10,7 @@ namespace H3.Test.Algorithms {
     public class LineTests {
 
          // result of select h3_line(h3_geo_to_h3(point(-110, 30), 14), h3_geo_to_h3(point(-110, 30.0005), 14));
-        public static readonly H3Index[] TestLineIndicies = new H3Index[] {
+        private static readonly H3Index[] TestLineIndicies = new H3Index[] {
             0x8e48e1d7038d527,
             0x8e48e1d7038d507,
             0x8e48e1d7038d50f,
@@ -37,7 +37,7 @@ namespace H3.Test.Algorithms {
         };
 
         [Test]
-        public void Test_Line_ReturnsExpectedIndicies() {
+        public void Test_LineTo_ReturnsExpectedIndicies() {
             // Arrange
             H3Index start = H3Index.FromPoint(new Point(-110, 30), 14);
             H3Index end = H3Index.FromPoint(new Point(-110, 30.0005), 14);
