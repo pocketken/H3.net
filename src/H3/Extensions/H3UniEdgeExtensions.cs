@@ -49,6 +49,7 @@ namespace H3.Extensions {
             for (int d = 0; d < 6; d += 1) {
                 if (isPentagon && d == 0) {
                     yield return H3Index.Invalid;
+                    continue;
                 }
 
                 yield return new H3Index(origin) {
@@ -101,7 +102,10 @@ namespace H3.Extensions {
         /// </summary>
         /// <param name="edge"></param>
         /// <returns></returns>
-        public static IEnumerable<GeoCoord> GetUniversalEdgeBoundaryVertices(this H3Index edge) {
+        public static IEnumerable<GeoCoord> GetUnidirectionalEdgeBoundaryVertices(this H3Index edge) {
+            if (!edge.IsUnidirectionalEdgeValid()) {
+                return Enumerable.Empty<GeoCoord>();
+            }
             Direction direction = (Direction)edge.ReservedBits;
             H3Index origin = edge.GetOriginFromUnidirectionalEdge();
 
@@ -118,6 +122,24 @@ namespace H3.Extensions {
                 ? face.GetPentagonBoundary(resolution, startVertex, 2)
                 : face.GetBoundary(resolution, startVertex, 2);
 
+        }
+
+        /// <summary>
+        /// Length of a unidirectional edge in radians.
+        /// </summary>
+        /// <param name="edge"></param>
+        /// <returns></returns>
+        public static double GetExactEdgeLengthInRadians(this H3Index edge) {
+            var vertices = edge.GetUnidirectionalEdgeBoundaryVertices().ToArray();
+
+            double length = 0.0;
+            if (vertices.Length == 0) return length;
+
+            for (int i = 0; i < vertices.Length - 1; i += 1) {
+                length += vertices[i].GetPointDistanceInRadians(vertices[i + 1]);
+            }
+
+            return length;
         }
 
         /// <summary>

@@ -12,9 +12,9 @@ namespace H3.Test.Extensions {
     public class H3GeometryExtensionsTests {
 
         private static readonly H3Index[] PentagonFaceIndicies = new H3Index[] {
-            TestHelpers.CreateIndex(1, 4, 0),
-            TestHelpers.CreateIndex(2, 4, 0),
-            TestHelpers.CreateIndex(15, 4, 0)
+            H3Index.Create(1, 4, 0),
+            H3Index.Create(2, 4, 0),
+            H3Index.Create(15, 4, 0)
         };
 
         private static readonly double[] CellAreasInKm2 = new double[] {

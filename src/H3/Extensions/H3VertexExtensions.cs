@@ -32,6 +32,29 @@ namespace H3.Extensions {
         };
 
         /// <summary>
+        /// Vertex number to hexagon direction relationships (same face).
+        /// </summary>
+        private static readonly Direction[] HexVertexNumToDirection = new Direction[NUM_HEX_VERTS] {
+            Direction.IJ,
+            Direction.J,
+            Direction.JK,
+            Direction.K,
+            Direction.IK,
+            Direction.I
+        };
+
+        /// <summary>
+        /// Vertex number to pentagon direction relationships (same face).
+        /// </summary>
+        private static readonly Direction[] PentagonVertexNumToDirection = new Direction[NUM_PENT_VERTS] {
+            Direction.IJ,
+            Direction.J,
+            Direction.JK,
+            Direction.IK,
+            Direction.I
+        };
+
+        /// <summary>
         /// Directions in CCW order.
         /// </summary>
         private static readonly Direction[] HexDirections = new Direction[NUM_HEX_VERTS] {
@@ -126,7 +149,7 @@ namespace H3.Extensions {
         /// <param name="vertexNum"></param>
         /// <returns>The direction for this vertex, or INVALID_DIGIT if the vertex
         /// number is invalid.</returns>
-        private static Direction GetDirectionForVertexNumber(this H3Index origin, int vertexNum) {
+        public static Direction GetDirectionForVertexNumber(this H3Index origin, int vertexNum) {
             bool isPentagon = origin.IsPentagon;
 
             // check for invalid vertexes
@@ -139,8 +162,8 @@ namespace H3.Extensions {
 
             // Find the appropriate direction, rotating CW if necessary
             return isPentagon
-                ? (Direction)PentagonDirectionToVertexNum[(vertexNum + rotations) % NUM_PENT_VERTS]
-                : (Direction)HexDirectionToVertexNum[(vertexNum + rotations) % NUM_HEX_VERTS];
+                ? PentagonVertexNumToDirection[(vertexNum + rotations) % NUM_PENT_VERTS]
+                : HexVertexNumToDirection[(vertexNum + rotations) % NUM_HEX_VERTS];
         }
 
         /// <summary>
@@ -186,7 +209,7 @@ namespace H3.Extensions {
                 }
 
                 // As above, skip the right neighbor if the left is known lowest
-                if (res == 0 || leftNeighbour.Direction != Direction.Center) {
+                if (res == 0 || leftNeighbour.GetDirectionForResolution(res) != Direction.Center) {
                     // Get the right neighbor of the vertex, with its rotations
                     // Note that vertex - 1 is the right side, as vertex numbers are CCW
                     Direction right = GetDirectionForVertexNumber(cell, (vertexNum - 1 + cellNumVerts) % cellNumVerts);
@@ -203,7 +226,7 @@ namespace H3.Extensions {
                         owner = rightNeighbour;
                         Direction dir = owner.IsPentagon
                             ? owner.DirectionForNeighbour(cell)
-                            : HexDirections[((HexNeighbourDirections[(int)right] + rRotations) % rRotations) % NUM_HEX_VERTS];
+                            : HexDirections[(HexNeighbourDirections[(int)right] + rRotations) % NUM_HEX_VERTS];
                         ownerVertexNum = GetVertexNumberForDirection(owner, dir);
                     }
                 }
@@ -213,7 +236,7 @@ namespace H3.Extensions {
                     bool ownerIsPentagon = owner.IsPentagon;
                     Direction dir = ownerIsPentagon
                         ? owner.DirectionForNeighbour(cell)
-                        : HexDirections[((HexNeighbourDirections[(int)left] + lRotations) % lRotations) % NUM_HEX_VERTS];
+                        : HexDirections[(HexNeighbourDirections[(int)left] + lRotations) % NUM_HEX_VERTS];
 
                     // For the left neighbor, we need the second vertex of the
                     // edge, which may involve looping around the vertex nums
@@ -238,7 +261,8 @@ namespace H3.Extensions {
         /// <param name="cell"></param>
         /// <returns></returns>
         public static IEnumerable<H3Index> GetVertexIndicies(this H3Index cell) {
-            for (int i = 0; i < NUM_HEX_VERTS; i += 1) {
+            int count = cell.IsPentagon ? NUM_PENT_VERTS : NUM_HEX_VERTS;
+            for (int i = 0; i < count; i += 1) {
                 yield return cell.GetVertexIndex(i);
             }
         }
@@ -251,12 +275,19 @@ namespace H3.Extensions {
         public static GeoCoord VertexToGeoCoord(this H3Index vertex) {
             // Get the vertex number and owner from the vertex
             int vertexNum = vertex.ReservedBits;
-            H3Index owner = new H3Index(vertex) {
+            H3Index owner = new(vertex) {
                 Mode = Mode.Hexagon,
                 ReservedBits = 0
             };
 
-            return owner.GetCellBoundaryVertices().First();
+            FaceIJK fijk = owner.ToFaceIJK();
+            int resolution = owner.Resolution;
+
+            var vertices = owner.IsPentagon
+                ? fijk.GetPentagonBoundary(resolution, vertexNum, 1)
+                : fijk.GetBoundary(resolution, vertexNum, 1);
+
+            return vertices.First();
         }
 
         /// <summary>
@@ -270,7 +301,7 @@ namespace H3.Extensions {
             }
 
             int vertexNum = vertex.ReservedBits;
-            H3Index owner = new H3Index(vertex) {
+            H3Index owner = new(vertex) {
                 Mode = Mode.Hexagon,
                 ReservedBits = 0
             };

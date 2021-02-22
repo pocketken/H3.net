@@ -222,7 +222,7 @@ namespace H3.Algorithms {
                 index = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], ref rotations);
                 if (index == H3Index.Invalid) {
                     // Should not be possible because `origin` would have to be a pentagon
-                    throw new HexRingPentagonException();
+                    throw new HexRingKSequenceException();
                 }
 
                 yield return new RingCell { Index = index, Distance = ring };

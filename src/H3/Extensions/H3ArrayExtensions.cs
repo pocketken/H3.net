@@ -195,7 +195,7 @@ namespace H3.Extensions {
                 if (currentResolution == resolution) {
                     result.Add(indexes[i]);
                 } else {
-                    result.AddRange(indexes[i].GetChildrenAtResolution(resolution));
+                    result.AddRange(indexes[i].GetChildrenForResolution(resolution));
                 }
             }
 

@@ -182,6 +182,19 @@ namespace H3 {
             if (ulong.TryParse(value, NumberStyles.HexNumber, null, out ulong parsed)) Value = parsed;
         }
 
+        public static H3Index Create(int resolution, int baseCell, Direction direction) {
+            H3Index index = new() {
+                Mode = Mode.Hexagon,
+                Resolution = resolution,
+                Direction = direction,
+                BaseCellNumber = baseCell
+            };
+
+            for (int r = 1; r <= resolution; r += 1) index.SetDirectionForResolution(r, direction);
+
+            return index;
+        }
+
         #region manipulations
 
         /// <summary>
@@ -477,17 +490,7 @@ namespace H3 {
 
         public int CompareTo(H3Index? other) {
             if (other == null) return 1;
-
-            // start with base cell
-            var c = BaseCellNumber.CompareTo(other.BaseCellNumber);
-            if (c != 0) return c;
-
-            // equal, so next by resolution
-            c = Resolution.CompareTo(other.Resolution);
-            if (c != 0) return c;
-
-            // lastly, direction
-            return Direction.CompareTo(other.Direction);
+            return Value.CompareTo(other.Value);
         }
 
         public static bool operator ==(H3Index? a, H3Index? b) => a?.Value == b?.Value;

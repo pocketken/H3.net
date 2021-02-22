@@ -50,9 +50,65 @@ namespace H3.Extensions {
         /// <param name="origin">an anchoring index for the IJ coordinate system</param>
         /// <param name="coord">IJ coordinates to index</param>
         /// <returns>H3Index for coordintes</returns>
-        public static H3Index FromLocalIJ(this H3Index origin, CoordIJ coord) =>
-            LocalCoordIJK.FromLocalIJK(origin, coord.ToCoordIJK());
+        public static H3Index FromLocalIJ(this H3Index origin, CoordIJ coord) {
+            try {
+                return LocalCoordIJK.ToH3Index(origin, coord.ToCoordIJK());
+            } catch {
+                return H3Index.Invalid;
+            }
+        }
+    }
 
+    /// <summary>
+    /// Extends the H3Index class with support for generating LocalIJK coordinates.
+    ///
+    /// This functionality is experimental, and its output is not guaranteed
+    /// to be compatible across different versions of H3.
+    /// </summary>
+    public static class H3LocalIJKExtensions {
+        /// <summary>
+        /// Produces ijk coordinates for an index anchored by an origin.
+        ///
+        /// The coordinate space used by this function may have deleted
+        /// regions or warping due to pentagonal distortion.
+        ///
+        /// Coordinates are only comparable if they come from the same
+        /// origin index.
+        ///
+        /// Failure may occur if the index is too far away from the origin
+        /// or if the index is on the other side of a pentagon.
+        ///
+        /// This function is experimental, and its output is not guaranteed
+        /// to be compatible across different versions of H3.
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public static CoordIJK ToLocalIJK(this H3Index origin, H3Index index) =>
+            LocalCoordIJK.ToLocalIJK(origin, index);
+
+        /// <summary>
+        /// Produces an index for ij coordinates anchored by an origin.
+        ///
+        /// The coordinate space used by this function may have deleted
+        /// regions or warping due to pentagonal distortion.
+        ///
+        /// Failure may occur if the index is too far away from the origin
+        /// or if the index is on the other side of a pentagon.
+        ///
+        /// This function is experimental, and its output is not guaranteed
+        /// to be compatible across different versions of H3.
+        /// </summary>
+        /// <param name="origin">an anchoring index for the IJ coordinate system</param>
+        /// <param name="coord">IJ coordinates to index</param>
+        /// <returns>H3Index for coordintes</returns>
+        public static H3Index FromLocalIJK(this H3Index origin, CoordIJK coord) {
+            try {
+                return LocalCoordIJK.ToH3Index(origin, coord);
+            }  catch {
+                return H3Index.Invalid;
+            }
+        }
     }
 
     public static class LocalCoordIJK {
@@ -90,7 +146,7 @@ namespace H3.Extensions {
             if (originBaseCell != baseCell) {
                 dir = BaseCell.GetNeighbourDirection(originBaseCell.Cell, baseCell.Cell);
                 if (dir == Direction.Invalid) {
-                    throw new ArgumentException("index is not a neighbour of origin");
+                    throw new ArgumentException($"index cell {baseCell.Cell} is not a neighbour of origin cell {originBaseCell.Cell}");
                 }
 
                 revDir = BaseCell.GetNeighbourDirection(baseCell.Cell, originBaseCell.Cell);
@@ -148,8 +204,8 @@ namespace H3.Extensions {
                     pentagonRotations = LookupTables.PentagonRotations[(int)revDir, (int)indexLeadingDigit];
                 }
 
-                if (pentagonRotations < 0) throw new Exception("negative pentagon rotations");
-                if (directionRotations < 0) throw new Exception("negative direction rotations");
+                if (pentagonRotations < 0) throw new Exception("no pentagon rotations");
+                if (directionRotations < 0) throw new Exception("no direction rotations");
 
                 for (int i = 0; i < pentagonRotations; i += 1) indexFijk.Coord.RotateClockwise();
 
@@ -200,13 +256,13 @@ namespace H3.Extensions {
         /// <param name="index"></param>
         /// <param name="ijk"></param>
         /// <returns></returns>
-        public static H3Index FromLocalIJK(H3Index origin, CoordIJK ijk) {
+        public static H3Index ToH3Index(H3Index origin, CoordIJK ijk) {
             int resolution = origin.Resolution;
             BaseCell? originBaseCell = origin.BaseCell;
             if (originBaseCell == null) throw new Exception("origin is not a valid base cell");
-            bool originOnPent = origin.IsPentagon;
+            bool originOnPent = originBaseCell.IsPentagon;
 
-            H3Index index = new H3Index {
+            H3Index index = new() {
                 Mode = Mode.Hexagon,
                 Resolution = resolution
             };
@@ -224,10 +280,13 @@ namespace H3.Extensions {
             // we need to find the correct base cell offset (if any) for this H3 index;
             // start with the passed in base cell and resolution res ijk coordinates
             // in that base cell's coordinate system
-            CoordIJK ijkCopy = new CoordIJK(ijk);
+            CoordIJK ijkCopy = new(ijk);
 
+            // build the H3Index from finest res up
+            // adjust r for the fact that the res 0 base cell offsets the indexing
+            // digits
             for (int r = resolution - 1; r >= 0; r -= 1) {
-                CoordIJK lastIJK = new CoordIJK(ijkCopy);
+                CoordIJK lastIJK = new(ijkCopy);
                 CoordIJK lastCenter;
 
                 if (IsResolutionClass3(r + 1)) {
@@ -286,7 +345,7 @@ namespace H3.Extensions {
 
                 // Now we can determine the relation between the origin and target base
                 // cell.
-                int baseCellRotations = LookupTables.NeighbourCounterClockwiseRotations[baseCell.Cell, (int)dir];
+                int baseCellRotations = LookupTables.NeighbourCounterClockwiseRotations[originBaseCell.Cell, (int)dir];
                 if (baseCellRotations < 0) throw new Exception("invalid number of base cell rotations");
 
                 // Adjust for pentagon warping within the base cell. The base cell
@@ -382,7 +441,7 @@ namespace H3.Extensions {
         /// <param name="origin">an anchoring index for the IJ coordinate system</param>
         /// <param name="coord">IJ coordinates to index</param>
         /// <returns>H3Index translated from IJ coordintes</returns>
-        public static H3Index FromLocalIJ(H3Index origin, CoordIJ coord) =>
+        public static H3Index ToH3Index(H3Index origin, CoordIJ coord) =>
             origin.FromLocalIJ(coord);
     }
 

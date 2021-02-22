@@ -70,7 +70,7 @@ namespace H3.Algorithms {
                     startIjk.J + jStep * n,
                     startIjk.K + kStep * n
                 ).Uncube();
-                yield return LocalCoordIJK.FromLocalIJK(origin, currentIjk);
+                yield return LocalCoordIJK.ToH3Index(origin, currentIjk);
             }
         }
 
