@@ -12,7 +12,7 @@ This is a work in progress and likely contains some silly bugs and poorly perfor
 
 While the majority of the core H3 API should be here in one form or another, there's still gaps particularly in terms of documentation and tests to validate behaviour vs. upstream.  My focus so far has been on getting the algorithm side of things (such as k-rings, polyfill and so on) working and tested as I needed those features for the project(s) I am working on, however given that the majority of those methods depend on the basics of the library working, test coverage is "ok".  I also make use of the [PostgreSQL bindings](https://github.com/bytesandbrains/h3-pg) in my work, so I tend to validate results with that as well.
 
-PRs to improve tests and documentation are definitely welcome, although please keep in mind I am quite busy these days and may be a bit slow to respond.  Sorry in advance!
+PRs to improve code, tests and documentation are definitely welcome, although please keep in mind I am quite busy these days and may be a bit slow to respond.  Sorry in advance!
 
 ## Installing
 I haven't published this to Nuget or anything yet, so for now you'll need to check the code out and build the package locally (e.g. `dotnet pack`), and/or add a dependency to this project from an existing solution.  It should compile/work anywhere .NET 5 does (I presently build/use on a variety of projects on Windows, Linux and Mac).
