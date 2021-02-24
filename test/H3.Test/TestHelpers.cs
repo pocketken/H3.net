@@ -1,4 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
 using H3.Model;
 using NUnit.Framework;
 
@@ -78,5 +83,20 @@ namespace H3.Test {
                 Assert.IsTrue(expected[i] == actual[i], $"index {i} should be {expected[i]} not {actual[i]}");
             }
         }
+
+        public static IEnumerable<string> GetTestData(Func<string, bool> matches) {
+            var executingAssembly = Assembly.GetExecutingAssembly();
+            string basePath = string.Format("{0}.TestData", executingAssembly.GetName().Name);
+            return executingAssembly.GetManifestResourceNames().Where(res =>
+                res.StartsWith(basePath) && res.EndsWith(".txt") && matches(res));
+        }
+
+        public static IEnumerable<string> ReadLines(StreamReader reader) {
+            string line;
+            while ((line = reader.ReadLine()) != null) {
+                yield return line;
+            }
+        }
+
     }
 }
