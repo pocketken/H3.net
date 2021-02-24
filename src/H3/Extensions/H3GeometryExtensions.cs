@@ -137,7 +137,7 @@ namespace H3.Extensions {
             int resolution = index.Resolution;
             return index.IsPentagon
                 ? face.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS)
-                : face.GetBoundary(resolution, 0, NUM_HEX_VERTS);
+                : face.GetHexagonBoundary(resolution, 0, NUM_HEX_VERTS);
         }
 
         /// <summary>
