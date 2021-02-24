@@ -126,7 +126,7 @@ namespace H3.Test {
 
         [Test]
         [TestCaseSource(typeof(H3IndexTests), "ToGeoCoordTestCases")]
-        public bool Test_ToGeoCoord((H3Index, double, double)[] expectedValues) {
+        public bool Test_Upstream_ToGeoCoord((H3Index, double, double)[] expectedValues) {
             // Act
             GeoCoord[] actualCoords = expectedValues.Select(t => t.Item1.ToGeoCoord()).ToArray();
 
@@ -146,7 +146,7 @@ namespace H3.Test {
 
         [Test]
         [TestCaseSource(typeof(H3IndexTests), "FromGeoCoordTestCases")]
-        public bool Test_FromGeoCoord((double, double, int, H3Index)[] expectedValues) {
+        public bool Test_Upstream_FromGeoCoord((double, double, int, H3Index)[] expectedValues) {
             // Act
             H3Index[] actualIndexes = expectedValues.Select(t => H3Index.FromGeoCoord((t.Item1, t.Item2), t.Item3)).ToArray();
 
