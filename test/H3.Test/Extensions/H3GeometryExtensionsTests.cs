@@ -61,7 +61,7 @@ namespace H3.Test.Extensions {
         public static IEnumerable<TestCaseData> GetCellBoundaryVerticesTestCases {
             get {
                 var testFiles = TestHelpers
-                    .GetTestData(f => f.Contains("bc") && f.Contains("cells"));
+                    .GetTestData(f => f.Contains("cells"));
 
                 var executingAssembly = Assembly.GetExecutingAssembly();
 
