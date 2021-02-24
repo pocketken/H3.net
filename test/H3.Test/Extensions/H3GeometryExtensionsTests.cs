@@ -138,7 +138,7 @@ namespace H3.Test.Extensions {
 
         [Test]
         [TestCaseSource(typeof(H3GeometryExtensionsTests), "GetCellBoundaryVerticesTestCases")]
-        public bool Test_GetCellBoundaryVertices_Upstream(string testDataFn, List<(H3Index, GeoCoord[])> expectedData) {
+        public bool Test_Upstream_GetCellBoundaryVertices(string testDataFn, List<(H3Index, GeoCoord[])> expectedData) {
             // Act
             var vertices = expectedData.Select(t => t.Item1.GetCellBoundaryVertices().ToArray());
 
