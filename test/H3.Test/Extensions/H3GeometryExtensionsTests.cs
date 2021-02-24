@@ -5,6 +5,10 @@ using H3.Model;
 using static H3.Constants;
 using NUnit.Framework;
 using NetTopologySuite.Geometries;
+using System.Collections.Generic;
+using System.Reflection;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace H3.Test.Extensions {
 
@@ -54,6 +58,53 @@ namespace H3.Test.Extensions {
             + "30.0000098389545, -110.000016802594 29.9999948091569, -110.000000429101 "
             + "29.9999892327449))";
 
+        public static IEnumerable<TestCaseData> GetCellBoundaryVerticesTestCases {
+            get {
+                var testFiles = TestHelpers
+                    .GetTestData(f => f.Contains("bc") && f.Contains("cells"));
+
+                var executingAssembly = Assembly.GetExecutingAssembly();
+
+                return testFiles.Select(testFile => {
+                    using var stream = executingAssembly.GetManifestResourceStream(testFile);
+                    if (stream == null) return null;
+
+                    using var reader = new StreamReader(stream);
+
+                    List<(H3Index, GeoCoord[])> data = new();
+                    string line;
+                    H3Index index = null;
+                    List<GeoCoord> coords = null;
+
+                    while ((line = reader.ReadLine()) != null) {
+                        if (index == null) {
+                            index = new H3Index(line);
+                            continue;
+                        }
+                        if (line == "{") {
+                            coords = new();
+                            continue;
+                        }
+                        if (line == "}") {
+                            data.Add((index, coords.ToArray()));
+                            index = null;
+                            coords = null;
+                            continue;
+                        }
+                        if (coords != null) {
+                            var match = Regex.Match(line, @"\s+([0-9.-]+) ([0-9.-]+)");
+                            coords.Add(new GeoCoord(
+                                Convert.ToDouble(match.Groups[1].Value) * M_PI_180,
+                                Convert.ToDouble(match.Groups[2].Value) * M_PI_180)
+                            );
+                        }
+                    }
+
+                    return new TestCaseData(testFile, data).Returns(true);
+                });
+            }
+        }
+
         [Test]
         public void Test_GetCellBoundaryVertices_AtRes0() {
             // Arrange
@@ -83,6 +134,32 @@ namespace H3.Test.Extensions {
 
             // Assert
             Assert.AreEqual(TestPointBoundaryPolygonWkt, polygon.ToString(), "should be equal");
+        }
+
+        [Test]
+        [TestCaseSource(typeof(H3GeometryExtensionsTests), "GetCellBoundaryVerticesTestCases")]
+        public bool Test_GetCellBoundaryVertices_Upstream(string testDataFn, List<(H3Index, GeoCoord[])> expectedData) {
+            // Act
+            var vertices = expectedData.Select(t => t.Item1.GetCellBoundaryVertices().ToArray());
+
+            // Assert
+            return expectedData.Zip(vertices).All(e => {
+                var expectedVerts = e.First.Item2;
+                var actualVerts = e.Second;
+                if (expectedVerts.Length != actualVerts.Length) {
+                    Assert.Fail($"{testDataFn}: {e.First.Item1} vertex count mismatch: expected {expectedVerts.Length} got {actualVerts.Length}");
+                    return false;
+                }
+                for (int i = 0; i < expectedVerts.Length; i += 1) {
+                    var ev = expectedVerts[i];
+                    var av = actualVerts[i];
+                    if (Math.Abs(ev.Latitude - av.Latitude) > 0.000001 ||
+                        Math.Abs(ev.Longitude - av.Longitude) > 0.000001) {
+                        return false;
+                    }
+                }
+                return true;
+            });
         }
 
         [Test]

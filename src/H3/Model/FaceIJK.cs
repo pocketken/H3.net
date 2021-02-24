@@ -78,26 +78,27 @@ namespace H3.Model {
 
         private FaceIJK[] GetVertices(CoordIJK[] class3Verts, CoordIJK[] class2Verts, ref int resolution) {
             var verts = IsResolutionClass3(resolution) ? class3Verts : class2Verts;
-            var coord = CoordIJK.DownAperature3CounterClockwise(Coord);
-            coord.DownAperature3Clockwise();
+            Coord.DownAperature3CounterClockwise();
+            Coord.DownAperature3Clockwise();
 
             // if res is Class III we need to add a cw aperture 7 to get to
             // icosahedral Class II
             if (IsResolutionClass3(resolution)) {
-                coord.DownAperature7Clockwise();
+                Coord.DownAperature7Clockwise();
                 resolution += 1;
             }
 
             List<FaceIJK> result = new();
             for (var v = 0; v < verts.Length; v += 1) {
-                result.Add(new FaceIJK(Face, (coord + verts[v]).Normalize()));
+                result.Add(new FaceIJK(Face, (Coord + verts[v]).Normalize()));
             }
 
             return result.ToArray();
         }
 
         /// <summary>
-        /// Get the vertices of a cell as substrate FaceIJK addresses.
+        /// Get the vertices of a cell as substrate FaceIJK addresses.  Note that this modifies
+        /// the address in place!
         /// </summary>
         /// <param name="resolution">The H3 resolution of the cell. This may be adjusted if
         /// necessary for the substrate grid resolution.</param>
@@ -106,7 +107,8 @@ namespace H3.Model {
             GetVertices(LookupTables.Class3HexVertices, LookupTables.Class2HexVertices, ref resolution);
 
         /// <summary>
-        /// Get the vertices of a pentagon cell as substrate FaceIJK addresses.
+        /// Get the vertices of a pentagon cell as substrate FaceIJK addresses.  Note that this
+        /// modifies the address in place!
         /// </summary>
         /// <param name="resolution">The H3 resolution of the cell. This may be adjusted if
         /// necessary for the substrate grid resolution.</param>
@@ -146,7 +148,7 @@ namespace H3.Model {
                         if (pentagonLeading4) {
                             // translate origin to center of pentagon, rotate to adjust for the missing sequence
                             // and translate the origin back to the center of the triangle
-                            CoordIJK origin = new CoordIJK(maxDist, 0, 0);
+                            CoordIJK origin = new(maxDist, 0, 0);
                             Coord = (Coord - origin).RotateClockwise() + origin;
                         }
                     }
@@ -202,7 +204,8 @@ namespace H3.Model {
         /// <returns>The spherical coordinates of the cell boundary</returns>
         public IEnumerable<GeoCoord> GetPentagonBoundary(int resolution, int start, int length) {
             int adjustedResolution = resolution;
-            FaceIJK[] verts = GetPentagonVertices(ref adjustedResolution);
+            FaceIJK centerIJK = new(this);
+            FaceIJK[] verts = centerIJK.GetPentagonVertices(ref adjustedResolution);
 
             // If we're returning the entire loop, we need one more iteration in case
             // of a distortion vertex on the last edge
@@ -216,7 +219,7 @@ namespace H3.Model {
             for (int vert = start; vert < start + length + additionalIteration; vert += 1) {
                 int v = vert % NUM_PENT_VERTS;
 
-                FaceIJK fijk = new FaceIJK(verts[v]);
+                FaceIJK fijk = new(verts[v]);
                 fijk.AdjustPentagonVertexOverage(adjustedResolution);
 
                 // all Class III pentagon edges cross icosa edges
@@ -224,14 +227,14 @@ namespace H3.Model {
                 // not edge intersections
                 if (IsResolutionClass3(resolution) && vert > start) {
                     // find hex2d of the two vertexes on the last face
-                    FaceIJK tmpFijk = new FaceIJK(fijk);
+                    FaceIJK tmpFijk = new(fijk);
                     Vec2d orig2d0 = lastFijk.Coord.ToVec2d();
 
                     int currentToLastDir = LookupTables.AdjacentFaceDirections[tmpFijk.Face, lastFijk.Face];
 
                     FaceOrientIJK fijkOrient = LookupTables.OrientedFaceNeighbours[tmpFijk.Face, currentToLastDir];
                     tmpFijk.Face = fijkOrient.Face;
-                    CoordIJK ijk = new CoordIJK(tmpFijk.Coord);
+                    CoordIJK ijk = new(tmpFijk.Coord);
 
                     // rotate and translate for adjacent face
                     for (int i = 0; i < fijkOrient.CounterClockwiseRotations; i += 1) ijk.RotateCounterClockwise();
@@ -243,9 +246,9 @@ namespace H3.Model {
 
                     // find the appropriate icosa face edge vertexes
                     int maxDim = LookupTables.MaxDistanceByClass2Res[adjustedResolution];
-                    Vec2d v0 = new Vec2d(3.0 * maxDim, 0.0);
-                    Vec2d v1 = new Vec2d(-1.5 * maxDim, 3.0 * M_SQRT3_2 * maxDim);
-                    Vec2d v2 = new Vec2d(-1.5 * maxDim, -3.0 * M_SQRT3_2 * maxDim);
+                    Vec2d v0 = new(3.0 * maxDim, 0.0);
+                    Vec2d v1 = new(-1.5 * maxDim, 3.0 * M_SQRT3_2 * maxDim);
+                    Vec2d v2 = new(-1.5 * maxDim, -3.0 * M_SQRT3_2 * maxDim);
 
                     Vec2d edge0;
                     Vec2d edge1;
@@ -292,9 +295,10 @@ namespace H3.Model {
         /// <param name="start">The first topological vertex to return</param>
         /// <param name="length">The number of topological vertexes to return</param>
         /// <returns>The spherical coordinates of the cell boundary</returns>
-        public IEnumerable<GeoCoord> GetBoundary(int resolution, int start, int length) {
+        public IEnumerable<GeoCoord> GetHexagonBoundary(int resolution, int start, int length) {
             int adjustedResolution = resolution;
-            FaceIJK[] verts = GetHexVertices(ref adjustedResolution);
+            FaceIJK centerIJK = new(this);
+            FaceIJK[] verts = centerIJK.GetHexVertices(ref adjustedResolution);
 
             int additionalIteration = length == NUM_HEX_VERTS ? 1 : 0;
 
@@ -304,8 +308,8 @@ namespace H3.Model {
             for (int vert = start; vert < start + length + additionalIteration; vert += 1) {
                 int v = vert % NUM_HEX_VERTS;
 
-                FaceIJK face = new FaceIJK(verts[v]);
-                Overage overage = face.AdjustOverageClass2(adjustedResolution, false, true);
+                FaceIJK fijk = new(verts[v]);
+                Overage overage = fijk.AdjustOverageClass2(adjustedResolution, false, true);
 
                 /*
                     Check for edge-crossing. Each face of the underlying icosahedron is a
@@ -316,7 +320,7 @@ namespace H3.Model {
                     projection. Note that Class II cell edges have vertices on the face
                     edge, with no edge line intersections.
                 */
-                if (IsResolutionClass3(resolution) && vert > start && face.Face != lastFace && lastOverage != Overage.FaceEdge) {
+                if (IsResolutionClass3(resolution) && vert > start && fijk.Face != lastFace && lastOverage != Overage.FaceEdge) {
                     // find hex2d of the two vertexes on original face
                     int lastV = (v + 5) % NUM_HEX_VERTS;
                     Vec2d orig2d0 = verts[lastV].Coord.ToVec2d();
@@ -324,16 +328,16 @@ namespace H3.Model {
 
                     // find the appropriate icosa face edge vertexes
                     int maxDist = LookupTables.MaxDistanceByClass2Res[adjustedResolution];
-                    Vec2d v0 = new Vec2d(3 * maxDist, 0);
-                    Vec2d v1 = new Vec2d(-1.5 * maxDist, 3.0 * M_SQRT3_2 * maxDist);
-                    Vec2d v2 = new Vec2d(-1.5 * maxDist, -3.0 * M_SQRT3_2 * maxDist);
+                    Vec2d v0 = new(3 * maxDist, 0);
+                    Vec2d v1 = new(-1.5 * maxDist, 3.0 * M_SQRT3_2 * maxDist);
+                    Vec2d v2 = new(-1.5 * maxDist, -3.0 * M_SQRT3_2 * maxDist);
 
                     Vec2d edge0;
                     Vec2d edge1;
 
-                    int face2 = lastFace == Face ? face.Face : lastFace;
+                    int face2 = lastFace == centerIJK.Face ? fijk.Face : lastFace;
 
-                    switch (LookupTables.AdjacentFaceDirections[Face, face2]) {
+                    switch (LookupTables.AdjacentFaceDirections[centerIJK.Face, face2]) {
                         case IJ:
                             edge0 = v0;
                             edge1 = v1;
@@ -356,7 +360,7 @@ namespace H3.Model {
                     Vec2d intersection = Vec2d.Intersect(orig2d0, orig2d1, edge0, edge1);
                     bool atVertex = orig2d0 == intersection || orig2d1 == intersection;
                     if (!atVertex) {
-                        yield return intersection.ToFaceGeoCoord(Face, adjustedResolution, true);
+                        yield return intersection.ToFaceGeoCoord(centerIJK.Face, adjustedResolution, true);
                     }
                 }
 
@@ -364,10 +368,10 @@ namespace H3.Model {
                 // vert == start + NUM_HEX_VERTS is only used to test for possible
                 // intersection on last edge
                 if (vert < start + NUM_HEX_VERTS) {
-                    yield return face.Coord.ToVec2d().ToFaceGeoCoord(face.Face, adjustedResolution, true);
+                    yield return fijk.Coord.ToVec2d().ToFaceGeoCoord(fijk.Face, adjustedResolution, true);
                 }
 
-                lastFace = face.Face;
+                lastFace = fijk.Face;
                 lastOverage = overage;
             }
         }

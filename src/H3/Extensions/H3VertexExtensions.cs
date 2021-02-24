@@ -285,7 +285,7 @@ namespace H3.Extensions {
 
             var vertices = owner.IsPentagon
                 ? fijk.GetPentagonBoundary(resolution, vertexNum, 1)
-                : fijk.GetBoundary(resolution, vertexNum, 1);
+                : fijk.GetHexagonBoundary(resolution, vertexNum, 1);
 
             return vertices.First();
         }

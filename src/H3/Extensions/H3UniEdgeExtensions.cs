@@ -120,7 +120,7 @@ namespace H3.Extensions {
 
             return origin.IsPentagon
                 ? face.GetPentagonBoundary(resolution, startVertex, 2)
-                : face.GetBoundary(resolution, startVertex, 2);
+                : face.GetHexagonBoundary(resolution, startVertex, 2);
 
         }
 

@@ -86,9 +86,9 @@ namespace H3.Test {
 
         public static IEnumerable<string> GetTestData(Func<string, bool> matches) {
             var executingAssembly = Assembly.GetExecutingAssembly();
-            string basePath = string.Format("{0}.TestData", executingAssembly.GetName().Name);
+            string basePath = $"{executingAssembly.GetName().Name}.TestData";
             return executingAssembly.GetManifestResourceNames().Where(res =>
-                res.StartsWith(basePath) && res.EndsWith(".txt") && matches(res));
+                res.StartsWith(basePath) && matches(res));
         }
 
         public static IEnumerable<string> ReadLines(StreamReader reader) {
