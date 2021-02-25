@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using NetTopologySuite.Geometries;
 using static H3.Constants;
 
@@ -53,5 +54,9 @@ namespace H3 {
 
         public static bool IsValidChildResolution(int parentResolution, int childResolution) =>
             childResolution >= parentResolution && childResolution <= MAX_H3_RES;
+
+        public static IEnumerable<T> ToEnumerable<T>(this T item) {
+            yield return item;
+        }
     }
 }

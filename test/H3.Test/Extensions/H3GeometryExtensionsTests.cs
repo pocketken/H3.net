@@ -173,7 +173,7 @@ namespace H3.Test.Extensions {
 
             // Assert
             for (int i = 0; i < CellAreasInKm2.Length; i += 1) {
-                Assert.IsTrue(Math.Abs(areas[i] - CellAreasInKm2[i]) < 0.01, $"{indexes[i]} should be {CellAreasInKm2[i]} not {areas[i]}");
+                Assert.IsTrue(Math.Abs(areas[i] - CellAreasInKm2[i]) < 1e-8, $"{indexes[i]} should be {CellAreasInKm2[i]} not {areas[i]}");
             }
         }
 

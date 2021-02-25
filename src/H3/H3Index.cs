@@ -5,6 +5,8 @@ using static H3.Constants;
 using static H3.Utils;
 using GeoAPI.Geometries;
 using NetTopologySuite.Geometries;
+using System.Linq;
+using System.Collections.Generic;
 
 #nullable enable
 
@@ -194,6 +196,17 @@ namespace H3 {
 
             return index;
         }
+
+        /// <summary>
+        /// Returns all of the resolution 0 base cell indexes.
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<H3Index> GetAllResolution0Indexes() =>
+            Enumerable.Range(0, NUM_BASE_CELLS)
+                .Select(baseCellNumber => new H3Index {
+                    Mode = Mode.Hexagon,
+                    BaseCellNumber = baseCellNumber
+                });
 
         #region manipulations
 

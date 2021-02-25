@@ -6,7 +6,7 @@ using System.Linq;
 namespace H3.Test.Extensions {
 
     [TestFixture]
-    public class H3ArrayExtensionsTests {
+    public class H3SetExtensionsTests {
 
         // select h3_compact(array(select h3_k_ring('8e48e1d7038d527'::h3index, 2)));
         public static readonly H3Index[] TestCompactArray = new H3Index[] {
@@ -49,18 +49,44 @@ namespace H3.Test.Extensions {
         };
 
         [Test]
+        public void Test_Compact_FailsOnMixedResolutions() {
+            // Arrange
+            H3Index[] indicies = new[] { TestHelpers.SfIndex, (H3Index)TestHelpers.TestIndexValue };
+
+            // Act
+            var exception = Assert.Throws<ArgumentException>(() => indicies.Compact().First());
+
+            // Assert
+            Assert.AreEqual("all indexes must be the same resolution", exception.Message, "same exception message");
+        }
+
+        [Test]
         public void Test_Compact_MatchesPg() {
             // Act
-            var result = TestHelpers.TestIndexKRingsTo2.Select(e => (H3Index)e.Item1).ToArray().Compact();
+            var result = TestHelpers.TestIndexKRingsTo2.Select(e => (H3Index)e.Item1).Compact().ToArray();
 
             // Assert
             TestHelpers.AssertAll(TestCompactArray, result);
         }
 
         [Test]
+        public void Test_Compact_RemovesDuplicates() {
+            // Arrange
+            var input = TestHelpers.TestIndexKRingsTo2.Select(e => (H3Index)e.Item1).ToList();
+            input.AddRange(TestHelpers.TestIndexKRingsTo2.Take(5).Select(e => (H3Index)e.Item1));
+
+            // Act
+            var result = input.Compact().ToArray();
+
+            // Assert
+            TestHelpers.AssertAll(TestCompactArray, result);
+        }
+
+
+        [Test]
         public void Test_Uncomapct_MatchesPg() {
             // Act
-            var result = TestCompactArray.UncompactToResolution(14);
+            var result = TestCompactArray.UncompactToResolution(14).ToArray();
 
             // Assert
             TestHelpers.AssertAll(TestUncompactArray, result);
