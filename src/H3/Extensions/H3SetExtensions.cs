@@ -99,10 +99,13 @@ namespace H3.Extensions {
             var byParent = indexes
                 .Where(index => index.Resolution >= 1)
                 .GroupBy(index => index.GetParentForResolution(index.Resolution - 1))
-                .Select(g => (Parent: g.Key, Count: g.Count(), Indexes: new HashSet<H3Index>(g)));
-            var compactable = byParent.Where(e => e.Count >= 7);
-            var uncompactable = indexes.Where(i => !compactable.Any(e => e.Indexes.Contains(i)));
-            return (compactable.Select(e => e.Parent), uncompactable);
+                .Select(g => (Parent: g.Key, Count: g.Count(), Indexes: new HashSet<H3Index>(g)))
+                .Where(g => g.Count >= 7);
+
+            var uncompactable = indexes.Where(i => !byParent.Any(e => e.Indexes.Contains(i)));
+            var compactable = byParent.Select(e => e.Parent);
+
+            return (compactable, uncompactable);
         }
 
     }
