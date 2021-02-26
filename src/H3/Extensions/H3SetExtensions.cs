@@ -18,8 +18,9 @@ namespace H3.Extensions {
         /// </summary>
         /// <param name="indexes">set of hexagons</param>
         /// <returns>set of compressed hexagons</returns>
-        public static IEnumerable<H3Index> Compact(this IEnumerable<H3Index> indexEnumerable) {
+        public static List<H3Index> Compact(this IEnumerable<H3Index> indexEnumerable) {
             List<H3Index> indexes = indexEnumerable.Distinct().ToList();
+            List<H3Index> results = new();
 
             if (!indexes.AreOfSameResolution()) {
                 throw new ArgumentException("all indexes must be the same resolution");
@@ -29,27 +30,18 @@ namespace H3.Extensions {
 
             // cant compress beyond res0
             if (resolution == 0) {
-                foreach (var index in indexes) {
-                    yield return index;
-                }
-                yield break;
+                return indexes;
             }
 
             // determine what can be compacted and what can't
-            var (compactable, uncompactable) = GetCompactableParents(indexes);
-            while (compactable.Any()) {
-                // immediately return anything that can't be compacted further
-                foreach (var index in uncompactable) {
-                    yield return index;
-                }
-
+            var compactable = GetCompactableParents(indexes, results);
+            while (compactable.Count > 0) {
                 // try and walk up and look for more
-                (compactable, uncompactable) = GetCompactableParents(compactable);
+                compactable = GetCompactableParents(compactable, results);
             }
 
-            foreach (var index in uncompactable) {
-                yield return index;
-            }
+            // and return result
+            return results;
         }
 
         /// <summary>
@@ -84,8 +76,19 @@ namespace H3.Extensions {
         /// <returns>true if all hexagons are of the same resolution, false if
         /// not.
         /// </returns>
-        public static bool AreOfSameResolution(this IEnumerable<H3Index> indexes) =>
-            indexes.Select(index => index.Resolution).Distinct().Count() == 1;
+        public static bool AreOfSameResolution(this IEnumerable<H3Index> indexes) {
+            int resolution = -1;
+            foreach (var index in indexes) {
+                if (resolution == -1) {
+                    resolution = index.Resolution;
+                } else {
+                    if (resolution != index.Resolution) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
 
         /// <summary>
         /// Splits the provided set of indexes into two separate enumerables -- Compactable,
@@ -95,17 +98,25 @@ namespace H3.Extensions {
         /// </summary>
         /// <param name="indexes"></param>
         /// <returns></returns>
-        private static (IEnumerable<H3Index>, IEnumerable<H3Index>) GetCompactableParents(IEnumerable<H3Index> indexes) {
+        private static List<H3Index> GetCompactableParents(List<H3Index> indexes, List<H3Index> results) {
             var byParent = indexes
-                .Where(index => index.Resolution >= 1)
+                .Where(index => index.Resolution > 0)
                 .GroupBy(index => index.GetParentForResolution(index.Resolution - 1))
-                .Select(g => (Parent: g.Key, Count: g.Count(), Indexes: new HashSet<H3Index>(g)))
-                .Where(g => g.Count >= 7);
+                .Select(g => (Parent: g.Key, Indexes: g.ToList()))
+                .Where(g => g.Indexes.Count >= 7);
 
-            var uncompactable = indexes.Where(i => !byParent.Any(e => e.Indexes.Contains(i)));
-            var compactable = byParent.Select(e => e.Parent);
+            List<H3Index> compactable = new();
+            var compacted = new HashSet<H3Index>();
 
-            return (compactable, uncompactable);
+            foreach (var group in byParent) {
+                compactable.Add(group.Parent);
+                foreach (var index in group.Indexes) {
+                    compacted.Add(index);
+                }
+            }
+
+            results.AddRange(indexes.Where(index => !compacted.Contains(index)));
+            return compactable;
         }
 
     }
