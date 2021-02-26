@@ -91,32 +91,31 @@ namespace H3.Extensions {
         }
 
         /// <summary>
-        /// Splits the provided set of indexes into two separate enumerables -- Compactable,
-        /// meaning the hexagon has a full set of children that can be pruned, and
-        /// Uncompactable which are indexes that do not have a full set of children and
-        /// therefore cannot be further compacted.
+        /// Processes the provided set of indexes, returning hexagons identified as
+        /// comptacted (meaning the hexagon had a full set of children that were
+        /// pruned) and adding indexes that were not comptactable to the provided
+        /// "uncompactable" index list.  This is the core of the compaction algorithm.
         /// </summary>
-        /// <param name="indexes"></param>
-        /// <returns></returns>
-        private static List<H3Index> GetCompactableParents(List<H3Index> indexes, List<H3Index> results) {
+        /// <param name="indexes">Indexes to try and compact</param>
+        /// <param name="uncompactable">List to add indexes identified as uncompactable
+        /// to</param>
+        /// <returns>List of parent indexes with children pruned</returns>
+        private static List<H3Index> GetCompactableParents(List<H3Index> indexes, List<H3Index> uncompactable) {
             var byParent = indexes
                 .Where(index => index.Resolution > 0)
                 .GroupBy(index => index.GetParentForResolution(index.Resolution - 1))
                 .Select(g => (Parent: g.Key, Indexes: g.ToList()))
                 .Where(g => g.Indexes.Count >= 7);
 
-            List<H3Index> compactable = new();
-            var compacted = new HashSet<H3Index>();
-
-            foreach (var group in byParent) {
-                compactable.Add(group.Parent);
-                foreach (var index in group.Indexes) {
-                    compacted.Add(index);
-                }
+            List<H3Index> compacted = new();
+            HashSet<H3Index> compactedChildren = new();
+            foreach (var (Parent, Indexes) in byParent) {
+                compacted.Add(Parent);
+                compactedChildren.UnionWith(Indexes);
             }
 
-            results.AddRange(indexes.Where(index => !compacted.Contains(index)));
-            return compactable;
+            uncompactable.AddRange(indexes.Where(index => !compactedChildren.Contains(index)));
+            return compacted;
         }
 
     }
