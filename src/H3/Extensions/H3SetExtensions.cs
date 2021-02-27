@@ -16,10 +16,16 @@ namespace H3.Extensions {
         /// the minimum number of hex addresses that perfectly cover the defined
         /// space.
         /// </summary>
-        /// <param name="indexes">set of hexagons</param>
+        /// <remarks>This implementation differs from upstream in that duplicate
+        /// or invalid inputs are filtered instead returning an error code when
+        /// they are encountered.</remarks>
+        /// <param name="indexes">set of hexagons to compress</param>
         /// <returns>set of compressed hexagons</returns>
         public static List<H3Index> Compact(this IEnumerable<H3Index> indexEnumerable) {
-            List<H3Index> indexes = indexEnumerable.Distinct().ToList();
+            List<H3Index> indexes = indexEnumerable
+                .Where(index => index != H3Index.Invalid)
+                .Distinct()
+                .ToList();
             List<H3Index> results = new();
 
             if (!indexes.AreOfSameResolution()) {
@@ -50,9 +56,9 @@ namespace H3.Extensions {
         /// </summary>
         /// <param name="indexes">set of hexagons</param>
         /// <param name="resolution">resolution to decompress to</param>
-        /// <returns>original set of hexagons.  Will throw an ArgumentException
-        /// if any hexagon in the set is smaller than the output resolution
-        /// </returns>
+        /// <returns>original set of hexagons. Thows ArgumentException if any
+        /// hexagon in the set is smaller than the output resolution or invalid
+        /// resolution is requested.</returns>
         public static IEnumerable<H3Index> UncompactToResolution(this IEnumerable<H3Index> indexes, int resolution) =>
             indexes.Where(index => index != H3Index.Invalid)
                 .SelectMany(index => {
@@ -105,7 +111,7 @@ namespace H3.Extensions {
                 .Where(index => index.Resolution > 0)
                 .GroupBy(index => index.GetParentForResolution(index.Resolution - 1))
                 .Select(g => (Parent: g.Key, Indexes: g.ToList()))
-                .Where(g => g.Indexes.Count >= 7);
+                .Where(g => g.Indexes.Count == (g.Parent.IsPentagon ? 6 : 7));
 
             List<H3Index> compacted = new();
             HashSet<H3Index> compactedChildren = new();

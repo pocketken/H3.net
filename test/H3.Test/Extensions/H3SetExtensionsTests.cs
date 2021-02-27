@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using NUnit.Framework;
+using H3.Algorithms;
 using H3.Extensions;
 using System.Linq;
 
@@ -9,7 +11,7 @@ namespace H3.Test.Extensions {
     public class H3SetExtensionsTests {
 
         // select h3_compact(array(select h3_k_ring('8e48e1d7038d527'::h3index, 2)));
-        public static readonly H3Index[] TestCompactArray = new H3Index[] {
+        private static readonly H3Index[] TestCompactArray = new H3Index[] {
             0x8e48e1d7038dc9f,
             0x8e48e1d7038dcd7,
             0x8e48e1d7038dc8f,
@@ -26,7 +28,7 @@ namespace H3.Test.Extensions {
         };
 
         // select h3_uncompact(array(select h3_compact(array(select h3_k_ring('8e48e1d7038d527'::h3index, 2)))), 14);
-        public static readonly H3Index[] TestUncompactArray = new H3Index[] {
+        private static readonly H3Index[] TestUncompactArray = new H3Index[] {
             0x8e48e1d7038dc9f,
             0x8e48e1d7038dcd7,
             0x8e48e1d7038dc8f,
@@ -47,6 +49,24 @@ namespace H3.Test.Extensions {
             0x8e48e1d7038d52f,
             0x8e48e1d7038d537
         };
+
+        private static readonly H3Index Sunnyvale = 0x89283470c27ffff;
+
+        private static readonly H3Index[] Uncompactable = new H3Index[] {
+            0x89283470803ffff,
+            0x8928347081bffff,
+            0x8928347080bffff
+        };
+
+        private static readonly H3Index[] UncompactableWithZero = new H3Index[] {
+            0x89283470803ffff,
+            0x8928347081bffff,
+            0,
+            0x8928347080bffff
+        };
+
+        private static readonly IEnumerable<H3Index> UncompactSomeHexagons = Enumerable.Range(0, 3)
+            .Select(i => H3Index.Create(5, i, 0));
 
         [Test]
         public void Test_Compact_FailsOnMixedResolutions() {
@@ -82,7 +102,6 @@ namespace H3.Test.Extensions {
             TestHelpers.AssertAll(TestCompactArray, result);
         }
 
-
         [Test]
         public void Test_Uncomapct_MatchesPg() {
             // Act
@@ -91,5 +110,102 @@ namespace H3.Test.Extensions {
             // Assert
             TestHelpers.AssertAll(TestUncompactArray, result);
         }
+
+        [Test]
+        public void Test_Upstream_Compact_Sunnyvale() {
+            // Arrange
+            var sunnyvaleExpanded = Sunnyvale.GetKRing(9).Select(c => c.Index);
+
+            // Act
+            var actual = sunnyvaleExpanded.Compact().ToList();
+
+            // Assert
+            Assert.AreEqual(73, actual.Count, "should reduce to 73 indexes");
+        }
+
+        [Test]
+        public void Test_Upstream_CompactUncompact_Roundtrip() {
+            // Arrange
+            var sunnyvaleExpanded = Sunnyvale
+                .GetKRing(9)
+                .Select(c => c.Index)
+                .ToList();
+            var expectedCount = sunnyvaleExpanded.Count;
+
+            // Act
+            var actual = sunnyvaleExpanded
+                .Compact()
+                .UncompactToResolution(9)
+                .ToList();
+
+            // Assert
+            Assert.AreEqual(expectedCount, actual.Count, $"should return {expectedCount}");
+        }
+
+        [Test]
+        public void Test_Upstream_Compact_Uncompactable() {
+            // Act
+            var actual = Uncompactable.Compact().ToList();
+
+            // Assert
+            Assert.AreEqual(Uncompactable, actual, "should return original input");
+        }
+
+        [Test]
+        public void Test_Upstream_Compact_UncompactableWithZero() {
+            // Arrange
+            var expected = UncompactableWithZero.Where(i => i != H3Index.Invalid).ToList();
+
+            // Act
+            var actual = UncompactableWithZero.Compact().ToList();
+
+            // Assert
+            Assert.AreEqual(expected, actual, "should return original input without H3_NULL");
+        }
+
+        [Test]
+        [TestCase(-1)]
+        [TestCase(4)]
+        [TestCase(16)]
+        public void Test_Upstream_Uncompact_WrongResolution(int resolution) {
+            // Act
+            var exception = Assert.Throws<ArgumentException>(() => UncompactSomeHexagons.UncompactToResolution(resolution).ToList());
+
+            // Assert
+            Assert.AreEqual("set contains hexagon smaller than target resolution", exception.Message, "expected message");
+        }
+
+        [Test]
+        [TestCase(4)]
+        [TestCase(5)]
+        public void Test_Upstream_Uncompact_SomeHexagonAndPentagon(int baseCellNumber) {
+            // Arrange
+            var index = H3Index.Create(1, baseCellNumber, 0);
+            var indexes = new H3Index[] { index };
+            var expectedChildren = index.GetChildrenForResolution(2);
+
+            // Act
+            var actual = indexes.UncompactToResolution(2);
+
+            // Assert
+            Assert.AreEqual(expectedChildren, actual, "should be equal");
+        }
+
+        [Test]
+        [TestCase(4)]
+        [TestCase(5)]
+        public void Test_Upstream_Compact_SomeHexagonAndPentagon(int baseCellNumber) {
+            // Arrange
+            var index = H3Index.Create(1, baseCellNumber, 0);
+            var expectedIndexes = new H3Index[] { index };
+            var children = index.GetChildrenForResolution(2);
+
+            // Act
+            var actual = children.Compact();
+
+            // Assert
+            Assert.AreEqual(expectedIndexes, actual, "should be equal");
+        }
+
     }
 }
