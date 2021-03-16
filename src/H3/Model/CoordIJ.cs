@@ -35,6 +35,9 @@ namespace H3.Model {
         public static bool operator !=(CoordIJ a, CoordIJ b) => a.I != b.I || a.J != b.J;
 
         public override bool Equals(object? other) => other is CoordIJ c && I == c.I && J == c.J;
+        public override string ToString() {
+            return $"({I}, {J})";
+        }
 
         public override int GetHashCode() => HashCode.Combine(I, J);
     }

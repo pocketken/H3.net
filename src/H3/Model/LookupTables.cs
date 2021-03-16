@@ -1458,7 +1458,8 @@ namespace H3.Model {
 
         /// <summary>
         /// Prohibited directions when unfolding a pentagon.
-        ///
+        /// </summary>
+        /// <remarks>
         /// Indexes by two directions, both relative to the pentagon base cell. The first
         /// is the direction of the origin index and the second is the direction of the
         /// index to unfold. Direction refers to the direction from base cell to base
@@ -1469,7 +1470,7 @@ namespace H3.Model {
         /// due to failure cases. It's possible this could be restricted to a narrower
         /// set of a failure cases. Currently, the logic is any unfolding across more
         /// than one icosahedron face is not permitted.
-        /// </summary>
+        /// </remarks>
         public static readonly bool[,] UnfoldableDirections = new bool[7, 7] {
             {false, false, false, false, false, false, false},  // 0
             {false, false, false, false, false, false, false},  // 1

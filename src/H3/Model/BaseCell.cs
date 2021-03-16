@@ -15,7 +15,11 @@ namespace H3.Model {
 
         public bool FaceMatchesOffset(int face) => ClockwiseOffsetPent[0] == face || ClockwiseOffsetPent[1] == face;
 
-        public BaseCell Neighbour(Direction direction) => LookupTables.BaseCells[LookupTables.Neighbours[Cell, (int)direction]];
+        public BaseCell? Neighbour(Direction direction) {
+            var neighbourIndex = LookupTables.Neighbours[Cell, (int)direction];
+            if (neighbourIndex == LookupTables.INVALID_BASE_CELL) return null;
+            return LookupTables.BaseCells[neighbourIndex];
+        }
 
         public static Direction GetNeighbourDirection(int originCell, int neighbouringCell) {
             for (Direction idx = Direction.Center; idx < Direction.Invalid; idx += 1) {
@@ -35,6 +39,14 @@ namespace H3.Model {
             };
 
         public static bool FaceMatchesOffset(int cell, int face) => LookupTables.BaseCells[cell].FaceMatchesOffset(face);
+
+        public static bool operator ==(BaseCell? a, BaseCell? b) {
+            return a?.Home == b?.Home && a?.IsPentagon == b?.IsPentagon && a?.ClockwiseOffsetPent[0] == b?.ClockwiseOffsetPent[0] && a?.ClockwiseOffsetPent[1] == b?.ClockwiseOffsetPent[1];
+        }
+
+        public static bool operator !=(BaseCell? a, BaseCell? b) {
+            return a?.Home != b?.Home || a?.IsPentagon != b?.IsPentagon || a?.ClockwiseOffsetPent[0] != b?.ClockwiseOffsetPent[0] || a?.ClockwiseOffsetPent[1] != b?.ClockwiseOffsetPent[1];
+        }
 
         public override bool Equals(object? other) =>
             other is BaseCell b &&

@@ -227,7 +227,7 @@ namespace H3.Extensions {
             }
 
             // Otherwise, we have to determine the neighbor relationship the "hard" way.
-            return origin.GetKRingFast(1).Any(cell => cell.Index == destination);
+            return origin.GetKRing(1).Any(cell => cell.Index == destination);
         }
 
         /// <summary>
@@ -291,20 +291,6 @@ namespace H3.Extensions {
             }
 
             return childIndex;
-        }
-
-        /// <summary>
-        /// Returns the maximum number of children possible for a given child resolution.
-        /// </summary>
-        /// <param name="origin">index to find children for</param>
-        /// <param name="childResolution">resolution of child level</param>
-        /// <returns></returns>
-        public static long GetMaxChildrenSizeForResolution(this H3Index origin, int childResolution) {
-            int parentResolution = origin.Resolution;
-            if (!IsValidChildResolution(parentResolution, childResolution)) return 0;
-            // TODO this is changing upstream to be pentago aware; port changes assuming we
-            //      need this method at all.  @see https://github.com/uber/h3/issues/412
-            return IPow(7, childResolution - parentResolution);
         }
 
         /// <summary>

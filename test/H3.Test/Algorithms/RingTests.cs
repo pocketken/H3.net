@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using H3.Algorithms;
 using NUnit.Framework;
 
@@ -6,6 +7,26 @@ namespace H3.Test.Algorithms {
 
     [TestFixture]
     public class RingTests {
+
+        private static readonly IEnumerable<object[]> HexRingTestCases = new List<object[]> {
+            new object[] {
+                1,
+                new H3Index[] {
+                    0x89283080ddbffff, 0x89283080c37ffff,
+                    0x89283080c27ffff, 0x89283080d53ffff,
+                    0x89283080dcfffff, 0x89283080dc3ffff
+                }
+            },
+            new object[] {
+                2,
+                new H3Index[] {
+                    0x89283080ca7ffff, 0x89283080cafffff, 0x89283080c33ffff,
+                    0x89283080c23ffff, 0x89283080c2fffff, 0x89283080d5bffff,
+                    0x89283080d43ffff, 0x89283080d57ffff, 0x89283080d1bffff,
+                    0x89283080dc7ffff, 0x89283080dd7ffff, 0x89283080dd3ffff
+                }
+            }
+        };
 
         [Test]
         public void Test_GetKRingSlow_KnownValue() {
@@ -87,6 +108,51 @@ namespace H3.Test.Algorithms {
 
             // Assert
             AssertRing(expected, ring);
+        }
+
+        [Test]
+        public void Test_Upstream_GetHexRing_Identity() {
+            // Act
+            var actual = TestHelpers.SfIndex.GetHexRing(0).ToList();
+
+            // Assert
+            Assert.AreEqual(1, actual.Count, "should have count of 1");
+            Assert.AreEqual(TestHelpers.SfIndex, actual[0], "should be equal");
+        }
+
+        [Test]
+        [TestCaseSource(nameof(HexRingTestCases))]
+        public void Test_Upstream_GetHexRing_Ring(int k, H3Index[] expectedRing) {
+            // Act
+            var actual = TestHelpers.SfIndex.GetHexRing(k).ToList();
+
+            // Assert
+            Assert.AreEqual(expectedRing.Length, actual.Count, "should have same count");
+            for (int i = 0; i < expectedRing.Length; i += 1) {
+                var expectedIndex = expectedRing[i];
+                var actualIndex = actual[i];
+                Assert.AreEqual(expectedIndex, actualIndex, "should be equal");
+            }
+        }
+
+        [Test]
+        [TestCase(1)]
+        [TestCase(2)]
+        public void Test_Upstream_GetHexRing_NearPentagon(int k) {
+            // Arrange
+            H3Index nearPentagon = 0x837405fffffffff;
+
+            // Act
+            var exception = Assert.Throws<HexRingPentagonException>(() => nearPentagon.GetHexRing(k).ToList(), "should throw pentagon exception");
+        }
+
+        [Test]
+        public void Test_Upstream_GetHexRing_OnPentagon() {
+            // Arrange
+            H3Index onPentagon = H3Index.Create(0, 4, 0);
+
+            // Act
+            var exception = Assert.Throws<HexRingPentagonException>(() => onPentagon.GetHexRing(2).ToList(), "should throw pentagon exception");
         }
 
         private static void AssertRing((ulong, int)[] expectedRing, RingCell[] actualRing) {

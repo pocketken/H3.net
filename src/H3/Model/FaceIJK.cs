@@ -8,7 +8,7 @@ using static H3.Utils;
 namespace H3.Model {
 
     public class FaceIJK {
-        public int Face { get; set; }
+        public int Face { get; set; } = 0;
         public CoordIJK Coord { get; set; } = new CoordIJK();
 
         public const int IJ = 1;
@@ -38,7 +38,7 @@ namespace H3.Model {
 
         public FaceIJK(int face, CoordIJK coord) {
             Face = face;
-            Coord = coord;
+            Coord = new CoordIJK(coord);
         }
 
         public static FaceIJK FromGeoCoord(GeoCoord coord, int resolution) {
@@ -376,9 +376,9 @@ namespace H3.Model {
             }
         }
 
-        public static bool operator ==(FaceIJK a, FaceIJK b) => a.Face == b.Face && a.Coord == b.Coord;
+        public static bool operator ==(FaceIJK? a, FaceIJK? b) => a?.Face == b?.Face && a?.Coord == b?.Coord;
 
-        public static bool operator !=(FaceIJK a, FaceIJK b) => a.Face != b.Face || a.Coord != b.Coord;
+        public static bool operator !=(FaceIJK? a, FaceIJK? b) => a?.Face != b?.Face || a?.Coord != b?.Coord;
 
         public override bool Equals(object? other) => other is FaceIJK f && Face == f.Face && Coord == f.Coord;
 

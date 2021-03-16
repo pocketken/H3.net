@@ -127,17 +127,15 @@ namespace H3.Extensions {
         /// <param name="origin">an anchoring index for the IJ coordinate system</param>
         /// <param name="index">index to generate IJ coordinates for</param>
         /// <returns>local IJ coordinates</returns>
-        public static CoordIJK ToLocalIJK(H3Index origin, H3Index index) {
+        public static CoordIJK ToLocalIJK(H3Index origin, H3Index destination) {
+            H3Index index = new(destination);
             int resolution = origin.Resolution;
             if (resolution != index.Resolution) {
                 throw new ArgumentOutOfRangeException(nameof(index), "must be same resolution as origin");
             }
 
-            BaseCell? originBaseCell = origin.BaseCell;
-            BaseCell? baseCell = index.BaseCell;
-
-            if (originBaseCell == null) throw new ArgumentException("origin is not a valid base cell");
-            if (baseCell == null) throw new ArgumentException("index is not a valid base cell");
+            BaseCell originBaseCell = origin.BaseCell;
+            BaseCell baseCell = index.BaseCell;
 
             // Direction from origin base cell to index base cell
             Direction dir = Direction.Center;
@@ -311,12 +309,12 @@ namespace H3.Extensions {
 
             // lookup correct base cell
             Direction dir = ijkCopy;
-            BaseCell baseCell = originBaseCell.Neighbour(dir);
+            BaseCell? baseCell = originBaseCell.Neighbour(dir);
 
             // If baseCell is invalid, it must be because the origin base cell is a
             // pentagon, and because pentagon base cells do not border each other,
             // baseCell must not be a pentagon.
-            bool indexOnPent = baseCell.Cell != LookupTables.INVALID_BASE_CELL && baseCell.IsPentagon;
+            bool indexOnPent = baseCell != null && baseCell.IsPentagon;
 
             if (dir != Direction.Center) {
                 // If the index is in a warped direction, we need to unwarp the base
@@ -338,10 +336,13 @@ namespace H3.Extensions {
 
                     // indexOnPent does not need to be checked again since no pentagon
                     // base cells border each other.
-                    if (baseCell.Cell == LookupTables.INVALID_BASE_CELL || baseCell.IsPentagon) {
+                    if (baseCell == null || baseCell.IsPentagon) {
                         throw new Exception("unable to translate coordinate to index");
                     }
                 }
+
+                // did we get a base cell?
+                if (baseCell == null) throw new Exception("unable to determine initial base cell");
 
                 // Now we can determine the relation between the origin and target base
                 // cell.
@@ -397,6 +398,8 @@ namespace H3.Extensions {
                 }
             }
 
+            // do we have a base cell?
+            if (baseCell == null) throw new Exception("unable to determine base cell");
             index.BaseCellNumber = baseCell.Cell;
 
             return index;
