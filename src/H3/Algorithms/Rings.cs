@@ -56,7 +56,7 @@ namespace H3.Algorithms {
                 yield break;
             }
 
-            H3Index index = new H3Index(origin);
+            H3Index index = new(origin);
 
             // break out to the requested ring
             int rotations = 0;
@@ -66,11 +66,10 @@ namespace H3.Algorithms {
                 if (index.IsPentagon) throw new HexRingPentagonException();
             }
 
-            H3Index lastIndex = new H3Index(index);
+            H3Index lastIndex = new(index);
             yield return index;
 
             for (int direction = 0; direction < 6; direction += 1) {
-                // TODO not sure i get this second loop to k...?
                 for (int pos = 0; pos < k; pos += 1) {
                     index = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], ref rotations);
                     if (index == H3Index.Invalid) throw new HexRingKSequenceException();
@@ -119,15 +118,13 @@ namespace H3.Algorithms {
         /// </summary>
         /// <param name="origin"></param>
         /// <param name="k"></param>
-        /// <param name="callback"></param>
-        /// <param name="curK"></param>
         public static IEnumerable<RingCell> GetKRingAll(this H3Index origin, int k) {
             // if not a valid index then nothing to do
             if (origin == H3Index.Invalid) yield break;
 
             // since k >= 0, start with origin
             Stack<RingCell> stack = new();
-            stack.Push(new RingCell { Index = origin, Distance = 0 });
+            stack.Push(new RingCell { Index = new(origin), Distance = 0 });
 
             while (stack.Count != 0) {
                 var cell = stack.Pop();
@@ -179,7 +176,7 @@ namespace H3.Algorithms {
         /// <returns>Enumerable set of RingCell, or an exception if a traversal error is
         /// encountered (eg pentagon)</returns>
         public static IEnumerable<RingCell> GetKRingFast(this H3Index origin, int k) {
-            H3Index index = new H3Index(origin);
+            H3Index index = new(origin);
 
             // k must be >= 0, so origin is always needed
             yield return new RingCell { Index = index, Distance = 0 };

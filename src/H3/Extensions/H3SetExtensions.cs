@@ -67,10 +67,6 @@ namespace H3.Extensions {
                         throw new ArgumentException("set contains hexagon smaller than target resolution");
                     }
 
-                    if (currentResolution == resolution) {
-                        return index.ToEnumerable();
-                    }
-
                     return index.GetChildrenForResolution(resolution);
                 });
 

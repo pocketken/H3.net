@@ -202,8 +202,8 @@ namespace H3.Model {
             int i = I - K;
             int j = J - K;
 
-            I = (int)Math.Round((3 * i - j) / 7.0);
-            J = (int)Math.Round((i + 2 * j) / 7.0);
+            I = (int)Math.Round((3 * i - j) / 7.0m, MidpointRounding.AwayFromZero);
+            J = (int)Math.Round((i + 2 * j) / 7.0m, MidpointRounding.AwayFromZero);
             K = 0;
 
             return Normalize();
@@ -218,8 +218,8 @@ namespace H3.Model {
             int i = I - K;
             int j = J - K;
 
-            I = (int)Math.Round((2 * i + j) / 7.0);
-            J = (int)Math.Round((3 * j - i) / 7.0);
+            I = (int)Math.Round((2 * i + j) / 7.0m, MidpointRounding.AwayFromZero);
+            J = (int)Math.Round((3 * j - i) / 7.0m, MidpointRounding.AwayFromZero);
             K = 0;
 
             return Normalize();
@@ -380,7 +380,11 @@ namespace H3.Model {
         /// <param name="k"></param>
         /// <returns></returns>
         public static CoordIJK CubeRound(double i, double j, double k) {
-            CoordIJK coord = new CoordIJK((int)Math.Round(i), (int)Math.Round(j), (int)Math.Round(k));
+            CoordIJK coord = new CoordIJK(
+                (int)Math.Round(i, MidpointRounding.AwayFromZero),
+                (int)Math.Round(j, MidpointRounding.AwayFromZero),
+                (int)Math.Round(k, MidpointRounding.AwayFromZero)
+            );
             double iDiff = Math.Abs(coord.I - i);
             double jDiff = Math.Abs(coord.J - j);
             double kDiff = Math.Abs(coord.K - k);
@@ -456,14 +460,18 @@ namespace H3.Model {
             };
         }
 
-        public static bool operator ==(CoordIJK a, CoordIJK b) =>
-            a.I == b.I && a.J == b.J && a.K == b.K;
+        public static bool operator ==(CoordIJK? a, CoordIJK? b) =>
+            a?.I == b?.I && a?.J == b?.J && a?.K == b?.K;
 
-        public static bool operator !=(CoordIJK a, CoordIJK b) =>
-            a.I != b.I || a.J != b.J || a.K != b.K;
+        public static bool operator !=(CoordIJK? a, CoordIJK? b) =>
+            a?.I != b?.I || a?.J != b?.J || a?.K != b?.K;
 
         public override bool Equals(object? other) =>
             other is CoordIJK c && I == c.I && J == c.J && K == c.K;
+
+        public override string ToString() {
+            return $"({I}, {J}, {K})";
+        }
 
         public override int GetHashCode() => HashCode.Combine(I, J, K);
     }

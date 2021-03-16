@@ -125,7 +125,7 @@ namespace H3 {
 
                     if (!foundFirstNonZeroDigit && idx != Direction.Center) {
                         foundFirstNonZeroDigit = true;
-                        if (!LookupTables.BaseCells[baseCell].IsPentagon && idx == Direction.K) {
+                        if (LookupTables.BaseCells[baseCell].IsPentagon && idx == Direction.K) {
                             return false;
                         }
                     }
@@ -161,7 +161,6 @@ namespace H3 {
         /// Whether or not this index should be considered as a pentagon.
         /// </summary>
         public bool IsPentagon => LookupTables.BaseCells[BaseCellNumber].IsPentagon &&
-            //LeadingNonZeroDirection != Direction.Center;
             LeadingNonZeroDirection == Direction.Center;
 
         /// <summary>
@@ -196,17 +195,6 @@ namespace H3 {
 
             return index;
         }
-
-        /// <summary>
-        /// Returns all of the resolution 0 base cell indexes.
-        /// </summary>
-        /// <returns></returns>
-        public static IEnumerable<H3Index> GetAllResolution0Indexes() =>
-            Enumerable.Range(0, NUM_BASE_CELLS)
-                .Select(baseCellNumber => new H3Index {
-                    Mode = Mode.Hexagon,
-                    BaseCellNumber = baseCellNumber
-                });
 
         #region manipulations
 
@@ -304,7 +292,7 @@ namespace H3 {
         /// <param name="index"></param>
         /// <returns></returns>
         public (FaceIJK, bool) ToFaceWithInitializedFijk(FaceIJK inputFaceIjk) {
-            FaceIJK faceIjk = new FaceIJK(inputFaceIjk);
+            FaceIJK faceIjk = new(inputFaceIjk);
             int resolution = Resolution;
 
             // center base cell hierarchy is entirely on this face
@@ -331,7 +319,7 @@ namespace H3 {
         /// </summary>
         /// <returns></returns>
         public FaceIJK ToFaceIJK() {
-            H3Index index = new H3Index(this);
+            H3Index index = new(this);
 
             if (BaseCell.IsPentagon && LeadingNonZeroDirection == Direction.IK) {
                 index.RotateClockwise();
@@ -345,8 +333,9 @@ namespace H3 {
 
             // if we're here we have the potential for an "overage"; i.e., it is
             // possible that c lies on an adjacent face
-            CoordIJK origIJK = new CoordIJK(fijk.Coord);
+            CoordIJK origIJK = new(fijk.Coord);
 
+            // if we're in Class III, drop into the next finer Class II grid
             int resolution = index.Resolution;
             if (IsResolutionClass3(resolution)) {
                 fijk.Coord.DownAperature7Clockwise();
@@ -401,7 +390,7 @@ namespace H3 {
         public static H3Index FromFaceIJK(FaceIJK face, int resolution) {
             if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;
 
-            H3Index index = new H3Index {
+            H3Index index = new() {
                 Mode = Mode.Hexagon,
                 Resolution = resolution
             };
@@ -415,13 +404,13 @@ namespace H3 {
             // we need to find the correct base cell FaceIJK for this H3 index;
             // start with the passed in face and resolution res ijk coordinates
             // in that face's coordinate system
-            FaceIJK ijk = new FaceIJK(face);
+            FaceIJK ijk = new(face);
 
             // build the H3Index from finest res up
             // adjust r for the fact that the res 0 base cell offsets the indexing
             // digits
             for (int r = resolution - 1; r >= 0; r--) {
-                CoordIJK last = new CoordIJK(ijk.Coord);
+                CoordIJK last = new(ijk.Coord);
                 CoordIJK lastCenter;
 
                 if (IsResolutionClass3(r + 1)) {

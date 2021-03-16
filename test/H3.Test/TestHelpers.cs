@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using H3.Model;
+using H3.Extensions;
+using static H3.Constants;
 using NUnit.Framework;
 
 namespace H3.Test {
@@ -69,6 +70,21 @@ namespace H3.Test {
             (0x8e48e1d7038dcf7, 2),
             (0x8e48e1d7038dcaf, 2),
         };
+
+        /// <summary>
+        /// Returns all of the resolution 0 base cell indexes.
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<H3Index> GetAllResolution0Indexes() =>
+            Enumerable.Range(0, NUM_BASE_CELLS)
+                .Select(baseCellNumber => new H3Index {
+                    Mode = Mode.Hexagon,
+                    BaseCellNumber = baseCellNumber,
+                    Resolution = 0
+                });
+
+        public static IEnumerable<H3Index> GetAllCellsForResolution(int resolution) =>
+            GetAllResolution0Indexes().UncompactToResolution(resolution);
 
         public static void AssertAll(H3Index[] expected, H3Index[] actual) {
             Assert.AreEqual(expected.Length, actual.Length, "should have same Length");

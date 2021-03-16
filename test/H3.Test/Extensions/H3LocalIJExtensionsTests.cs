@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using H3.Extensions;
 using H3.Model;
 using NUnit.Framework;
@@ -23,6 +24,16 @@ namespace H3.Test.Extensions {
             new object[] { BaseCell15, BaseCell8, 0, -1 },      // bc1 -> bc2
             new object[] { BaseCell15, BaseCell31, -1, 0 }      // bc1 -> bc3
         };
+
+        private static readonly CoordIJ[] IjDirections = new CoordIJ[] {
+            (0, 1),
+            (-1, 0),
+            (-1, -1),
+            (0, -1),
+            (1, 0),
+            (1, 1)
+        };
+        private static readonly CoordIJ IjNextRing = (1, 0);
 
         [Test]
         [TestCase(0, 15, Direction.Center)]
@@ -142,6 +153,136 @@ namespace H3.Test.Extensions {
         public void Test_Upstream_ToLocakIJ_FailsIfNotNeighbours() {
             // Act
             Assert.Throws<ArgumentException>(() => PentagonIndex.ToLocalIJ(BaseCell31));
+        }
+
+        [Test]
+        public void Test_Upstream_ToLocalIJ_Invalid_ResolutionMismatch() {
+            // Arrange
+            H3Index invalid = 0x7fffffffffffffff;
+
+            // Act
+            var actual = Assert.Throws<ArgumentOutOfRangeException>(() => invalid.ToLocalIJ(BaseCell15));
+
+            // Assert
+            Assert.AreEqual("must be same resolution as origin (Parameter 'index')", actual.Message, "same message");
+        }
+
+        [Test]
+        public void Test_Upstream_ToLocalIJ_Invalid_OriginAndDestination() {
+            // Arrange
+            H3Index invalid = 0x7fffffffffffffff;
+
+            // Act
+            var actual = Assert.Throws<IndexOutOfRangeException>(() => invalid.ToLocalIJ(invalid));
+
+            // Assert
+            Assert.AreEqual("Index was outside the bounds of the array.", actual.Message, "same message");
+        }
+
+        [Test]
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        public void Test_Upstream_ToLocalIJ_Identity(int resolution) {
+            // Arrange
+            var coords = TestHelpers.GetAllCellsForResolution(resolution)
+                .Select(index => (Origin: index, LocalCoordIJ: index.ToLocalIJ(index)));
+
+            // Act
+            var actual = coords.Select(c => (Expected: c.Origin, Actual: c.Origin.FromLocalIJ(c.LocalCoordIJ)));
+
+            // Assert
+            foreach (var (Expected, Actual) in actual) {
+                Assert.AreEqual(Expected, Actual, "should be equal");
+            }
+        }
+
+        [Test]
+        public void Test_Upstream_ToLocalIJ_Coordinates_Resolution0() {
+            // Act
+            var coords = TestHelpers.GetAllCellsForResolution(0)
+                .Select(index => (
+                    Origin: index,
+                    LocalCoordIJK: index.ToLocalIJ(index).ToCoordIJK(),
+                    Expected: LookupTables.UnitVectors[0]
+                ));
+
+            // Assert
+            foreach (var (Origin, LocalCoordIJK, Expected) in coords) {
+                Assert.AreEqual(Expected, LocalCoordIJK, $"{Origin} should equal {Expected} not {LocalCoordIJK}");
+            }
+        }
+
+        [Test]
+        public void Test_Upstream_ToLocalIJ_Coordinates_Resolution1() {
+            // Act
+            var coords = TestHelpers.GetAllCellsForResolution(1)
+                .Select(index => (
+                    Origin: index,
+                    LocalCoordIJK: index.ToLocalIJ(index).ToCoordIJK(),
+                    Expected: LookupTables.DirectionToUnitVector[index.GetDirectionForResolution(1)]
+                ));
+
+            // Assert
+            foreach (var (Origin, LocalCoordIJK, Expected) in coords) {
+                Assert.AreEqual(Expected, LocalCoordIJK, $"{Origin} ({Origin.GetDirectionForResolution(1)}) should equal {Expected} not {LocalCoordIJK}");
+            }
+        }
+
+        [Test]
+        public void Test_Upstream_ToLocalIJ_Coordinates_Resolution2() {
+            // Act
+            var coords = TestHelpers.GetAllCellsForResolution(2)
+                .Select(index => {
+                    CoordIJK expected = new CoordIJK(LookupTables.DirectionToUnitVector[index.GetDirectionForResolution(1)]);
+                    expected.DownAperature7Clockwise().ToNeighbour(index.GetDirectionForResolution(2));
+
+                    return (
+                        Origin: index,
+                        LocalCoordIJK: index.ToLocalIJ(index).ToCoordIJK(),
+                        Expected: expected
+                    );
+                });
+
+            // Assert
+            foreach (var (Origin, LocalCoordIJK, Expected) in coords) {
+                Assert.AreEqual(Expected, LocalCoordIJK, $"{Origin} should equal {Expected} not {LocalCoordIJK}");
+            }
+        }
+
+        [Test]
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        public void Test_Upstream_ToLocalIJ_Neighbors(int resolution) {
+            // Act
+            var coords = TestHelpers.GetAllCellsForResolution(resolution)
+                .SelectMany(index =>
+                    Enumerable.Range((int)Direction.K, 6)
+                        .Where(dir => !(index.IsPentagon && dir == (int)Direction.K))
+                        .Select(dir => {
+                            int rotations = 0;
+                            H3Index offset = index.GetDirectNeighbour((Direction)dir, ref rotations);
+                            return (
+                                Origin: index,
+                                OriginIJK: index.ToLocalIJK(index),
+                                Index: offset,
+                                LocalCoordIJ: index.ToLocalIJ(offset),
+                                Direction: (Direction)dir
+                            );
+                        }));
+
+            // Assert
+            foreach(var (Origin, OriginIJK, Index, LocalCoordIJ, Direction) in coords) {
+                Assert.NotNull(LocalCoordIJ, "should not be null");
+                CoordIJK invertedIjk = new CoordIJK(0, 0, 0).ToNeighbour(Direction);
+                for (int i = 0; i < 3; i += 1) {
+                    invertedIjk = invertedIjk.RotateCounterClockwise();
+                }
+                CoordIJK ijk = (LocalCoordIJ.ToCoordIJK() + invertedIjk).Normalize();
+                Assert.AreEqual(OriginIJK, ijk, $"should be {OriginIJK} not {ijk}");
+            }
         }
 
     }
