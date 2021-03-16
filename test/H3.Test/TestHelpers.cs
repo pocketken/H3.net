@@ -75,16 +75,19 @@ namespace H3.Test {
         /// Returns all of the resolution 0 base cell indexes.
         /// </summary>
         /// <returns></returns>
-        public static IEnumerable<H3Index> GetAllResolution0Indexes() =>
+        public static readonly List<H3Index> AllResolution0Indexes =
             Enumerable.Range(0, NUM_BASE_CELLS)
                 .Select(baseCellNumber => new H3Index {
                     Mode = Mode.Hexagon,
                     BaseCellNumber = baseCellNumber,
                     Resolution = 0
-                });
+                })
+                .ToList();
 
-        public static IEnumerable<H3Index> GetAllCellsForResolution(int resolution) =>
-            GetAllResolution0Indexes().UncompactToResolution(resolution);
+        public static IEnumerable<H3Index> GetAllCellsForResolution(int resolution) {
+            if (resolution == 0) return AllResolution0Indexes;
+            return AllResolution0Indexes.UncompactToResolution(resolution);
+        }
 
         public static void AssertAll(H3Index[] expected, H3Index[] actual) {
             Assert.AreEqual(expected.Length, actual.Length, "should have same Length");

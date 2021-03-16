@@ -9,6 +9,7 @@ namespace H3.Extensions {
     /// Provides extension methods that operate on sets of H3Index.
     /// </summary>
     public static class H3SetExtensions {
+
         /// <summary>
         /// Takes a set of hexagons all at the same resolution and compresses
         /// them by removing duplicates and pruning full child branches to the
@@ -19,7 +20,7 @@ namespace H3.Extensions {
         /// <remarks>This implementation differs from upstream in that duplicate
         /// or invalid inputs are filtered instead returning an error code when
         /// they are encountered.</remarks>
-        /// <param name="indexes">set of hexagons to compress</param>
+        /// <param name="indexEnumerable">set of hexagons to compress</param>
         /// <returns>set of compressed hexagons</returns>
         public static List<H3Index> Compact(this IEnumerable<H3Index> indexEnumerable) {
             List<H3Index> indexes = indexEnumerable

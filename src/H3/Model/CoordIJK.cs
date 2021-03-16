@@ -202,8 +202,8 @@ namespace H3.Model {
             int i = I - K;
             int j = J - K;
 
-            I = (int)Math.Round((3 * i - j) / 7.0m, MidpointRounding.AwayFromZero);
-            J = (int)Math.Round((i + 2 * j) / 7.0m, MidpointRounding.AwayFromZero);
+            I = (int)Math.Round((3 * i - j) / 7.0, MidpointRounding.AwayFromZero);
+            J = (int)Math.Round((i + 2 * j) / 7.0, MidpointRounding.AwayFromZero);
             K = 0;
 
             return Normalize();
@@ -218,8 +218,8 @@ namespace H3.Model {
             int i = I - K;
             int j = J - K;
 
-            I = (int)Math.Round((2 * i + j) / 7.0m, MidpointRounding.AwayFromZero);
-            J = (int)Math.Round((3 * j - i) / 7.0m, MidpointRounding.AwayFromZero);
+            I = (int)Math.Round((2 * i + j) / 7.0, MidpointRounding.AwayFromZero);
+            J = (int)Math.Round((3 * j - i) / 7.0, MidpointRounding.AwayFromZero);
             K = 0;
 
             return Normalize();
@@ -380,7 +380,7 @@ namespace H3.Model {
         /// <param name="k"></param>
         /// <returns></returns>
         public static CoordIJK CubeRound(double i, double j, double k) {
-            CoordIJK coord = new CoordIJK(
+            CoordIJK coord = new(
                 (int)Math.Round(i, MidpointRounding.AwayFromZero),
                 (int)Math.Round(j, MidpointRounding.AwayFromZero),
                 (int)Math.Round(k, MidpointRounding.AwayFromZero)
@@ -406,7 +406,7 @@ namespace H3.Model {
         /// </summary>
         /// <param name="coordinates"></param>
         public static implicit operator CoordIJK((int, int, int) coordinates) =>
-            new CoordIJK(coordinates.Item1, coordinates.Item2, coordinates.Item3);
+            new(coordinates.Item1, coordinates.Item2, coordinates.Item3);
 
         /// <summary>
         /// Determines the H3 digit corresponding to a unit vector in ijk coordinates.

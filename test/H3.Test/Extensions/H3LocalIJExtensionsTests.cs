@@ -255,7 +255,7 @@ namespace H3.Test.Extensions {
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(3)]
-        public void Test_Upstream_ToLocalIJ_Neighbors(int resolution) {
+        public void Test_Upstream_ToLocalIJ_Neighbours(int resolution) {
             // Act
             var coords = TestHelpers.GetAllCellsForResolution(resolution)
                 .SelectMany(index =>

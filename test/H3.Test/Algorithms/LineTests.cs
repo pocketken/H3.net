@@ -74,27 +74,40 @@ namespace H3.Test.Algorithms {
                 .SelectMany(start =>
                     start
                         .GetKRing(k)
-                        .Where(n => n.Index != H3Index.Invalid)
                         .Select(n => (Start: start, End: n.Index, Distance: start.DistanceTo(n.Index)))
                 );
 
             // Act
-            var lines = endpoints.Select(e => (e.Start, e.End, e.Distance, Line: e.Start.LineTo(e.End).ToList()));
+            var lines = endpoints.Select(e => (e.Start, e.End, e.Distance, Line: e.Start.LineTo(e.End)));
 
             // Assert
             foreach (var (Start, End, Distance, Line) in lines) {
                 if (Distance >= 0) {
-                    Assert.AreEqual(Distance + 1, Line.Count, $"line should have count of {Distance + 1}");
-                    Assert.AreEqual(Start, Line.First(), $"line should start with {Start}");
-                    Assert.AreEqual(End, Line.Last(), $"line should end with {End}");
-                    for (int i = 1; i < Line.Count; i += 1) {
-                        var index = Line[i];
-                        Assert.IsTrue(index.IsValid, $"{index} should be valid");
-                        Assert.IsTrue(index.IsNeighbour(Line[i - 1]), $"{index} should be neighbours with previous index {Line[i-1]}");
-                        if (i > 1) {
-                            Assert.IsFalse(index.IsNeighbour(Line[i - 2]), $"{index} should not be neighbours with index before previous {Line[i-2]}");
+                    int i = 0;
+                    H3Index lastIndex = null;
+                    H3Index previousLastIndex = null;
+
+                    foreach (var index in Line) {
+                        if (i == 0) {
+                            Assert.AreEqual(Start, index, $"line should start with {Start}");
                         }
+
+                        Assert.IsTrue(index.IsValid, $"{index} should be valid");
+                        if (lastIndex != null) {
+                            Assert.IsTrue(index.IsNeighbour(lastIndex), $"{index} should be neighbours with previous index {lastIndex}");
+                        }
+
+                        if (previousLastIndex != null) {
+                            Assert.IsFalse(index.IsNeighbour(previousLastIndex), $"{index} should not be neighbours with index before previous {previousLastIndex}");
+                        }
+
+                        i++;
+                        previousLastIndex = lastIndex;
+                        lastIndex = index;
                     }
+
+                    Assert.AreEqual(End, lastIndex, $"line should end with {End}");
+                    Assert.AreEqual(Distance + 1, i, $"line should have count of {Distance + 1}");
                 } else {
                     Assert.IsEmpty(Line, "should be empty for invalid distances");
                 }
