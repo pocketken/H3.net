@@ -109,42 +109,8 @@ namespace H3.Algorithms {
         }
 
         /// <summary>
-        /// Iteratively produce cells and their distances from the given origin cell within
-        /// distance k.  This is a "higher-accuracy" version of GetKRingFast, but will
-        /// produce cells more than once as they will be seen from multiple paths/depths.
-        ///
-        /// k-ring 0 is defined as the origin cell, k-ring 1 is defined as k-ring 0 and
-        /// all neighboring cells, and so on.
-        /// </summary>
-        /// <param name="origin"></param>
-        /// <param name="k"></param>
-        public static IEnumerable<RingCell> GetKRingAll(this H3Index origin, int k) {
-            // if not a valid index then nothing to do
-            if (origin == H3Index.Invalid) yield break;
-
-            // since k >= 0, start with origin
-            Stack<RingCell> stack = new();
-            stack.Push(new RingCell { Index = new(origin), Distance = 0 });
-
-            while (stack.Count != 0) {
-                var cell = stack.Pop();
-                yield return cell;
-
-                var nextK = cell.Distance + 1;
-                if (nextK <= k) {
-                    for (int i = 0; i < 6; i += 1) {
-                        int rotations = 0;
-                        var neighbour = cell.Index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[i], ref rotations);
-
-                        stack.Push(new RingCell { Index = neighbour, Distance = nextK });
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Produces indexes within k cell distance of the origin index.  This is a
-        /// higher-accuracy but slower version of GetKRingFast.
+        /// Iteratively produces indexes within k cell distance of the origin index.  This
+        /// is a higher-accuracy but slower version of GetKRingFast.
         ///
         /// k-ring 0 is defined as the origin index, k-ring 1 is defined as k-ring 0 and
         /// all neighboring indexes, and so on.
@@ -152,14 +118,33 @@ namespace H3.Algorithms {
         /// <param name="origin">Origin location</param>
         /// <param name="k">k >= 0</param>
         /// <returns>all neighbours within k cell distance</returns>
-        public static IEnumerable<RingCell> GetKRingSlow(this H3Index origin, int k) =>
-            origin.GetKRingAll(k)
-                .GroupBy(cell => cell.Index)
-                .Select(group => new RingCell {
-                    Index = group.Key,
-                    Distance = group.OrderBy(g => g.Distance).First().Distance
-                })
-                .Distinct();
+        public static IEnumerable<RingCell> GetKRingSlow(this H3Index origin, int k) {
+            // if not a valid index then nothing to do
+            if (origin == H3Index.Invalid) yield break;
+
+            // since k >= 0, start with origin
+            Queue<RingCell> queue = new();
+            Dictionary<H3Index, int> searched = new();
+            queue.Enqueue(new RingCell { Index = new(origin), Distance = 0 });
+
+            while (queue.Count != 0) {
+                var cell = queue.Dequeue();
+                yield return cell;
+
+                var nextK = cell.Distance + 1;
+                if (nextK <= k) {
+                    for (int i = 0; i < 6; i += 1) {
+                        int rotations = 0;
+                        var neighbour = cell.Index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[i], ref rotations);
+                        if (neighbour == origin || neighbour == H3Index.Invalid || (searched.TryGetValue(neighbour, out int previousK) && previousK <= nextK)) {
+                            continue;
+                        }
+                        searched[neighbour] = nextK;
+                        queue.Enqueue(new RingCell { Index = neighbour, Distance = nextK });
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Produces indexes within k cell distance of the origin index.  This is a

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using H3.Algorithms;
 using NUnit.Framework;
@@ -78,7 +79,6 @@ namespace H3.Test.Algorithms {
                 (0x8011fffffffffff, 1),
                 (0x801ffffffffffff, 1),
                 (0x8019fffffffffff, 1),
-                // NOTE upstream has a 0 here in their test?
             };
 
             // Act
@@ -99,8 +99,6 @@ namespace H3.Test.Algorithms {
                 (0x8108fffffffffff, 1),
                 (0x8108bffffffffff, 1),
                 (0x8109bffffffffff, 1),
-                (0, 1)
-                // TODO why do we get 0 here and not up there?  Slow vs Fast?
             };
 
             // Act
