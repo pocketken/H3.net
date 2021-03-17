@@ -1,0 +1,15 @@
+# Shell scripts require LF
+*.sh    text eol=lf
+# Batch scripts require CRLF
+*.bat   text eol=crlf
+
+
+# Handle line endings automatically for files detected as text
+# and leave all files detected as binary untouched.
+* text=auto
+
+# Never modify line endings of our bash scripts
+*.sh -crlf
+
+## c# ##
+*.cs diff=csharp text
