@@ -7,6 +7,10 @@
     <PackageVersion>3.7.1</PackageVersion>
     <Authors>pocketken</Authors>
     <Description>Port of Uber's H3 to .NET</Description>
+    <PackageProjectUrl>https://github.com/pocketken/H3.net</PackageProjectUrl>
+    <RepositoryUrl></RepositoryUrl>
+    <PackageTags>h3 geospatial hexagon spatial-indexing</PackageTags>
+    <Company />
   </PropertyGroup>
 
   <ItemGroup>

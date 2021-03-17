@@ -62,6 +62,7 @@ namespace H3.Extensions {
         /// resolution is requested.</returns>
         public static IEnumerable<H3Index> UncompactToResolution(this IEnumerable<H3Index> indexes, int resolution) =>
             indexes.Where(index => index != H3Index.Invalid)
+                .Distinct()
                 .SelectMany(index => {
                     int currentResolution = index.Resolution;
                     if (!IsValidChildResolution(currentResolution, resolution)) {
