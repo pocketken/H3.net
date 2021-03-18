@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using GeoAPI.Geometries;
 using H3.Extensions;
 using H3.Model;
 
