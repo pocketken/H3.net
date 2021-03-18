@@ -14,6 +14,7 @@ namespace H3.Extensions {
     /// Extends the H3Index class with support for bitwise hierarchial queries.
     /// </summary>
     public static class H3HierarchyExtensions {
+
         /// <summary>
         /// Returns the hexagon index neighboring the origin, in the direction dir.
         ///

@@ -73,7 +73,7 @@ namespace H3.Extensions {
                 });
 
         /// <summary>
-        /// Determines whether or not all H3Index entries within the array are
+        /// Determines whether or not all H3Index entries within the enumerable are
         /// of the same resolution.
         /// </summary>
         /// <param name="indexes">set of hexagons</param>

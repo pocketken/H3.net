@@ -312,8 +312,6 @@ namespace H3.Extensions {
                 diff.I = lastIJK.I - lastCenter.I;
                 diff.J = lastIJK.J - lastCenter.J;
                 diff.K = lastIJK.K - lastCenter.K;
-
-                diff.Normalize();
                 index.SetDirectionForResolution(r + 1, diff);
             }
 

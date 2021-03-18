@@ -38,7 +38,7 @@ namespace H3.Algorithms {
         /// distances for indexes on opposite sides of a pentagon.
         /// - The specific output of this function should not be considered stable
         ///   across library versions. The only guarantees the library provides are
-        ///   that the line length will be `h3Distance(start, end) + 1` and that
+        ///   that the line length will be `DistanceTo(start, end) + 1` and that
         ///   every index in the line will be a neighbor of the preceding index.
         /// - Lines are drawn in grid space, and may not correspond exactly to either
         ///   Cartesian lines or great arcs.
@@ -48,14 +48,23 @@ namespace H3.Algorithms {
         /// <returns>all points from start to end, inclusive; empty if could not
         /// compute a line</returns>
         public static IEnumerable<H3Index> LineTo(this H3Index origin, H3Index destination) {
-            int distance = origin.DistanceTo(destination);
-            if (distance < 0) return Enumerable.Empty<H3Index>();
+            CoordIJK startIjk;
+            CoordIJK endIjk;
 
-            // Get IJK coords for the start and end. We've already confirmed
-            // that these can be calculated with the distance check above.
+            // translate to local coordinates
+            try {
+                startIjk = LocalCoordIJK.ToLocalIJK(origin, origin);
+                endIjk = LocalCoordIJK.ToLocalIJK(origin, destination);
+            } catch {
+                return Enumerable.Empty<H3Index>();
+            }
+
+            // get grid distance between start/end
+            int distance = startIjk.GetDistanceTo(endIjk);
+
             // Convert IJK to cube coordinates suitable for linear interpolation
-            CoordIJK startIjk = LocalCoordIJK.ToLocalIJK(origin, origin).Cube();
-            CoordIJK endIjk = LocalCoordIJK.ToLocalIJK(origin, destination).Cube();
+            startIjk.Cube();
+            endIjk.Cube();
 
             double d = distance;
             double iStep = distance > 0 ? (endIjk.I - startIjk.I) / d : 0.0;

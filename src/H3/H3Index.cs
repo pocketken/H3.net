@@ -150,7 +150,9 @@ namespace H3 {
                 int resolution = Resolution;
                 for (int r = 1; r <= resolution; r += 1) {
                     var idx = GetDirectionForResolution(r);
-                    if (idx != Direction.Center) return idx;
+                    if (idx != Direction.Center) {
+                        return idx;
+                    }
                 }
 
                 return Direction.Center;
@@ -436,7 +438,6 @@ namespace H3 {
                 diff.I = last.I - lastCenter.I;
                 diff.J = last.J - lastCenter.J;
                 diff.K = last.K - lastCenter.K;
-                diff.Normalize();
                 index.SetDirectionForResolution(r + 1, diff);
             }
 
