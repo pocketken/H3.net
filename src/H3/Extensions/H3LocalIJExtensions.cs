@@ -285,23 +285,35 @@ namespace H3.Extensions {
             // build the H3Index from finest res up
             // adjust r for the fact that the res 0 base cell offsets the indexing
             // digits
+            CoordIJK lastIJK = new();
+            CoordIJK lastCenter = new();
+            CoordIJK diff = new();
             for (int r = resolution - 1; r >= 0; r -= 1) {
-                CoordIJK lastIJK = new(ijkCopy);
-                CoordIJK lastCenter;
+                lastIJK.I = ijkCopy.I;
+                lastIJK.J = ijkCopy.J;
+                lastIJK.K = ijkCopy.K;
 
                 if (IsResolutionClass3(r + 1)) {
                     // rotate ccw
                     ijkCopy.UpAperature7CounterClockwise();
-                    lastCenter = new CoordIJK(ijkCopy);
+                    lastCenter.I = ijkCopy.I;
+                    lastCenter.J = ijkCopy.J;
+                    lastCenter.K = ijkCopy.K;
                     lastCenter.DownAperature7CounterClockwise();
                 } else {
                     // rotate cw
                     ijkCopy.UpAperature7Clockwise();
-                    lastCenter = new CoordIJK(ijkCopy);
+                    lastCenter.I = ijkCopy.I;
+                    lastCenter.J = ijkCopy.J;
+                    lastCenter.K = ijkCopy.K;
                     lastCenter.DownAperature7Clockwise();
                 }
 
-                CoordIJK diff = (lastIJK - lastCenter).Normalize();
+                diff.I = lastIJK.I - lastCenter.I;
+                diff.J = lastIJK.J - lastCenter.J;
+                diff.K = lastIJK.K - lastCenter.K;
+
+                diff.Normalize();
                 index.SetDirectionForResolution(r + 1, diff);
             }
 
