@@ -36,6 +36,7 @@ namespace H3.Algorithms {
     /// Extends the H3Index class with support for kRing and hex ring queries.
     /// </summary>
     public static class Rings {
+
         /// <summary>
         /// Returns the "hollow" ring of hexagons at exactly grid distance k from
         /// the origin hexagon. In particular, k=0 returns just the origin hexagon.
@@ -125,7 +126,7 @@ namespace H3.Algorithms {
             // since k >= 0, start with origin
             Queue<RingCell> queue = new();
             Dictionary<H3Index, int> searched = new();
-            queue.Enqueue(new RingCell { Index = new(origin), Distance = 0 });
+            queue.Enqueue(new RingCell { Index = origin, Distance = 0 });
 
             while (queue.Count != 0) {
                 var cell = queue.Dequeue();

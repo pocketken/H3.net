@@ -148,8 +148,9 @@ namespace H3.Model {
                         if (pentagonLeading4) {
                             // translate origin to center of pentagon, rotate to adjust for the missing sequence
                             // and translate the origin back to the center of the triangle
-                            CoordIJK origin = new(maxDist, 0, 0);
-                            Coord = (Coord - origin).RotateClockwise() + origin;
+                            Coord.I -= maxDist;
+                            Coord.RotateClockwise();
+                            Coord.I += maxDist;
                         }
                     }
                 } else {
@@ -165,7 +166,9 @@ namespace H3.Model {
 
                 int unitScale = LookupTables.UnitScaleByClass2Res[resolution];
                 if (isSubstrate) unitScale *= 3;
-                Coord += orientedFace.Translate * unitScale;
+                Coord.I += orientedFace.Translate.I * unitScale;
+                Coord.J += orientedFace.Translate.J * unitScale;
+                Coord.K += orientedFace.Translate.K * unitScale;
                 Coord.Normalize();
 
                 // overage points on pentagon boundaries can end up on edges

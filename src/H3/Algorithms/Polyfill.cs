@@ -36,6 +36,7 @@ namespace H3.Algorithms {
     /// Polyfill algorithms for H3Index.
     /// </summary>
     public static class Polyfill {
+
         /// <summary>
         /// Returns all of the H3 indexes that are contained within the provided
         /// Polygon at the specified resolution.  Supports Polygons with holes.
@@ -49,7 +50,7 @@ namespace H3.Algorithms {
 
             HashSet<H3Index> searched = new();
 
-            Stack<H3Index> toSearch = new(GetEdgeIndicies(testPoly, resolution));
+            Stack<H3Index> toSearch = new(GetIndicies(testPoly.Coordinates, resolution));
             if (toSearch.Count == 0 && !testPoly.IsEmpty) {
                 toSearch.Push(H3Index.FromPoint(testPoly.InteriorPoint, resolution));
             }
@@ -70,51 +71,25 @@ namespace H3.Algorithms {
         }
 
         /// <summary>
-        /// Attempts to split a polygon that spans the antemeridian into
-        /// a multipolygon by clipping coordinates on either side of it and
-        /// then unioning them back together again.
+        /// Returns all of the H3 indexes that follow the provided LineString
+        /// at the specified resolution.
         /// </summary>
-        /// <param name="originalPolygon"></param>
-        /// <returns></returns>
-        private static IGeometry SplitPolygon(IPolygon originalPolygon) {
-            var left = originalPolygon.Copy();
-            left.Apply(new NegativeLonFilter());
-            var right = originalPolygon.Copy();
-            right.Apply(new PositiveLonFilter());
-
-            var polygon = left.Union(right);
-            return polygon.IsEmpty ? originalPolygon : polygon;
-        }
-
-        /// <summary>
-        /// Determines whether or not the polygon is flagged as transmeridian;
-        /// that is, has an arc > 180 deg lon.
-        /// </summary>
-        /// <param name="polygon"></param>
-        /// <returns></returns>
-        public static bool IsTransMeridian(this IPolygon polygon) {
-            if (polygon.IsEmpty) return false;
-            var coords = polygon.Envelope.Coordinates;
-            return Math.Abs(coords[0].X - coords[2].X) > 180.0;
-        }
-
-        /// <summary>
-        /// Gets all of the H3 indexes that define the boundary of the
-        /// provided polygon.  This is used to seed the k ring search /
-        /// point in polygon testing phase.
-        /// </summary>
-        /// <param name="polygon"></param>
+        /// <param name="polyline"></param>
         /// <param name="resolution"></param>
         /// <returns></returns>
-        private static IEnumerable<H3Index> GetEdgeIndicies(IGeometry polygon, int resolution) {
-            // TODO do some testing to see whether or not centroid or something else
-            //      does the same trick here so we don't bother having to do all this work
-            HashSet<H3Index> indicies = new();
-            Coordinate[] coordinates = polygon.Coordinates;
+        public static IEnumerable<H3Index> Fill(this ILineString polyline, int resolution) =>
+            polyline.Coordinates.GetIndicies(resolution);
 
-            // trace the edge of the polygon; note this differs slightly from
-            // upstream because NTS makes sure the polygons are already closed,
-            // so we don't need to loop around to the first vertex ourselves
+        /// <summary>
+        /// Gets all of the H3 indices that define the provided set of Coordinates.
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <param name="resolution"></param>
+        /// <returns></returns>
+        public static IEnumerable<H3Index> GetIndicies(this Coordinate[] coordinates, int resolution) {
+            HashSet<H3Index> indicies = new();
+
+            // trace the coordinates
             int coordLen = coordinates.Length - 1;
             for (int c = 0; c < coordLen; c += 1) {
                 // from this coordinate to next/first
@@ -135,6 +110,35 @@ namespace H3.Algorithms {
             }
 
             return indicies;
+        }
+
+        /// <summary>
+        /// Determines whether or not the polygon is flagged as transmeridian;
+        /// that is, has an arc > 180 deg lon.
+        /// </summary>
+        /// <param name="polygon"></param>
+        /// <returns></returns>
+        public static bool IsTransMeridian(this IPolygon polygon) {
+            if (polygon.IsEmpty) return false;
+            var coords = polygon.Envelope.Coordinates;
+            return Math.Abs(coords[0].X - coords[2].X) > 180.0;
+        }
+
+        /// <summary>
+        /// Attempts to split a polygon that spans the antemeridian into
+        /// a multipolygon by clipping coordinates on either side of it and
+        /// then unioning them back together again.
+        /// </summary>
+        /// <param name="originalPolygon"></param>
+        /// <returns></returns>
+        private static IGeometry SplitPolygon(IPolygon originalPolygon) {
+            var left = originalPolygon.Copy();
+            left.Apply(new NegativeLonFilter());
+            var right = originalPolygon.Copy();
+            right.Apply(new PositiveLonFilter());
+
+            var polygon = left.Union(right);
+            return polygon.IsEmpty ? originalPolygon : polygon;
         }
 
         /// <summary>

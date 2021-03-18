@@ -220,7 +220,9 @@ namespace H3.Extensions {
                 for (int i = 0; i < directionRotations; i += 1) offset.RotateClockwise();
 
                 // perform necesary translation
-                indexFijk.Coord += offset;
+                indexFijk.Coord.I += offset.I;
+                indexFijk.Coord.J += offset.J;
+                indexFijk.Coord.K += offset.K;
                 indexFijk.Coord.Normalize();
             } else if (originOnPent && indexOnPent) {
                 // If the origin and index are on pentagon, and we checked that the base
@@ -283,23 +285,35 @@ namespace H3.Extensions {
             // build the H3Index from finest res up
             // adjust r for the fact that the res 0 base cell offsets the indexing
             // digits
+            CoordIJK lastIJK = new();
+            CoordIJK lastCenter = new();
+            CoordIJK diff = new();
             for (int r = resolution - 1; r >= 0; r -= 1) {
-                CoordIJK lastIJK = new(ijkCopy);
-                CoordIJK lastCenter;
+                lastIJK.I = ijkCopy.I;
+                lastIJK.J = ijkCopy.J;
+                lastIJK.K = ijkCopy.K;
 
                 if (IsResolutionClass3(r + 1)) {
                     // rotate ccw
                     ijkCopy.UpAperature7CounterClockwise();
-                    lastCenter = new CoordIJK(ijkCopy);
+                    lastCenter.I = ijkCopy.I;
+                    lastCenter.J = ijkCopy.J;
+                    lastCenter.K = ijkCopy.K;
                     lastCenter.DownAperature7CounterClockwise();
                 } else {
                     // rotate cw
                     ijkCopy.UpAperature7Clockwise();
-                    lastCenter = new CoordIJK(ijkCopy);
+                    lastCenter.I = ijkCopy.I;
+                    lastCenter.J = ijkCopy.J;
+                    lastCenter.K = ijkCopy.K;
                     lastCenter.DownAperature7Clockwise();
                 }
 
-                CoordIJK diff = (lastIJK - lastCenter).Normalize();
+                diff.I = lastIJK.I - lastCenter.I;
+                diff.J = lastIJK.J - lastCenter.J;
+                diff.K = lastIJK.K - lastCenter.K;
+
+                diff.Normalize();
                 index.SetDirectionForResolution(r + 1, diff);
             }
 
@@ -405,47 +419,6 @@ namespace H3.Extensions {
             return index;
         }
 
-    }
-
-    public static class LocalCoordIJ {
-        /// <summary>
-        /// Produces ij coordinates for an index anchored by an origin.
-        ///
-        /// The coordinate space used by this function may have deleted
-        /// regions or warping due to pentagonal distortion.
-        ///
-        /// Coordinates are only comparable if they come from the same
-        /// origin index.
-        ///
-        /// Failure may occur if the index is too far away from the origin
-        /// or if the index is on the other side of a pentagon.
-        ///
-        /// This function is experimental, and its output is not guaranteed
-        /// to be compatible across different versions of H3.
-        /// </summary>
-        /// <param name="origin">an anchoring index for the IJ coordinate system</param>
-        /// <param name="index">index to generate IJ coordinates for</param>
-        /// <returns>local IJ coordinates</returns>
-        public static CoordIJ ToLocalIJ(H3Index origin, H3Index index) =>
-            origin.ToLocalIJ(index);
-
-        /// <summary>
-        /// Produces an index for ij coordinates anchored by an origin.
-        ///
-        /// The coordinate space used by this function may have deleted
-        /// regions or warping due to pentagonal distortion.
-        ///
-        /// Failure may occur if the index is too far away from the origin
-        /// or if the index is on the other side of a pentagon.
-        ///
-        /// This function is experimental, and its output is not guaranteed
-        /// to be compatible across different versions of H3.
-        /// </summary>
-        /// <param name="origin">an anchoring index for the IJ coordinate system</param>
-        /// <param name="coord">IJ coordinates to index</param>
-        /// <returns>H3Index translated from IJ coordintes</returns>
-        public static H3Index ToH3Index(H3Index origin, CoordIJ coord) =>
-            origin.FromLocalIJ(coord);
     }
 
 }

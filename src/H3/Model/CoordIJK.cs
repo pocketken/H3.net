@@ -12,7 +12,7 @@ namespace H3.Model {
         public int K { get; set; } = 0;
         public bool IsValid => this != InvalidIJKCoordinate;
 
-        public static readonly CoordIJK InvalidIJKCoordinate = new CoordIJK(-int.MaxValue, -int.MaxValue, -int.MaxValue);
+        public static readonly CoordIJK InvalidIJKCoordinate = new(-int.MaxValue, -int.MaxValue, -int.MaxValue);
 
         public CoordIJK() { }
 
@@ -119,13 +119,6 @@ namespace H3.Model {
             return h.Normalize();
         }
 
-        private CoordIJK SetFrom(CoordIJK other) {
-            I = other.I;
-            J = other.J;
-            K = other.K;
-            return this;
-        }
-
         /// <summary>
         /// Normalizes ijk coordinates by setting the components to the smallest possible
         /// values.  Works in place.
@@ -174,11 +167,19 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK RotateCounterClockwise() {
-            CoordIJK iVec = LookupTables.DirectionToUnitVector[Direction.IJ] * I;
-            CoordIJK jVec = LookupTables.DirectionToUnitVector[Direction.JK] * J;
-            CoordIJK kVec = LookupTables.DirectionToUnitVector[Direction.IK] * K;
+            var uVecI = LookupTables.DirectionToUnitVector[Direction.IJ];
+            var uVecJ = LookupTables.DirectionToUnitVector[Direction.JK];
+            var uVecK = LookupTables.DirectionToUnitVector[Direction.IK];
 
-            return SetFrom(iVec + jVec + kVec).Normalize();
+            int i = (I * uVecI.I) + (J * uVecJ.I) + (K * uVecK.I);
+            int j = (I * uVecI.J) + (J * uVecJ.J) + (K * uVecK.J);
+            int k = (I * uVecI.K) + (J * uVecJ.K) + (K * uVecK.K);
+
+            I = i;
+            J = j;
+            K = k;
+
+            return Normalize();
         }
 
         /// <summary>
@@ -186,11 +187,19 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK RotateClockwise() {
-            CoordIJK iVec = LookupTables.DirectionToUnitVector[Direction.IK] * I;
-            CoordIJK jVec = LookupTables.DirectionToUnitVector[Direction.IJ] * J;
-            CoordIJK kVec = LookupTables.DirectionToUnitVector[Direction.JK] * K;
+            var uVecI = LookupTables.DirectionToUnitVector[Direction.IK];
+            var uVecJ = LookupTables.DirectionToUnitVector[Direction.IJ];
+            var uVecK = LookupTables.DirectionToUnitVector[Direction.JK];
 
-            return SetFrom(iVec + jVec + kVec).Normalize();
+            int i = (I * uVecI.I) + (J * uVecJ.I) + (K * uVecK.I);
+            int j = (I * uVecI.J) + (J * uVecJ.J) + (K * uVecK.J);
+            int k = (I * uVecI.K) + (J * uVecJ.K) + (K * uVecK.K);
+
+            I = i;
+            J = j;
+            K = k;
+
+            return Normalize();
         }
 
         /// <summary>
@@ -232,11 +241,15 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperature7CounterClockwise() {
-            CoordIJK iVec = new CoordIJK(3, 0, 1) * I;
-            CoordIJK jVec = new CoordIJK(1, 3, 0) * J;
-            CoordIJK kVec = new CoordIJK(0, 1, 3) * K;
+            int i = (3 * I) + J;
+            int j = (3 * J) + K;
+            int k = I + (3 * K);
 
-            return SetFrom(iVec + jVec + kVec).Normalize();
+            I = i;
+            J = j;
+            K = k;
+
+            return Normalize();
         }
 
         /// <summary>
@@ -245,11 +258,15 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperature7Clockwise() {
-            CoordIJK iVec = new CoordIJK(3, 1, 0) * I;
-            CoordIJK jVec = new CoordIJK(0, 3, 1) * J;
-            CoordIJK kVec = new CoordIJK(1, 0, 3) * K;
+            int i = (3 * I) + K;
+            int j = I + (3 * J);
+            int k = J + (3 * K);
 
-            return SetFrom(iVec + jVec + kVec).Normalize();
+            I = i;
+            J = j;
+            K = k;
+
+            return Normalize();
         }
 
         /// <summary>
@@ -259,11 +276,15 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperature3CounterClockwise() {
-            CoordIJK iVec = new CoordIJK(2, 0, 1) * I;
-            CoordIJK jVec = new CoordIJK(1, 2, 0) * J;
-            CoordIJK kVec = new CoordIJK(0, 1, 2) * K;
+            int i = (2 * I) + J;
+            int j = (2 * J) + K;
+            int k = I + (2 * K);
 
-            return SetFrom(iVec + jVec + kVec).Normalize();
+            I = i;
+            J = j;
+            K = k;
+
+            return Normalize();
         }
 
         /// <summary>
@@ -272,11 +293,15 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperature3Clockwise() {
-            CoordIJK iVec = new CoordIJK(2, 1, 0) * I;
-            CoordIJK jVec = new CoordIJK(0, 2, 1) * J;
-            CoordIJK kVec = new CoordIJK(1, 0, 2) * K;
+            int i = (2 * I) + K;
+            int j = I + (2 * J);
+            int k = J + (2 * K);
 
-            return SetFrom(iVec + jVec + kVec).Normalize();
+            I = i;
+            J = j;
+            K = k;
+
+            return Normalize();
         }
 
         /// <summary>
@@ -308,7 +333,11 @@ namespace H3.Model {
         /// <returns></returns>
         public CoordIJK ToNeighbour(Direction direction) {
             if (direction > Direction.Center && direction < Direction.Invalid) {
-                SetFrom(this + LookupTables.DirectionToUnitVector[direction]).Normalize();
+                var unitVector = LookupTables.DirectionToUnitVector[direction];
+                I += unitVector.I;
+                J += unitVector.J;
+                K += unitVector.K;
+                Normalize();
             }
             return this;
         }
@@ -319,7 +348,7 @@ namespace H3.Model {
         /// <param name="h2"></param>
         /// <returns></returns>
         public int GetDistanceTo(CoordIJK h2) {
-            var diff = (this - h2).Normalize();
+            var diff = new CoordIJK(I - h2.I, J - h2.J, K - h2.K).Normalize();
             return Math.Max(Math.Abs(diff.I), Math.Max(Math.Abs(diff.J), Math.Abs(diff.K)));
         }
 

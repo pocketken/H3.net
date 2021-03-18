@@ -409,21 +409,34 @@ namespace H3 {
             // build the H3Index from finest res up
             // adjust r for the fact that the res 0 base cell offsets the indexing
             // digits
+            CoordIJK diff = new();
+            CoordIJK last = new();
+            CoordIJK lastCenter = new();
             for (int r = resolution - 1; r >= 0; r--) {
-                CoordIJK last = new(ijk.Coord);
-                CoordIJK lastCenter;
+                last.I = ijk.Coord.I;
+                last.J = ijk.Coord.J;
+                last.K = ijk.Coord.K;
 
                 if (IsResolutionClass3(r + 1)) {
                     // rotate ccw
                     ijk.Coord.UpAperature7CounterClockwise();
-                    lastCenter = new CoordIJK(ijk.Coord).DownAperature7CounterClockwise();
+                    lastCenter.I = ijk.Coord.I;
+                    lastCenter.J = ijk.Coord.J;
+                    lastCenter.K = ijk.Coord.K;
+                    lastCenter.DownAperature7CounterClockwise();
                 } else {
                     // rotate cw
                     ijk.Coord.UpAperature7Clockwise();
-                    lastCenter = new CoordIJK(ijk.Coord).DownAperature7Clockwise();
+                    lastCenter.I = ijk.Coord.I;
+                    lastCenter.J = ijk.Coord.J;
+                    lastCenter.K = ijk.Coord.K;
+                    lastCenter.DownAperature7Clockwise();
                 }
 
-                CoordIJK diff = (last - lastCenter).Normalize();
+                diff.I = last.I - lastCenter.I;
+                diff.J = last.J - lastCenter.J;
+                diff.K = last.K - lastCenter.K;
+                diff.Normalize();
                 index.SetDirectionForResolution(r + 1, diff);
             }
 
