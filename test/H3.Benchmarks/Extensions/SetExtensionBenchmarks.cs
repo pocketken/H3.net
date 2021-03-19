@@ -15,12 +15,21 @@ namespace H3.Benchmarks.Extensions {
     [MemoryDiagnoser]
     public class CompactBenchmarks {
 
-        private static readonly H3Index[] TestCompactArray = TestHelpers.TestIndexKRingsTo2
-            .Select(c => new H3Index(c.Item1))
-            .ToArray();
+        private const int Resolution = 5;
+
+        private static readonly IEnumerable<H3Index> TestCompactList = TestHelpers.GetAllCellsForResolution(Resolution)
+            .GroupBy(i => i.BaseCellNumber)
+            .SelectMany(g => g.Take(50));
+
+        private static readonly List<H3Lib.H3Index> H3LibTestCompactList = TestCompactList
+            .Select(i => new H3Lib.H3Index(i))
+            .ToList();
 
         [Benchmark(Description = "pocketken.H3.Compact")]
-        public List<H3Index> Compact() => TestCompactArray.Compact().ToList();
+        public List<H3Index> Compact() => TestCompactList.Compact().ToList();
+
+        [Benchmark(Description = "H3Lib.Compact")]
+        public List<H3Lib.H3Index> H3LibCompact() => H3LibTestCompactList.Compact().Item2;
     }
 
     [SimpleJob(RuntimeMoniker.NetCoreApp50)]
