@@ -57,6 +57,7 @@ namespace H3.Extensions {
                 return H3Index.Invalid;
             }
         }
+
     }
 
     /// <summary>
@@ -66,6 +67,7 @@ namespace H3.Extensions {
     /// to be compatible across different versions of H3.
     /// </summary>
     public static class H3LocalIJKExtensions {
+
         /// <summary>
         /// Produces ijk coordinates for an index anchored by an origin.
         ///
@@ -88,7 +90,7 @@ namespace H3.Extensions {
             LocalCoordIJK.ToLocalIJK(origin, index);
 
         /// <summary>
-        /// Produces an index for ij coordinates anchored by an origin.
+        /// Produces an index for ijk coordinates anchored by an origin.
         ///
         /// The coordinate space used by this function may have deleted
         /// regions or warping due to pentagonal distortion.
@@ -99,8 +101,8 @@ namespace H3.Extensions {
         /// This function is experimental, and its output is not guaranteed
         /// to be compatible across different versions of H3.
         /// </summary>
-        /// <param name="origin">an anchoring index for the IJ coordinate system</param>
-        /// <param name="coord">IJ coordinates to index</param>
+        /// <param name="origin">an anchoring index for the IJK coordinate system</param>
+        /// <param name="coord">IJK coordinates to index</param>
         /// <returns>H3Index for coordintes</returns>
         public static H3Index FromLocalIJK(this H3Index origin, CoordIJK coord) {
             try {
@@ -109,9 +111,11 @@ namespace H3.Extensions {
                 return H3Index.Invalid;
             }
         }
+
     }
 
     public static class LocalCoordIJK {
+
         /// <summary>
         /// Produces ijk+ coordinates for an index anchored by an origin.
         ///
