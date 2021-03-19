@@ -57,7 +57,7 @@ namespace H3.Algorithms {
                 yield break;
             }
 
-            H3Index index = new(origin);
+            H3Index index = origin;
 
             // break out to the requested ring
             int rotations = 0;
@@ -162,7 +162,7 @@ namespace H3.Algorithms {
         /// <returns>Enumerable set of RingCell, or an exception if a traversal error is
         /// encountered (eg pentagon)</returns>
         public static IEnumerable<RingCell> GetKRingFast(this H3Index origin, int k) {
-            H3Index index = new(origin);
+            H3Index index = origin;
 
             // k must be >= 0, so origin is always needed
             yield return new RingCell { Index = index, Distance = 0 };
