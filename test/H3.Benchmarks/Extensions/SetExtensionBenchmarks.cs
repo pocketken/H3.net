@@ -19,7 +19,8 @@ namespace H3.Benchmarks.Extensions {
 
         private static readonly IEnumerable<H3Index> TestCompactList = TestHelpers.GetAllCellsForResolution(Resolution)
             .GroupBy(i => i.BaseCellNumber)
-            .SelectMany(g => g.Take(50));
+            .SelectMany(g => g.Take(50))
+            .ToList();
 
         private static readonly List<H3Lib.H3Index> H3LibTestCompactList = TestCompactList
             .Select(i => new H3Lib.H3Index(i))
