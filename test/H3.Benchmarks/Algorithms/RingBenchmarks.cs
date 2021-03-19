@@ -24,17 +24,23 @@ namespace H3.Benchmarks.Algorithms {
 
         private const int K = 50;
 
-        [Benchmark(Description = "pocketken.H3.GetKRingFast(hex, k = 50)", Baseline = true)]
-        public List<RingCell> GetKRingFast() => TestIndex.GetKRingFast(K).ToList();
+        [GlobalSetup]
+        public void Setup() {
+            Console.WriteLine($"Hexagon = {TestIndex}");
+            Console.WriteLine($"Pentagon = {TestPentagonIndex}");
+        }
+
+        [Benchmark(Description = "pocketken.H3.GetKRingFast(hex, k = 50)")]
+        public List<RingCell> GetKRingHexFast() => TestIndex.GetKRingFast(K).ToList();
 
         [Benchmark(Description = "pocketken.H3.GetKRingSlow(hex, k = 50)")]
-        public List<RingCell> GetKRingSlow() => TestPentagonIndex.GetKRingSlow(K).ToList();
+        public List<RingCell> GetKRingHexSlow() => TestPentagonIndex.GetKRingSlow(K).ToList();
 
         [Benchmark(Description = "pocketken.H3.GetKRingSlow(pent, k = 50)")]
         public List<RingCell> GetKRingPentSlow() => TestPentagonIndex.GetKRingSlow(K).ToList();
 
         [Benchmark(Description = "H3Lib.KRingDistances(hex, k = 50)")]
-        public Dictionary<H3Lib.H3Index, int> H3Lib_KRingDistances() => TestH3LibIndex.KRingDistances(K);
+        public Dictionary<H3Lib.H3Index, int> H3Lib_KRingDistancesHex() => TestH3LibIndex.KRingDistances(K);
 
         [Benchmark(Description = "H3Lib.KRingDistances(pent, k = 50)")]
         public Dictionary<H3Lib.H3Index, int> H3Lib_KRingDistancesPent() => TestH3LibPentagonIndex.KRingDistances(K);

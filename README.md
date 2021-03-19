@@ -16,3 +16,51 @@ PRs to improve code, tests and documentation are definitely welcome, although pl
 
 ## Installing
 I haven't published this to Nuget or anything yet, so for now you'll need to check the code out and build the package locally (e.g. `dotnet pack`), and/or add a dependency to this project from an existing solution.  It should compile/work anywhere .NET 5 does (I presently build/use on a variety of projects on Windows, Linux and Mac).
+
+## Some Benchmarks
+I still need to work on getting some benchmarks for the other H3 package which wraps the native library; if anyone is interested in assisting PRs are welcome!
+
+You can check the code out to run the benchmarks locally if you want, e.g.:
+
+```sh
+$ dotnet run --configuration Release --project .\test\H3.Benchmarks\H3.Benchmarks.csproj --filter *Uncompact* --join
+```
+
+All numbers here are from my primary Windows development VM:
+
+``` ini
+BenchmarkDotNet=v0.12.1, OS=Windows 10.0.19042
+AMD Ryzen 9 3900X, 1 CPU, 12 logical and 6 physical cores
+.NET Core SDK=5.0.201
+  [Host]        : .NET Core 5.0.4 (CoreCLR 5.0.421.11614, CoreFX 5.0.421.11614), X64 RyuJIT
+  .NET Core 5.0 : .NET Core 5.0.4 (CoreCLR 5.0.421.11614, CoreFX 5.0.421.11614), X64 RyuJIT
+
+Job=.NET Core 5.0  Runtime=.NET Core 5.0
+```
+
+### Lines
+Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554625 cells).
+
+|              Method |       Mean |    Error |  StdDev |        Gen 0 |      Gen 1 |     Gen 2 |  Allocated |
+|-------------------- |-----------:|---------:|--------:|-------------:|-----------:|----------:|-----------:|
+| pocketken.H3.LineTo |   972.3 ms |  8.73 ms | 7.29 ms |   45000.0000 | 11000.0000 | 1000.0000 |  355.44 MB |
+|        H3Lib.LineTo | 4,422.1 ms | 10.23 ms | 9.57 ms | 1057000.0000 |  3000.0000 | 1000.0000 | 8449.31 MB |
+
+### Rings
+`hex` is a hexagon index (`8f48e1d7038d520`), `pent` is a pentagon index (`8e0800000000007`) which forces the use of the iterative (recursive in the case of H3Lib) method of generating the ring due to the fast method's inability to handle pentagons.
+
+|                                    Method |          Mean |         Error |        StdDev |        Gen 0 |        Gen 1 |        Gen 2 |   Allocated |
+|------------------------------------------ |--------------:|--------------:|--------------:|-------------:|-------------:|-------------:|------------:|
+| 'pocketken.H3.GetKRingFast(hex, k = 50)' |   593.2 us |  4.04 us |  3.78 us |  66.4063 | 33.2031 |       - |  547.92 KB |
+| 'pocketken.H3.GetKRingSlow(hex, k = 50)' | 5,846.9 us | 26.14 us | 24.45 us | 179.6875 | 85.9375 | 85.9375 | 1634.09 KB |
+|      'H3Lib.KRingDistances(hex, k = 50)' |   377.3 us |  1.83 us |  1.53 us |  99.6094 | 99.6094 | 99.6094 |  486.59 KB |
+| 'pocketken.H3.GetKRingSlow(pent, k = 50)' |      5.644 ms |     0.0249 ms |     0.0233 ms |     179.6875 |      85.9375 |      85.9375 |      1.6 MB |
+|      'H3Lib.KRingDistances(pent, k = 50)' | 59,581.867 ms | 1,123.9235 ms | 1,154.1867 ms | 7683000.0000 | 6097000.0000 | 5055000.0000 | 71357.79 MB |
+
+### Uncompact
+Result of uncompacting all base cells to resolution of 5.
+
+|                 Method |     Mean |   Error |  StdDev |      Gen 0 |     Gen 1 |    Gen 2 | Allocated |
+|----------------------- |---------:|--------:|--------:|-----------:|----------:|---------:|----------:|
+| pocketken.H3.Uncompact | 121.6 ms | 1.58 ms | 1.47 ms |  7000.0000 | 3000.0000 |        - |  93.15 MB |
+|        H3Lib.Uncompact | 198.0 ms | 2.89 ms | 2.70 ms | 43000.0000 | 7333.3333 | 666.6667 | 493.03 MB |

@@ -20,7 +20,14 @@ namespace H3.Benchmarks.Algorithms {
         private static readonly H3Lib.H3Index H3LibTestIndex = new(TestHelpers.TestIndexValue);
         private static readonly H3Lib.H3Index H3LibSfIndexAt14 = new(SfIndexAt14);
 
-        [Benchmark(Baseline = true, Description = "pocketken.H3.LineTo")]
+        [GlobalSetup]
+        public void Setup() {
+            Console.WriteLine($"TestIndexValue = {TestHelpers.TestIndexValue:x}");
+            Console.WriteLine($"SfIndexAt14 = {SfIndexAt14}");
+            Console.WriteLine($"length = {SfIndexAt14.DistanceTo(TestHelpers.TestIndexValue)}");
+        }
+
+        [Benchmark(Description = "pocketken.H3.LineTo")]
         public List<H3Index> LineTo() => SfIndexAt14.LineTo(TestHelpers.TestIndexValue).ToList();
 
         [Benchmark(Description = "H3Lib.LineTo")]
