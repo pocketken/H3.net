@@ -286,10 +286,7 @@ namespace H3.Extensions {
             H3Index childIndex = new(origin) {
                 Resolution = childResolution
             };
-
-            for (int r = resolution + 1; r <= childResolution; r += 1) {
-                childIndex.SetDirectionForResolution(r, Direction.Center);
-            }
+            childIndex.ZeroDirectionsForResolutionRange(resolution + 1, childResolution);
 
             return childIndex;
         }
@@ -302,32 +299,53 @@ namespace H3.Extensions {
         /// <param name="childResolution">resolution of child level</param>
         /// <returns></returns>
         public static IEnumerable<H3Index> GetChildrenForResolution(this H3Index origin, int childResolution) {
-            int resolution = origin.Resolution;
-
-            if (!IsValidChildResolution(resolution, childResolution)) {
+            int parentResolution = origin.Resolution;
+            if (!IsValidChildResolution(parentResolution, childResolution)) {
                 yield break;
             }
 
-            if (resolution == childResolution) {
+            if (parentResolution == childResolution) {
                 yield return origin;
                 yield break;
             }
 
-            // process children in a FIFO manner
-            Queue<H3Index> queue = new();
-            queue.Enqueue(origin);
+            // initialize our iterator
+            H3Index iterator = new(origin);
+            iterator.ZeroDirectionsForResolutionRange(parentResolution + 1, childResolution);
+            iterator.Resolution = childResolution;
 
-            while (queue.Count != 0) {
-                var index = queue.Dequeue();
-                bool pentagon = index.IsPentagon;
+            // handle pentagons
+            int fnz = iterator.IsPentagon ? childResolution : -1;
 
-                for (Direction i = 0; i < Direction.Invalid; i += 1) {
-                    if (pentagon && i == Direction.K) continue;
-                    var child = index.GetDirectChild(i);
-                    if (child.Resolution != childResolution) {
-                        queue.Enqueue(child);
+            while (iterator != H3Index.Invalid) {
+                yield return new(iterator);
+
+                int childRes = iterator.Resolution;
+                iterator.IncrementDirectionForResolution(childRes);
+
+                for (int i = childResolution; i >= parentResolution; i -= 1) {
+                    if (i == parentResolution) {
+                        iterator = H3Index.Invalid;
+                        break;
+                    }
+
+                    // pentagon?
+                    if (i == fnz && iterator.GetDirectionForResolution(i) == Direction.K) {
+                        // Then we are iterating through the children of a pentagon cell.
+                        // All children of a pentagon have the property that the first
+                        // nonzero digit between the parent and child resolutions is
+                        // not 1.
+                        // I.e., we never see a sequence like 00001.
+                        // Thus, we skip the `1` in this digit.
+                        iterator.IncrementDirectionForResolution(i);
+                        fnz -= 1;
+                        break;
+                    }
+
+                    if (iterator.GetDirectionForResolution(i) == Direction.Invalid) {
+                        iterator.IncrementDirectionForResolution(i);
                     } else {
-                        yield return child;
+                        break;
                     }
                 }
             }
