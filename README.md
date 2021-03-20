@@ -43,11 +43,10 @@ While there are some comparisons here against [H3Lib](https://github.com/Richard
 #### GetChildrenForResolution
 Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) to get all children at resolution 15.
 
-|                                Method |      Mean |     Error |    StdDev |     Gen 0 |     Gen 1 |    Gen 2 | Allocated |
-|-------------------------------------- |----------:|----------:|----------:|----------:|----------:|---------:|----------:|
-| pocketken.H3.GetChildrenForResolution | 10.275 ms | 0.2009 ms | 0.2681 ms |  890.6250 |  796.8750 | 546.8750 |   5.64 MB |
-|                      H3Lib.ToChildren |  9.689 ms | 0.1837 ms | 0.1966 ms | 3453.1250 | 1640.6250 | 984.3750 |  23.55 MB |
-
+|                                Method |     Mean |     Error |    StdDev |     Gen 0 |     Gen 1 |    Gen 2 | Allocated |
+|-------------------------------------- |---------:|----------:|----------:|----------:|----------:|---------:|----------:|
+| pocketken.H3.GetChildrenForResolution | 9.368 ms | 0.1335 ms | 0.1184 ms |  796.8750 |  781.2500 | 484.3750 |   4.69 MB |
+|                      H3Lib.ToChildren | 9.689 ms | 0.1837 ms | 0.1966 ms | 3453.1250 | 1640.6250 | 984.3750 |  23.55 MB |
 
 ### Lines
 Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells).

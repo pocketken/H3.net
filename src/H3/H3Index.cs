@@ -223,6 +223,34 @@ namespace H3 {
         }
 
         /// <summary>
+        /// Increments the Direction "digit" for the index at the specified resolution.
+        /// </summary>
+        /// <param name="resolution"></param>
+        public void IncrementDirectionForResolution(int resolution) {
+            ulong val = 1UL;
+            val <<= 3 * (15 - resolution);
+            Value += val;
+        }
+
+        /// <summary>
+        /// Zeros the Direction "digits" for the indexes starting at startResolution
+        /// and ending at endResolution.
+        /// </summary>
+        /// <param name="startResolution"></param>
+        /// <param name="endResolution"></param>
+        public void ZeroDirectionsForResolutionRange(int startResolution, int endResolution) {
+            if (startResolution > endResolution) return;
+
+            ulong m = ~0UL;
+            m <<= 3 * (endResolution - startResolution + 1);
+            m = ~m;
+            m <<= 3 * (15 - endResolution);
+            m = ~m;
+
+            Value &= m;
+        }
+
+        /// <summary>
         /// Rotates the index in place; skips any leading 1 digits (k-axis)
         /// </summary>
         /// <param name="rotateIndex">Callback to be fired in order to actually perform
