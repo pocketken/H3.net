@@ -76,9 +76,9 @@ Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells)
 * Compact: Result of compacting the first 50 children of each base cell at resolution 5.
 * Uncompact: Result of uncompacting all base cells to resolution of 5.
 
-|                Type |                 Method |       Mean |     Error |    StdDev |      Gen 0 |     Gen 1 |    Gen 2 | Allocated |
-|-------------------- |----------------------- |-----------:|----------:|----------:|-----------:|----------:|---------:|----------:|
-|   CompactBenchmarks |   pocketken.H3.Compact |   2.043 ms | 0.0407 ms | 0.0633 ms |          - |         - |        - |   1.35 MB |
-|   CompactBenchmarks |          H3Lib.Compact |   1.105 ms | 0.0048 ms | 0.0042 ms |   164.0625 |   82.0313 |  82.0313 |   1.08 MB |
-| UncompactBenchmarks | pocketken.H3.Uncompact | 167.754 ms | 0.6426 ms | 0.5697 ms |  8250.0000 | 4500.0000 | 750.0000 |  93.15 MB |
-| UncompactBenchmarks |        H3Lib.Uncompact | 194.917 ms | 1.9689 ms | 1.7454 ms | 43000.0000 | 7333.3333 | 666.6667 | 493.02 MB |
+|                Type |                 Method |       Mean |     Error |    StdDev |      Gen 0 |     Gen 1 |     Gen 2 | Allocated |
+|-------------------- |----------------------- |-----------:|----------:|----------:|-----------:|----------:|----------:|----------:|
+|   CompactBenchmarks |   pocketken.H3.Compact |   2.043 ms | 0.0407 ms | 0.0633 ms |          - |         - |         - |   1.35 MB |
+|   CompactBenchmarks |          H3Lib.Compact |   1.105 ms | 0.0048 ms | 0.0042 ms |   164.0625 |   82.0313 |   82.0313 |   1.08 MB |
+| UncompactBenchmarks | pocketken.H3.Uncompact | 139.508 ms | 2.1152 ms | 1.9786 ms |  6500.0000 | 3500.0000 | 1000.0000 |  78.18 MB |
+| UncompactBenchmarks |        H3Lib.Uncompact | 194.917 ms | 1.9689 ms | 1.7454 ms | 43000.0000 | 7333.3333 |  666.6667 | 493.02 MB |
