@@ -309,10 +309,11 @@ namespace H3.Extensions {
                 yield break;
             }
 
-            // initialize our iterator
-            H3Index iterator = new(origin);
+            // initialize our iterator by starting at the center child at the target resolution
+            H3Index iterator = new(origin) {
+                Resolution = childResolution
+            };
             iterator.ZeroDirectionsForResolutionRange(parentResolution + 1, childResolution);
-            iterator.Resolution = childResolution;
 
             // handle pentagons
             int fnz = iterator.IsPentagon ? childResolution : -1;
@@ -324,13 +325,16 @@ namespace H3.Extensions {
                 iterator.IncrementDirectionForResolution(childRes);
 
                 for (int i = childResolution; i >= parentResolution; i -= 1) {
+                    // done iterating?
                     if (i == parentResolution) {
                         iterator = H3Index.Invalid;
                         break;
                     }
 
+                    Direction dir = iterator.GetDirectionForResolution(i);
+
                     // pentagon?
-                    if (i == fnz && iterator.GetDirectionForResolution(i) == Direction.K) {
+                    if (i == fnz && dir == Direction.K) {
                         // Then we are iterating through the children of a pentagon cell.
                         // All children of a pentagon have the property that the first
                         // nonzero digit between the parent and child resolutions is
@@ -342,7 +346,8 @@ namespace H3.Extensions {
                         break;
                     }
 
-                    if (iterator.GetDirectionForResolution(i) == Direction.Invalid) {
+                    if (dir == Direction.Invalid) {
+                        // zeros out it[i] and increments it[i-1] by 1
                         iterator.IncrementDirectionForResolution(i);
                     } else {
                         break;
