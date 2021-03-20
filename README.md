@@ -46,8 +46,7 @@ Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) to get all childre
 |                                Method |     Mean |     Error |    StdDev |     Gen 0 |     Gen 1 |    Gen 2 | Allocated |
 |-------------------------------------- |---------:|----------:|----------:|----------:|----------:|---------:|----------:|
 | pocketken.H3.GetChildrenForResolution | 9.368 ms | 0.1335 ms | 0.1184 ms |  796.8750 |  781.2500 | 484.3750 |   4.69 MB |
-|                      H3Lib.ToChildren | 9.923 ms | 0.1932 ms | 0.3280 ms | 3453.1250 | 1656.2500 | 984.3750 |  23.55 MB |
-
+|                      H3Lib.ToChildren | 9.689 ms | 0.1837 ms | 0.1966 ms | 3453.1250 | 1640.6250 | 984.3750 |  23.55 MB |
 
 ### Lines
 Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells).
