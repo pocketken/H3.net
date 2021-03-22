@@ -98,7 +98,7 @@ namespace H3.Extensions {
         /// set of hexagons at a specific resoution.
         /// </summary>
         /// <param name="indexes">set of hexagons</param>
-        /// <param name="resolution">resolution to decompact to</param>
+        /// <param name="resolution">resolution to expand to</param>
         /// <returns>original set of hexagons. Thows ArgumentException if any
         /// hexagon in the set is smaller than the output resolution or invalid
         /// resolution is requested.</returns>
