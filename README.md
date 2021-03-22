@@ -76,8 +76,8 @@ Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells)
 * Compact: Result of compacting all base cells at resolution 5.
 * Uncompact: Result of uncompacting all base cells to resolution of 5.
 
-|                Type |                 Method |     Mean |   Error |  StdDev |      Gen 0 |     Gen 1 |     Gen 2 | Allocated |
-|-------------------- |----------------------- |----------:|-------:|--------:|-----------:|----------:|----------:|---------:|
+|                Type |                 Method |     Mean |    Error |  StdDev |      Gen 0 |     Gen 1 |     Gen 2 | Allocated |
+|-------------------- |----------------------- |----------:|--------:|--------:|-----------:|----------:|----------:|----------:|
 |   CompactBenchmarks |   pocketken.H3.Compact |  356.1 ms | 6.75 ms | 6.63 ms | 11000.0000 | 3000.0000 |         - | 243.51 MB |
 |   CompactBenchmarks |          H3Lib.Compact |  389.1 ms | 6.56 ms | 6.14 ms |  9000.0000 | 4000.0000 | 2000.0000 | 305.24 MB |
 | UncompactBenchmarks | pocketken.H3.Uncompact |  138.7 ms | 1.45 ms | 1.36 ms |  6500.0000 | 3500.0000 | 1000.0000 |  78.18 MB |
