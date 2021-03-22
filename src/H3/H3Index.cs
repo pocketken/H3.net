@@ -5,8 +5,6 @@ using static H3.Constants;
 using static H3.Utils;
 using GeoAPI.Geometries;
 using NetTopologySuite.Geometries;
-using System.Linq;
-using System.Collections.Generic;
 
 #nullable enable
 
@@ -44,7 +42,7 @@ namespace H3 {
         /// <summary>
         /// H3 index with a value of 0; aka H3_NULL
         /// </summary>
-        public static readonly H3Index Invalid = new H3Index(0);
+        public static readonly H3Index Invalid = new(0);
 
         #endregion constants
 
@@ -162,7 +160,7 @@ namespace H3 {
         /// <summary>
         /// Whether or not this index should be considered as a pentagon.
         /// </summary>
-        public bool IsPentagon => LookupTables.BaseCells[BaseCellNumber].IsPentagon &&
+        public bool IsPentagon => BaseCell.IsPentagon &&
             LeadingNonZeroDirection == Direction.Center;
 
         /// <summary>

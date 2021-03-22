@@ -69,15 +69,15 @@ namespace H3.Test.Extensions {
             .Select(i => H3Index.Create(5, i, 0));
 
         [Test]
-        public void Test_Compact_FailsOnMixedResolutions() {
+        public void Test_Compact_CanCompactMixedResolutions() {
             // Arrange
             H3Index[] indicies = new[] { TestHelpers.SfIndex, (H3Index)TestHelpers.TestIndexValue };
 
             // Act
-            var exception = Assert.Throws<ArgumentException>(() => indicies.Compact().First());
+            var actual = indicies.Compact().ToArray();
 
             // Assert
-            Assert.AreEqual("all indexes must be the same resolution", exception.Message, "same exception message");
+            TestHelpers.AssertAll(indicies, actual);
         }
 
         [Test]

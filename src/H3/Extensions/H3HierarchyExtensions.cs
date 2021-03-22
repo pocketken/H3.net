@@ -254,7 +254,6 @@ namespace H3.Extensions {
 
             for (int r = parentResolution + 1; r <= resolution; r += 1)
                 parentIndex.SetDirectionForResolution(r, Direction.Invalid);
-
             return parentIndex;
         }
 

@@ -11,52 +11,94 @@ namespace H3.Extensions {
     public static class H3SetExtensions {
 
         /// <summary>
-        /// Takes a set of hexagons all at the same resolution and compresses
-        /// them by removing duplicates and pruning full child branches to the
-        /// parent level. This is also done for all parents recursively to get
-        /// the minimum number of hex addresses that perfectly cover the defined
-        /// space.
-        /// </summary>
-        /// <remarks>This implementation differs from upstream in that duplicate
-        /// or invalid inputs are filtered instead returning an error code when
-        /// they are encountered.</remarks>
-        /// <param name="indexEnumerable">set of hexagons to compress</param>
-        /// <returns>set of compressed hexagons</returns>
+        /// Takes a set of hexagons and compacts them by removing duplicates and
+        /// pruning full child branches to the parent level. This is also done for
+        /// all parents recursively to get the minimum number of indexes that perfectly
+        /// cover the defined space.</summary>
+        /// <remarks>This implementation differs from upstream in that mixed resolutions
+        /// are supported, and duplicate or invalid inputs are filtered instead returning
+        /// an error code when they are encountered.  Based on the "FlexiCompact" method
+        /// in H3Lib
+        /// (https://github.com/RichardVasquez/h3net/blob/v3.7.1/H3Lib/Extensions/H3LibExtensions.cs#L359)
+        /// </remarks>
+        /// <param name="indexEnumerable">set of hexagons to compact</param>
+        /// <returns>set of compacted hexagons</returns>
         public static List<H3Index> Compact(this IEnumerable<H3Index> indexEnumerable) {
-            List<H3Index> indexes = indexEnumerable
-                .Where(index => index != H3Index.Invalid)
-                .Distinct()
-                .ToList();
-            List<H3Index> results = new();
+            Dictionary<int, HashSet<H3Index>> indexes = new();
+            int maxResolution = -1;
+            int count = 0;
 
-            if (!indexes.AreOfSameResolution()) {
-                throw new ArgumentException("all indexes must be the same resolution");
+            // first group by resolution
+            foreach (var index in indexEnumerable) {
+                if (index == H3Index.Invalid) {
+                    continue;
+                }
+
+                int indexResolution = index.Resolution;
+                maxResolution = Math.Max(maxResolution, indexResolution);
+
+                if (!indexes.ContainsKey(indexResolution)) {
+                    indexes[indexResolution] = new HashSet<H3Index>();
+                }
+
+                indexes[indexResolution].Add(index);
+                count++;
             }
 
-            int resolution = indexes[0].Resolution;
+            // worst case, nothing gets compacted
+            List<H3Index> results = new(count);
+            Dictionary<H3Index, List<H3Index>> parents = new();
 
-            // cant compress beyond res0
-            if (resolution == 0) {
-                return indexes;
+            // loop backward through each resolution, throwing any compacted parents into
+            // the resolution below us
+            for (int resolution = maxResolution; resolution > 0; resolution -= 1) {
+                if (indexes.TryGetValue(resolution, out var toCompact)) {
+                    int parentResolution = resolution - 1;
+
+                    foreach (var index in toCompact) {
+                        var parent = index.GetParentForResolution(parentResolution);
+
+                        if (!parents.ContainsKey(parent)) {
+                            parents[parent] = new List<H3Index>(7);
+                        }
+
+                        parents[parent].Add(index);
+                    }
+
+                    // any parent that has enough children should be added
+                    // back in to be tested at the next lowest resolution.
+                    // anything else is uncompactable.
+                    foreach (var (parent, children) in parents) {
+                        if (children.Count >= (parent.IsPentagon ? 6 : 7)) {
+                            if (!indexes.ContainsKey(parentResolution)) {
+                                indexes[parentResolution] = new HashSet<H3Index>();
+                            }
+                            indexes[parentResolution].Add(parent);
+                        } else {
+                            results.AddRange(children);
+                        }
+                    }
+
+                    if (resolution > 1) {
+                        parents.Clear();
+                    }
+                }
             }
 
-            // determine what can be compacted and what can't
-            var compactable = GetCompactableParents(indexes, results);
-            while (compactable.Count > 0) {
-                // try and walk up and look for more
-                compactable = GetCompactableParents(compactable, results);
+            // and lastly, add in any res 0
+            if (indexes.TryGetValue(0, out var zeroes)) {
+                results.AddRange(zeroes);
             }
 
-            // and return result
             return results;
         }
 
         /// <summary>
-        /// Takes a compressed set of hexagons and expands back to the original
+        /// Takes a compacted set of hexagons and expands back to the original
         /// set of hexagons at a specific resoution.
         /// </summary>
         /// <param name="indexes">set of hexagons</param>
-        /// <param name="resolution">resolution to decompress to</param>
+        /// <param name="resolution">resolution to decompact to</param>
         /// <returns>original set of hexagons. Thows ArgumentException if any
         /// hexagon in the set is smaller than the output resolution or invalid
         /// resolution is requested.</returns>
@@ -71,6 +113,15 @@ namespace H3.Extensions {
 
                     return index.GetChildrenForResolution(resolution);
                 });
+
+        /// <summary>
+        /// Takes a set of indexes and expands to the highest found resolution
+        /// within the set.
+        /// </summary>
+        /// <param name="indexes"></param>
+        /// <returns>expanded set ofindexes</returns>
+        public static IEnumerable<H3Index> UncompactToHighestResolution(this IEnumerable<H3Index> indexes) =>
+            UncompactToResolution(indexes, indexes.Max(i => i.Resolution));
 
         /// <summary>
         /// Determines whether or not all H3Index entries within the enumerable are
@@ -92,34 +143,6 @@ namespace H3.Extensions {
                 }
             }
             return true;
-        }
-
-        /// <summary>
-        /// Processes the provided set of indexes, returning hexagons identified as
-        /// comptacted (meaning the hexagon had a full set of children that were
-        /// pruned) and adding indexes that were not comptactable to the provided
-        /// "uncompactable" index list.  This is the core of the compaction algorithm.
-        /// </summary>
-        /// <param name="indexes">Indexes to try and compact</param>
-        /// <param name="uncompactable">List to add indexes identified as uncompactable
-        /// to</param>
-        /// <returns>List of parent indexes with children pruned</returns>
-        private static List<H3Index> GetCompactableParents(List<H3Index> indexes, List<H3Index> uncompactable) {
-            var byParent = indexes
-                .Where(index => index.Resolution > 0)
-                .GroupBy(index => index.GetParentForResolution(index.Resolution - 1))
-                .Select(g => (Parent: g.Key, Indexes: g.ToList()))
-                .Where(g => g.Indexes.Count == (g.Parent.IsPentagon ? 6 : 7));
-
-            List<H3Index> compacted = new();
-            HashSet<H3Index> compactedChildren = new();
-            foreach (var (Parent, Indexes) in byParent) {
-                compacted.Add(Parent);
-                compactedChildren.UnionWith(Indexes);
-            }
-
-            uncompactable.AddRange(indexes.Where(index => !compactedChildren.Contains(index)));
-            return compacted;
         }
 
     }

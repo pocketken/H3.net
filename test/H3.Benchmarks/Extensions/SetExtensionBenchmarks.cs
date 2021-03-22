@@ -17,17 +17,14 @@ namespace H3.Benchmarks.Extensions {
 
         private const int Resolution = 5;
 
-        private static readonly IEnumerable<H3Index> TestCompactList = TestHelpers.GetAllCellsForResolution(Resolution)
-            .GroupBy(i => i.BaseCellNumber)
-            .SelectMany(g => g.Take(50))
-            .ToList();
+        private static readonly List<H3Index> TestCompactList = TestHelpers.GetAllCellsForResolution(Resolution).ToList();
 
         private static readonly List<H3Lib.H3Index> H3LibTestCompactList = TestCompactList
             .Select(i => new H3Lib.H3Index(i))
             .ToList();
 
         [Benchmark(Description = "pocketken.H3.Compact")]
-        public List<H3Index> Compact() => TestCompactList.Compact().ToList();
+        public List<H3Index> PocketkenCompact() => TestCompactList.Compact();
 
         [Benchmark(Description = "H3Lib.Compact")]
         public List<H3Lib.H3Index> H3LibCompact() => H3LibTestCompactList.Compact().Item2;

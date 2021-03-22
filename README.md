@@ -73,12 +73,12 @@ Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells)
 |      'H3Lib.KRingDistances(pent, k = 50)' | 59,581.867 ms | 1,123.9235 ms | 1,154.1867 ms | 7683000.0000 | 6097000.0000 | 5055000.0000 | 71357.79 MB |
 
 ### Sets
-* Compact: Result of compacting the first 50 children of each base cell at resolution 5.
+* Compact: Result of compacting all base cells at resolution 5.
 * Uncompact: Result of uncompacting all base cells to resolution of 5.
 
-|                Type |                 Method |       Mean |     Error |    StdDev |      Gen 0 |     Gen 1 |     Gen 2 | Allocated |
-|-------------------- |----------------------- |-----------:|----------:|----------:|-----------:|----------:|----------:|----------:|
-|   CompactBenchmarks |   pocketken.H3.Compact |   2.043 ms | 0.0407 ms | 0.0633 ms |          - |         - |         - |   1.35 MB |
-|   CompactBenchmarks |          H3Lib.Compact |   1.105 ms | 0.0048 ms | 0.0042 ms |   164.0625 |   82.0313 |   82.0313 |   1.08 MB |
-| UncompactBenchmarks | pocketken.H3.Uncompact | 139.508 ms | 2.1152 ms | 1.9786 ms |  6500.0000 | 3500.0000 | 1000.0000 |  78.18 MB |
-| UncompactBenchmarks |        H3Lib.Uncompact | 194.917 ms | 1.9689 ms | 1.7454 ms | 43000.0000 | 7333.3333 |  666.6667 | 493.02 MB |
+|                Type |                 Method |     Mean |   Error |  StdDev |      Gen 0 |     Gen 1 |     Gen 2 | Allocated |
+|-------------------- |----------------------- |----------:|-------:|--------:|-----------:|----------:|----------:|---------:|
+|   CompactBenchmarks |   pocketken.H3.Compact |  356.1 ms | 6.75 ms | 6.63 ms | 11000.0000 | 3000.0000 |         - | 243.51 MB |
+|   CompactBenchmarks |          H3Lib.Compact |  389.1 ms | 6.56 ms | 6.14 ms |  9000.0000 | 4000.0000 | 2000.0000 | 305.24 MB |
+| UncompactBenchmarks | pocketken.H3.Uncompact |  138.7 ms | 1.45 ms | 1.36 ms |  6500.0000 | 3500.0000 | 1000.0000 |  78.18 MB |
+| UncompactBenchmarks |        H3Lib.Uncompact |  194.9 ms | 1.97 ms | 1.75 ms | 43000.0000 | 7333.3333 |  666.6667 | 493.02 MB |
