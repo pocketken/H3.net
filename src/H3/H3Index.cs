@@ -5,6 +5,7 @@ using static H3.Constants;
 using static H3.Utils;
 using GeoAPI.Geometries;
 using NetTopologySuite.Geometries;
+using System.Runtime.CompilerServices;
 
 #nullable enable
 
@@ -50,13 +51,18 @@ namespace H3 {
 
         private ulong Value { get; set; } = 0;
 
-        public BaseCell BaseCell => LookupTables.BaseCells[BaseCellNumber];
+        public BaseCell BaseCell {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => LookupTables.BaseCells[BaseCellNumber];
+        }
 
         /// <summary>
         /// The highest bit value of the index.
         /// </summary>
         public int HighBit {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => (int)((Value & H3_HIGH_BIT_MASK) >> H3_MAX_OFFSET);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => Value = (Value & H3_HIGH_BIT_MASK_NEGATIVE) | ((ulong)value << H3_MAX_OFFSET);
         }
 
@@ -64,7 +70,9 @@ namespace H3 {
         /// The Mode of the index.
         /// </summary>
         public Mode Mode {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => (Mode)((Value & H3_MODE_MASK) >> H3_MODE_OFFSET);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => Value = (Value & H3_MODE_MASK_NEGATIVE) | ((ulong)value << H3_MODE_OFFSET);
         }
 
@@ -72,7 +80,9 @@ namespace H3 {
         /// The base cell number of the index.  Must be >= 0 < NUM_BASE_CELLS
         /// </summary>
         public int BaseCellNumber {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => (int)((Value & H3_BC_MASK) >> H3_BC_OFFSET);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => Value = (Value & H3_BC_MASK_NEGATIVE) | ((ulong)value << H3_BC_OFFSET);
         }
 
@@ -80,7 +90,9 @@ namespace H3 {
         /// The resolution of the index.  Must be >= 0 <= MAX_H3_RES
         /// </summary>
         public int Resolution {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => (int)((Value & H3_RES_MASK) >> H3_RES_OFFSET);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => Value = (Value & H3_RES_MASK_NEGATIVE) | ((ulong)value << H3_RES_OFFSET);
         }
 
@@ -98,7 +110,9 @@ namespace H3 {
         /// the index.
         /// </summary>
         public int ReservedBits {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => (int)((Value & H3_RESERVED_MASK) >> H3_RESERVED_OFFSET);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => Value = (Value & H3_RESERVED_MASK_NEGATIVE) | ((ulong)value << H3_RESERVED_OFFSET);
         }
 
@@ -144,6 +158,7 @@ namespace H3 {
         /// The leading non-zero Direction "digit" of the index.
         /// </summary>
         public Direction LeadingNonZeroDirection {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get {
                 int resolution = Resolution;
                 for (int r = 1; r <= resolution; r += 1) {
@@ -160,8 +175,10 @@ namespace H3 {
         /// <summary>
         /// Whether or not this index should be considered as a pentagon.
         /// </summary>
-        public bool IsPentagon => BaseCell.IsPentagon &&
-            LeadingNonZeroDirection == Direction.Center;
+        public bool IsPentagon {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => BaseCell.IsPentagon && LeadingNonZeroDirection == Direction.Center;
+        }
 
         /// <summary>
         /// The maximum number of possible icosahedron faces the index
@@ -203,6 +220,7 @@ namespace H3 {
         /// </summary>
         /// <param name="resolution"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Direction GetDirectionForResolution(int resolution) {
             var v = (int)((Value >> ((MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET)) & H3_DIGIT_MASK);
             return (Direction)v;
@@ -214,6 +232,7 @@ namespace H3 {
         /// </summary>
         /// <param name="resolution"></param>
         /// <param name="direction"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetDirectionForResolution(int resolution, Direction direction) {
             int offset = (MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET;
             Value = (Value & ~(H3_DIGIT_MASK << (offset))) |
@@ -224,6 +243,7 @@ namespace H3 {
         /// Increments the Direction "digit" for the index at the specified resolution.
         /// </summary>
         /// <param name="resolution"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void IncrementDirectionForResolution(int resolution) {
             ulong val = 1UL;
             val <<= 3 * (15 - resolution);
@@ -236,6 +256,7 @@ namespace H3 {
         /// </summary>
         /// <param name="startResolution"></param>
         /// <param name="endResolution"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ZeroDirectionsForResolutionRange(int startResolution, int endResolution) {
             if (startResolution > endResolution) return;
 
