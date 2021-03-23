@@ -13,6 +13,7 @@
     <PackageTags>h3 geospatial hexagon spatial-indexing</PackageTags>
     <Company />
     <IsPackable>true</IsPackable>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +23,12 @@
     <Folder Include="Model\" />
     <Folder Include="Algorithms\" />
     <Folder Include="Extensions\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>
