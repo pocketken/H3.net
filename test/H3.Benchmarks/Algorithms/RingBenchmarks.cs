@@ -30,11 +30,17 @@ namespace H3.Benchmarks.Algorithms {
             Console.WriteLine($"Pentagon = {TestPentagonIndex}");
         }
 
+        [Benchmark(Description = "pocketken.H3.GetKRing(hex, k = 50)")]
+        public List<RingCell> GetKRingHex() => TestIndex.GetKRing(K).ToList();
+
         [Benchmark(Description = "pocketken.H3.GetKRingFast(hex, k = 50)")]
         public List<RingCell> GetKRingHexFast() => TestIndex.GetKRingFast(K).ToList();
 
         [Benchmark(Description = "pocketken.H3.GetKRingSlow(hex, k = 50)")]
         public List<RingCell> GetKRingHexSlow() => TestPentagonIndex.GetKRingSlow(K).ToList();
+
+        [Benchmark(Description = "pocketken.H3.GetKRing(pent, k = 50)")]
+        public List<RingCell> GetKRingPent() => TestPentagonIndex.GetKRing(K).ToList();
 
         [Benchmark(Description = "pocketken.H3.GetKRingSlow(pent, k = 50)")]
         public List<RingCell> GetKRingPentSlow() => TestPentagonIndex.GetKRingSlow(K).ToList();
