@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using GeoAPI.Geometries;
 using H3.Model;
 using NetTopologySuite.Geometries;
 using static H3.Constants;
@@ -148,7 +147,7 @@ namespace H3.Extensions {
         /// Polygon instance.  Note that vertex coordinates are provided in EPSG
         /// 4326 (WGS84)</param>
         /// <returns>Polygon for cell boundary</returns>
-        public static IPolygon GetCellBoundary(this H3Index index, GeometryFactory? geomFactory = null) {
+        public static Polygon GetCellBoundary(this H3Index index, GeometryFactory? geomFactory = null) {
             // get vertices and copy first onto the end to close the hole
             var polyVertices = GetCellBoundaryVertices(index).ToList();
             polyVertices.Add(polyVertices.First());
@@ -165,7 +164,7 @@ namespace H3.Extensions {
         /// <param name="indicies"></param>
         /// <param name="geomFactory"></param>
         /// <returns></returns>
-        public static IMultiPolygon GetCellBoundaries(this IEnumerable<H3Index> indicies, GeometryFactory? geomFactory = null) {
+        public static MultiPolygon GetCellBoundaries(this IEnumerable<H3Index> indicies, GeometryFactory? geomFactory = null) {
             var gf = geomFactory ?? DefaultGeometryFactory;
             return gf.CreateMultiPolygon(indicies.Select(index => index.GetCellBoundary()).ToArray());
         }

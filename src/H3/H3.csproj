@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>pocketken.H3.3.7.1</AssemblyName>
+    <AssemblyName>pocketken.H3.3.7.1.1</AssemblyName>
     <TargetFramework>net5.0</TargetFramework>
     <PackOnBuild>true</PackOnBuild>
     <PackageId>pocketken.H3</PackageId>
-    <PackageVersion>3.7.1</PackageVersion>
+    <PackageVersion>3.7.1.1</PackageVersion>
     <Authors>pocketken</Authors>
     <Description>Port of Uber's H3 to .NET</Description>
     <PackageProjectUrl>https://github.com/pocketken/H3.net</PackageProjectUrl>
@@ -14,10 +14,11 @@
     <Company />
     <IsPackable>true</IsPackable>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <Version>3.7.1.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetTopologySuite.Core" Version="1.15.3" />
+    <PackageReference Include="NetTopologySuite" Version="2.2.0" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Model\" />

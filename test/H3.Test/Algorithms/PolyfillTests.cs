@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
 using NUnit.Framework;
-using GeoAPI.Geometries;
 using H3.Algorithms;
 using H3.Extensions;
 using H3.Model;
 using static H3.Constants;
 using static H3.Utils;
+using NetTopologySuite.Geometries;
 
 namespace H3.Test.Algorithms {
 
@@ -293,7 +293,7 @@ namespace H3.Test.Algorithms {
         /// </summary>
         /// <param name="verts"></param>
         /// <returns></returns>
-        private static IPolygon CreatePolygon(GeoCoord[] verts) =>
+        private static Polygon CreatePolygon(GeoCoord[] verts) =>
             DefaultGeometryFactory.CreatePolygon(verts.Select(g => g.ToCoordinate()).Reverse().ToArray());
 
         /// <summary>
@@ -302,7 +302,7 @@ namespace H3.Test.Algorithms {
         /// <param name="verts"></param>
         /// <param name="holeVerts"></param>
         /// <returns></returns>
-        private static IPolygon CreatePolygonWithHole(GeoCoord[] verts, GeoCoord[] holeVerts) =>
+        private static Polygon CreatePolygonWithHole(GeoCoord[] verts, GeoCoord[] holeVerts) =>
             DefaultGeometryFactory.CreatePolygon(
                     DefaultGeometryFactory.CreateLinearRing(verts.Select(g => g.ToCoordinate()).Reverse().ToArray()),
                     new[] { DefaultGeometryFactory.CreateLinearRing(holeVerts.Select(g => g.ToCoordinate()).Reverse().ToArray()) }

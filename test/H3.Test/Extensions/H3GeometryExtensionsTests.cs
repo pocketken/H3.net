@@ -129,10 +129,14 @@ namespace H3.Test.Extensions {
 
         [Test]
         public void Test_GetCellBoundary_PolygonWktMatchesPg() {
+            // Arrange
+            var geomFactory = new GeometryFactory(new PrecisionModel(1 / (EPSILON * 100)), 4236);
+
             // Act
-            var polygon = new H3Index(TestHelpers.TestIndexValue).GetCellBoundary();
+            var polygon = new H3Index(TestHelpers.TestIndexValue).GetCellBoundary(geomFactory);
 
             // Assert
+            Assert.AreEqual(geomFactory, polygon.Factory, "should be using geomFactory not DefaultGeometryFactory");
             Assert.AreEqual(TestPointBoundaryPolygonWkt, polygon.ToString(), "should be equal");
         }
 
