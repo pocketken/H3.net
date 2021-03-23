@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using GeoAPI.Geometries;
 using H3.Model;
 using NetTopologySuite.Algorithm.Locate;
+using NetTopologySuite.Geometries;
 using NetTopologySuite.LinearReferencing;
 
 #nullable enable
@@ -15,7 +15,7 @@ namespace H3.Algorithms {
 
         public bool GeometryChanged => true;
 
-        public void Filter(ICoordinateSequence seq, int i) {
+        public void Filter(CoordinateSequence seq, int i) {
             double x = seq.GetX(i);
             seq.SetOrdinate(i, Ordinate.X, x < 0 ? x + 360.0 : x);
         }
@@ -26,7 +26,7 @@ namespace H3.Algorithms {
 
         public bool GeometryChanged => true;
 
-        public void Filter(ICoordinateSequence seq, int i) {
+        public void Filter(CoordinateSequence seq, int i) {
             double x = seq.GetX(i);
             seq.SetOrdinate(i, Ordinate.X, x > 0 ? x - 360.0 : x);
         }
@@ -44,7 +44,7 @@ namespace H3.Algorithms {
         /// <param name="polygon">Containment polygon</param>
         /// <param name="resolution">H3 resolution</param>
         /// <returns>Indicies where center point is contained within polygon</returns>
-        public static IEnumerable<H3Index> Fill(this IPolygon polygon, int resolution) {
+        public static IEnumerable<H3Index> Fill(this Polygon polygon, int resolution) {
             bool isTransMeridian = polygon.IsTransMeridian();
             var testPoly = isTransMeridian ? SplitPolygon(polygon) : polygon;
 
@@ -77,7 +77,7 @@ namespace H3.Algorithms {
         /// <param name="polyline"></param>
         /// <param name="resolution"></param>
         /// <returns></returns>
-        public static IEnumerable<H3Index> Fill(this ILineString polyline, int resolution) =>
+        public static IEnumerable<H3Index> Fill(this LineString polyline, int resolution) =>
             polyline.Coordinates.GetIndicies(resolution);
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace H3.Algorithms {
         /// </summary>
         /// <param name="polygon"></param>
         /// <returns></returns>
-        public static bool IsTransMeridian(this IPolygon polygon) {
+        public static bool IsTransMeridian(this Polygon polygon) {
             if (polygon.IsEmpty) return false;
             var coords = polygon.Envelope.Coordinates;
             return Math.Abs(coords[0].X - coords[2].X) > 180.0;
@@ -131,7 +131,7 @@ namespace H3.Algorithms {
         /// </summary>
         /// <param name="originalPolygon"></param>
         /// <returns></returns>
-        private static IGeometry SplitPolygon(IPolygon originalPolygon) {
+        private static Geometry SplitPolygon(Polygon originalPolygon) {
             var left = originalPolygon.Copy();
             left.Apply(new NegativeLonFilter());
             var right = originalPolygon.Copy();

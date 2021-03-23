@@ -3,7 +3,6 @@ using System.Globalization;
 using H3.Model;
 using static H3.Constants;
 using static H3.Utils;
-using GeoAPI.Geometries;
 using NetTopologySuite.Geometries;
 using System.Runtime.CompilerServices;
 
@@ -427,7 +426,7 @@ namespace H3 {
         /// point; defaults to DefaultGeometryFactory.  Note that coordinates
         /// are provided in degrees and SRS is assumed to be EPSG:4326.</param>
         /// <returns></returns>
-        public IPoint ToPoint(GeometryFactory? geometryFactory = null) =>
+        public Point ToPoint(GeometryFactory? geometryFactory = null) =>
             ToGeoCoord().ToPoint(geometryFactory);
 
         /// <summary>
@@ -537,7 +536,7 @@ namespace H3 {
             return FromFaceIJK(FaceIJK.FromGeoCoord(geoCoord, resolution), resolution);
         }
 
-        public static H3Index FromPoint(IPoint point, int resolution) =>
+        public static H3Index FromPoint(Point point, int resolution) =>
             FromGeoCoord(GeoCoord.FromPoint(point), resolution);
 
         public static H3Index FromCoordinate(Coordinate coordinate, int resolution) =>

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using GeoAPI.Geometries;
 using H3.Extensions;
 using NetTopologySuite.Geometries;
 using static H3.Constants;
@@ -32,7 +31,7 @@ namespace H3.Model {
         /// </summary>
         /// <param name="p"></param>
         /// <returns></returns>
-        public static GeoCoord FromPoint(IPoint p) => new GeoCoord {
+        public static GeoCoord FromPoint(Point p) => new GeoCoord {
             Latitude = p.Y * M_PI_180,
             Longitude = p.X * M_PI_180
         };
@@ -122,7 +121,7 @@ namespace H3.Model {
         /// </summary>
         /// <param name="geometryFactory"></param>
         /// <returns></returns>
-        public IPoint ToPoint(GeometryFactory? geometryFactory = null) {
+        public Point ToPoint(GeometryFactory? geometryFactory = null) {
             var gf = geometryFactory ?? DefaultGeometryFactory;
             return gf.CreatePoint(new Coordinate(LongitudeDegrees, LatitudeDegrees));
         }
