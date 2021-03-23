@@ -12,6 +12,7 @@
     <RepositoryUrl>https://github.com/pocketken/H3.net</RepositoryUrl>
     <PackageTags>h3 geospatial hexagon spatial-indexing</PackageTags>
     <Company />
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
