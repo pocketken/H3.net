@@ -18,7 +18,7 @@ PRs to improve code, tests and documentation are definitely welcome, although pl
 Available on [nuget.org](https://nuget.org) as [pocketken.H3](https://www.nuget.org/packages/pocketken.H3/).
 
 ```
-PM> Install-Package pocketken.H3 -Version 3.7.1
+PM> Install-Package pocketken.H3 -Version 3.7.1.2
 ```
 
 ## Some Mostly-Pointless Benchmarks
