@@ -200,8 +200,7 @@ namespace H3.Extensions {
                     return H3Index.Invalid;
                 }
 
-                int lRotations = 0;
-                H3Index leftNeighbour = cell.GetDirectNeighbour(left, ref lRotations);
+                var (leftNeighbour, lRotations) = cell.GetDirectNeighbour(left);
 
                 // Set to owner if lowest index
                 if (leftNeighbour < owner) {
@@ -218,8 +217,7 @@ namespace H3.Extensions {
                         return H3Index.Invalid;
                     }
 
-                    int rRotations = 0;
-                    H3Index rightNeighbour = cell.GetDirectNeighbour(right, ref rRotations);
+                    var (rightNeighbour, rRotations) = cell.GetDirectNeighbour(right);
 
                     // Set to owner if lowest index
                     if (rightNeighbour < owner) {

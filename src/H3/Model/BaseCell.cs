@@ -32,7 +32,7 @@ namespace H3.Model {
         }
 
         public static implicit operator BaseCell(((int, (int, int, int)), int, (int, int)) tuple) =>
-            new BaseCell {
+            new() {
                 Home = new FaceIJK(tuple.Item1.Item1, tuple.Item1.Item2),
                 IsPentagon = tuple.Item2 == 1,
                 ClockwiseOffsetPent = new int[2] { tuple.Item3.Item1, tuple.Item3.Item2 }

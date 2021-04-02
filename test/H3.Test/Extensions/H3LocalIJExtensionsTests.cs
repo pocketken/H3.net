@@ -234,7 +234,7 @@ namespace H3.Test.Extensions {
             // Act
             var coords = TestHelpers.GetAllCellsForResolution(2)
                 .Select(index => {
-                    CoordIJK expected = new CoordIJK(LookupTables.DirectionToUnitVector[index.GetDirectionForResolution(1)]);
+                    CoordIJK expected = new(LookupTables.DirectionToUnitVector[index.GetDirectionForResolution(1)]);
                     expected.DownAperature7Clockwise().ToNeighbour(index.GetDirectionForResolution(2));
 
                     return (
@@ -262,8 +262,7 @@ namespace H3.Test.Extensions {
                     Enumerable.Range((int)Direction.K, 6)
                         .Where(dir => !(index.IsPentagon && dir == (int)Direction.K))
                         .Select(dir => {
-                            int rotations = 0;
-                            H3Index offset = index.GetDirectNeighbour((Direction)dir, ref rotations);
+                            H3Index offset = index.GetDirectNeighbour((Direction)dir).Item1;
                             return (
                                 Origin: index,
                                 OriginIJK: index.ToLocalIJK(index),

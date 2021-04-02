@@ -85,8 +85,7 @@ namespace H3.Extensions {
             if (origin == H3Index.Invalid) {
                 return H3Index.Invalid;
             }
-            int rotations = 0;
-            return origin.GetDirectNeighbour((Direction)edge.ReservedBits, ref rotations);
+            return origin.GetDirectNeighbour((Direction)edge.ReservedBits).Item1;
         }
 
         /// <summary>

@@ -32,8 +32,7 @@ namespace H3.Test.Extensions {
                 Mode = Mode.UniEdge,
                 ReservedBits = (int)Direction.IJ
             };
-            int rotations = 0;
-            H3Index destination = origin.GetDirectNeighbour(Direction.IJ, ref rotations);
+            H3Index destination = origin.GetDirectNeighbour(Direction.IJ).Item1;
 
             // Act
             var actual = origin.GetUnidirectionalEdge(destination);
@@ -145,8 +144,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_Upstream_GetOriginFromUnidirectionalEdge() {
             // Arrange
-            int rotations = 0;
-            H3Index sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ, ref rotations);
+            H3Index sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1;
             var edge = TestHelpers.SfIndex.GetUnidirectionalEdge(sf2);
 
             // Act
@@ -177,8 +175,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_Upstream_GetDestinationFromUnidirectionalEdge() {
             // Arrange
-            int rotations = 0;
-            H3Index sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ, ref rotations);
+            H3Index sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1;
             var edge = TestHelpers.SfIndex.GetUnidirectionalEdge(sf2);
 
             // Act
@@ -209,8 +206,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_Upstream_GetIndexesFromUnidirectionalEdge() {
             // Arrange
-            int rotations = 0;
-            H3Index sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ, ref rotations);
+            H3Index sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1;
             var edge = TestHelpers.SfIndex.GetUnidirectionalEdge(sf2);
 
             // Act

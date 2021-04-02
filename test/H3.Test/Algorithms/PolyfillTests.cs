@@ -180,19 +180,19 @@ namespace H3.Test.Algorithms {
             // Arrange
             var index = H3Index.Create(9, 24, 0);
             GeoCoord coord = index.ToGeoCoord();
-            GeoCoord topRight = new GeoCoord {
+            GeoCoord topRight = new() {
                 Latitude = coord.Latitude + EdgeLength2,
                 Longitude = coord.Longitude + EdgeLength2
             };
-            GeoCoord topLeft = new GeoCoord {
+            GeoCoord topLeft = new() {
                 Latitude = coord.Latitude + EdgeLength2,
                 Longitude = coord.Longitude - EdgeLength2
             };
-            GeoCoord bottomRight = new GeoCoord {
+            GeoCoord bottomRight = new() {
                 Latitude = coord.Latitude - EdgeLength2,
                 Longitude = coord.Longitude + EdgeLength2
             };
-            GeoCoord bottomLeft = new GeoCoord {
+            GeoCoord bottomLeft = new() {
                 Latitude = coord.Latitude - EdgeLength2,
                 Longitude = coord.Longitude - EdgeLength2
             };

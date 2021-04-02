@@ -108,7 +108,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_GetCellBoundaryVertices_AtRes0() {
             // Arrange
-            GeoCoord c = new GeoCoord(0, 0);
+            GeoCoord c = new(0, 0);
             var index = H3Index.FromGeoCoord(c, 0);
 
             // Act
@@ -169,7 +169,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_GetCellAreaInKm2() {
             // Arrange
-            GeoCoord c = new GeoCoord(0, 0);
+            GeoCoord c = new(0, 0);
             var indexes = Enumerable.Range(0, MAX_H3_RES + 1).Select(r => H3Index.FromGeoCoord(c, r)).ToArray();
 
             // Act

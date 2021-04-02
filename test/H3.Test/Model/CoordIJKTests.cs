@@ -21,7 +21,7 @@ namespace H3.Test {
         [TestCase(8, 1, 8, Direction.Invalid)]
         public void Test_CoordIJK_UnitVector_Matching(int i, int j, int k, Direction expectedIndex) {
             // Arrange
-            CoordIJK coord = new CoordIJK(i, j, k);
+            CoordIJK coord = new(i, j, k);
 
             // Act
             var cell = (Direction)coord;
@@ -34,7 +34,7 @@ namespace H3.Test {
         [TestCase(0, 1, 0, 2)]
         public void Test_CoordIJK_Equals(int i, int j, int k, int expectedIndex) {
             // Arrange
-            CoordIJK coord = new CoordIJK(i, j, k);
+            CoordIJK coord = new(i, j, k);
 
             // Act
             var result = coord == LookupTables.UnitVectors[expectedIndex];
@@ -46,8 +46,8 @@ namespace H3.Test {
         [Test]
         public void Test_CoordIJK_Addition() {
             // Arrange
-            CoordIJK a = new CoordIJK(1, 1, 0);
-            CoordIJK b = new CoordIJK(0, 1, 1);
+            CoordIJK a = new(1, 1, 0);
+            CoordIJK b = new(0, 1, 1);
 
             // Act
             var result = a + b;
@@ -61,8 +61,8 @@ namespace H3.Test {
         [Test]
         public void Test_CoordIJK_Subtraction() {
             // Arrange
-            CoordIJK a = new CoordIJK(1, 1, 0);
-            CoordIJK b = new CoordIJK(0, 1, 1);
+            CoordIJK a = new(1, 1, 0);
+            CoordIJK b = new(0, 1, 1);
 
             // Act
             var result = a - b;
@@ -76,7 +76,7 @@ namespace H3.Test {
         [Test]
         public void Test_CoordIJK_Scaling() {
             // Arrange
-            CoordIJK a = new CoordIJK(1, 1, 0);
+            CoordIJK a = new(1, 1, 0);
 
             // Act
             var result = a *= 2;
@@ -90,9 +90,9 @@ namespace H3.Test {
         [Test]
         public void Test_CoordIJK_MultipleTransforms() {
             // Arrange
-            CoordIJK a = new CoordIJK(1, 1, 0);
-            CoordIJK b = new CoordIJK(0, 1, 1);
-            CoordIJK c = new CoordIJK(1, 0, 0);
+            CoordIJK a = new(1, 1, 0);
+            CoordIJK b = new(0, 1, 1);
+            CoordIJK c = new(1, 0, 0);
 
             // Act
             var result = (a + b + c) * 2;
@@ -106,7 +106,7 @@ namespace H3.Test {
         [Test]
         public void Test_CoordIJK_Normalize() {
             // Arrange
-            CoordIJK a = new CoordIJK(-2, 2, 0);
+            CoordIJK a = new(-2, 2, 0);
 
             // Act
             var result = CoordIJK.Normalize(a);
@@ -123,7 +123,7 @@ namespace H3.Test {
         [TestCase(Direction.Invalid, 0, 0, 0)]
         public void Test_CoordIJK_ToNeighbour(Direction direction, int expectedI, int expectedJ, int expectedK) {
             // Arrange
-            CoordIJK ijk = new CoordIJK();
+            CoordIJK ijk = new();
 
             // Act
             var neighbour = ijk.ToNeighbour(direction);
