@@ -217,7 +217,7 @@ namespace H3.Model {
             // convert each vertex to lat/lon
             // adjust the face of each vertex as appropriate and introduce
             // edge-crossing vertices as needed
-            FaceIJK lastFijk = new FaceIJK();
+            FaceIJK lastFijk = new();
 
             for (int vert = start; vert < start + length + additionalIteration; vert += 1) {
                 int v = vert % NUM_PENT_VERTS;

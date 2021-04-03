@@ -75,7 +75,7 @@ namespace H3.Test {
         [Test]
         public void Test_KnownIndexValue() {
             // Act
-            H3Index h3 = new H3Index(TestHelpers.TestIndexValue);
+            H3Index h3 = new(TestHelpers.TestIndexValue);
 
             // Assert
             AssertKnownIndexValue(h3);
@@ -84,7 +84,7 @@ namespace H3.Test {
         [Test]
         public void Test_FromString_MatchesKnownIndexValue() {
             // Act
-            H3Index h3 = new H3Index("8e48e1d7038d527");
+            H3Index h3 = new("8e48e1d7038d527");
 
             // Assert
             AssertKnownIndexValue(h3);
@@ -93,7 +93,7 @@ namespace H3.Test {
         [Test]
         public void Test_FromPoint_MatchesKnownIndexValue() {
             // Arrange
-            Point point = new Point(-110, 30);
+            Point point = new(-110, 30);
 
             // Act
             H3Index h3 = H3Index.FromPoint(point, 14);
@@ -105,10 +105,10 @@ namespace H3.Test {
         [Test]
         public void Test_Equality() {
             // Arrange
-            H3Index i1 = new H3Index(TestHelpers.TestIndexValue);
-            H3Index i1_1 = new H3Index(TestHelpers.TestIndexValue);
-            H3Index i2 = new H3Index(TestHelpers.TestIndexValue + 1);
-            H3Index i2_2 = new H3Index(TestHelpers.TestIndexValue + 1);
+            H3Index i1 = new(TestHelpers.TestIndexValue);
+            H3Index i1_1 = new(TestHelpers.TestIndexValue);
+            H3Index i2 = new(TestHelpers.TestIndexValue + 1);
+            H3Index i2_2 = new(TestHelpers.TestIndexValue + 1);
             List<H3Index> h3List = new() { i1, i2 };
             HashSet<H3Index> h3Set = new() { i1, i2 };
 

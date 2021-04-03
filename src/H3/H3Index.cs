@@ -48,7 +48,7 @@ namespace H3 {
 
         #region properties
 
-        private ulong Value { get; set; } = 0;
+        internal ulong Value { get; set; } = 0;
 
         public BaseCell BaseCell {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -243,9 +243,9 @@ namespace H3 {
         /// </summary>
         /// <param name="resolution"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void IncrementDirectionForResolution(int resolution) {
+        internal void IncrementDirectionForResolution(int resolution) {
             ulong val = 1UL;
-            val <<= 3 * (15 - resolution);
+            val <<= H3_PER_DIGIT_OFFSET * (15 - resolution);
             Value += val;
         }
 
@@ -256,16 +256,34 @@ namespace H3 {
         /// <param name="startResolution"></param>
         /// <param name="endResolution"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ZeroDirectionsForResolutionRange(int startResolution, int endResolution) {
+        internal void ZeroDirectionsForResolutionRange(int startResolution, int endResolution) {
             if (startResolution > endResolution) return;
 
             ulong m = ~0UL;
-            m <<= 3 * (endResolution - startResolution + 1);
+            m <<= H3_PER_DIGIT_OFFSET * (endResolution - startResolution + 1);
             m = ~m;
-            m <<= 3 * (15 - endResolution);
+            m <<= H3_PER_DIGIT_OFFSET * (15 - endResolution);
             m = ~m;
 
             Value &= m;
+        }
+
+        /// <summary>
+        /// Invalidates the Direction "digits" for the indexes starting at startResolution
+        /// and ending at endResolution
+        /// </summary>
+        /// <param name="startResolution"></param>
+        /// <param name="endResolution"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void InvalidateDirectionsForResolutionRange(int startResolution, int endResolution) {
+            if (startResolution > endResolution) return;
+
+            ulong m = ~0UL;
+            m <<= H3_PER_DIGIT_OFFSET * (endResolution - startResolution + 1);
+            m = ~m;
+            m <<= H3_PER_DIGIT_OFFSET * (15 - endResolution);
+
+            Value |= m;
         }
 
         /// <summary>
@@ -544,7 +562,7 @@ namespace H3 {
 
         public static implicit operator ulong(H3Index index) => index.Value;
 
-        public static implicit operator H3Index(ulong value) => new H3Index(value);
+        public static implicit operator H3Index(ulong value) => new(value);
 
         public override string ToString() => $"{Value:x}".ToLowerInvariant();
 

@@ -193,11 +193,10 @@ namespace H3.Test.Extensions {
         [TestCase(Direction.IJ, 8, 1)]
         public void Test_GetDirectNeighbour_BaseCells(Direction direction, int expectedBaseCell, int baseRotations) {
             // Arrange
-            int rotations = 0;
             int expectedRotations = LookupTables.BaseCells[expectedBaseCell].IsPentagon ? baseRotations + 1 : baseRotations;
 
             // Act
-            var actual = BaseCell0.GetDirectNeighbour(direction, ref rotations);
+            var (actual, rotations) = BaseCell0.GetDirectNeighbour(direction);
 
             // Assert
             Assert.AreEqual(expectedBaseCell, actual.BaseCellNumber, $"should be {expectedBaseCell}");
@@ -239,8 +238,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_Upstream_IsNeighbour_FalseOnInvalid() {
             // Arrange
-            int rotations = 0;
-            H3Index index = new(TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ, ref rotations)) {
+            H3Index index = new(TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1) {
                 Mode = Mode.UniEdge
             };
 
@@ -254,8 +252,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_Upstream_IsNeighbour_FalseOnResolutionDifference() {
             // Arrange
-            int rotations = 0;
-            H3Index index = new(TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ, ref rotations));
+            H3Index index = new(TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1);
 
             // Act
             var actual = TestHelpers.SfIndex.IsNeighbour(index.GetParentForResolution(7));

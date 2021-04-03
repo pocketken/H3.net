@@ -15,7 +15,7 @@ namespace H3.Model {
         private BaseCellRotation() { }
 
         public static implicit operator BaseCellRotation((int, int) tuple) =>
-            new BaseCellRotation {
+            new() {
                 Cell = tuple.Item1,
                 CounterClockwiseRotations = tuple.Item2
             };

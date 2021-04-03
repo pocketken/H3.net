@@ -31,7 +31,7 @@ namespace H3.Model {
         /// </summary>
         /// <param name="p"></param>
         /// <returns></returns>
-        public static GeoCoord FromPoint(Point p) => new GeoCoord {
+        public static GeoCoord FromPoint(Point p) => new() {
             Latitude = p.Y * M_PI_180,
             Longitude = p.X * M_PI_180
         };
@@ -54,7 +54,7 @@ namespace H3.Model {
         /// The spherical coordinates at the desired azimuth and distance from p1
         /// </returns>
         public static GeoCoord ForAzimuthDistanceInRadians(GeoCoord p1, double azimuth, double distance) {
-            GeoCoord p2 = new GeoCoord(p1);
+            GeoCoord p2 = new(p1);
             if (distance < EPSILON) return p2;
 
             double az = NormalizeAngle(azimuth);
@@ -205,7 +205,7 @@ namespace H3.Model {
 
         public bool AlmostEquals(GeoCoord p2) => AlmostEqualsThreshold(p2, EPSILON_RAD);
 
-        public static implicit operator GeoCoord((double, double) c) => new GeoCoord(c.Item1, c.Item2);
+        public static implicit operator GeoCoord((double, double) c) => new(c.Item1, c.Item2);
 
         public static bool operator ==(GeoCoord a, GeoCoord b) => a.Latitude == b.Latitude && a.Longitude == b.Longitude;
 

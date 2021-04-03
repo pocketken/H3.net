@@ -24,8 +24,8 @@ namespace H3.Model {
         }
 
         public static Vec2d Intersect(Vec2d p0, Vec2d p1, Vec2d p2, Vec2d p3) {
-            Vec2d s1 = new Vec2d(p1.X - p0.X, p1.Y - p0.Y);
-            Vec2d s2 = new Vec2d(p3.X - p2.X, p3.Y - p2.Y);
+            Vec2d s1 = new(p1.X - p0.X, p1.Y - p0.Y);
+            Vec2d s2 = new(p3.X - p2.X, p3.Y - p2.Y);
             float t = (float)(s2.X * (p0.Y - p2.Y) - s2.Y * (p0.X - p2.X)) /
                 (float)(-s2.X * s1.Y + s1.X * s2.Y);
             return new Vec2d(p0.X + (t * s1.X), p0.Y + (t * s1.Y));

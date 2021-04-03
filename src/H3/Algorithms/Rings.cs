@@ -62,7 +62,7 @@ namespace H3.Algorithms {
             // break out to the requested ring
             int rotations = 0;
             for (int ring = 0; ring < k; ring +=1 ) {
-                index = index.GetDirectNeighbour(LookupTables.NextRingDirection, ref rotations);
+                (index, rotations) = index.GetDirectNeighbour(LookupTables.NextRingDirection, rotations);
                 if (index == H3Index.Invalid) throw new HexRingKSequenceException();
                 if (index.IsPentagon) throw new HexRingPentagonException();
             }
@@ -72,7 +72,7 @@ namespace H3.Algorithms {
 
             for (int direction = 0; direction < 6; direction += 1) {
                 for (int pos = 0; pos < k; pos += 1) {
-                    index = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], ref rotations);
+                    (index, rotations) = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], rotations);
                     if (index == H3Index.Invalid) throw new HexRingKSequenceException();
 
                     // Skip the very last index, it was already added. We do
@@ -135,8 +135,7 @@ namespace H3.Algorithms {
                 var nextK = cell.Distance + 1;
                 if (nextK <= k) {
                     for (int i = 0; i < 6; i += 1) {
-                        int rotations = 0;
-                        var neighbour = cell.Index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[i], ref rotations);
+                        var neighbour = cell.Index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[i]).Item1;
                         if (neighbour == origin || neighbour == H3Index.Invalid || (searched.TryGetValue(neighbour, out int previousK) && previousK <= nextK)) {
                             continue;
                         }
@@ -190,7 +189,7 @@ namespace H3.Algorithms {
                 if (direction == 0 && i == 0) {
                     // Not putting in the output set as it will be done later, at
                     // the end of this ring.
-                    index = index.GetDirectNeighbour(LookupTables.NextRingDirection, ref rotations);
+                    (index, rotations) = index.GetDirectNeighbour(LookupTables.NextRingDirection, rotations);
                     if (index == H3Index.Invalid) {
                         // Should not be possible because `origin` would have to be a pentagon
                         throw new HexRingKSequenceException();
@@ -202,7 +201,7 @@ namespace H3.Algorithms {
                     }
                 }
 
-                index = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], ref rotations);
+                (index, rotations) = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], rotations);
                 if (index == H3Index.Invalid) {
                     // Should not be possible because `origin` would have to be a pentagon
                     throw new HexRingKSequenceException();

@@ -44,13 +44,21 @@ While there are some comparisons here against [H3Lib](https://github.com/Richard
 
 ### Hierarchy Ops
 
+### GetParentForResolution
+Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) to get parent at resolution 0 (a silly microbenchmark):
+
+|                              Method |      Mean |     Error |    StdDev |  Gen 0 | Gen 1 | Gen 2 | Allocated |
+|------------------------------------ |----------:|----------:|----------:|-------:|------:|------:|----------:|
+| pocketken.H3.GetParentForResolution |  4.458 ns | 0.0474 ns | 0.0443 ns | 0.0029 |     - |     - |      24 B |
+|                      H3Lib.ToParent | 20.817 ns | 0.1196 ns | 0.1118 ns |      - |     - |     - |         - |
+
 #### GetChildrenForResolution
 Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) to get all children at resolution 15.
 
 |                                Method |     Mean |     Error |    StdDev |     Gen 0 |     Gen 1 |    Gen 2 | Allocated |
 |-------------------------------------- |---------:|----------:|----------:|----------:|----------:|---------:|----------:|
-| pocketken.H3.GetChildrenForResolution | 9.368 ms | 0.1335 ms | 0.1184 ms |  796.8750 |  781.2500 | 484.3750 |   4.69 MB |
-|                      H3Lib.ToChildren | 9.689 ms | 0.1837 ms | 0.1966 ms | 3453.1250 | 1640.6250 | 984.3750 |  23.55 MB |
+| pocketken.H3.GetChildrenForResolution | 9.128 ms | 0.1809 ms | 0.2415 ms |  796.8750 |  781.2500 | 484.3750 |   4.69 MB |
+|                      H3Lib.ToChildren | 9.671 ms | 0.1904 ms | 0.2266 ms | 3453.1250 | 1671.8750 | 984.3750 |  23.55 MB |
 
 ### Lines
 Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells).
@@ -63,26 +71,28 @@ Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells)
 ### Rings
 `hex` is a hexagon index (`8f48e1d7038d520`).
 
-|                                   Method |       Mean |    Error |   StdDev |   Gen 0 |    Gen 1 |   Gen 2 |  Allocated |
-|----------------------------------------- |-----------:|---------:|---------:|--------:|---------:|--------:|-----------:|
-| 'pocketken.H3.GetKRingFast(hex, k = 50)' |   593.2 us |  4.04 us |  3.78 us |  66.4063 | 33.2031 |       - |  547.92 KB |
-| 'pocketken.H3.GetKRingSlow(hex, k = 50)' | 5,846.9 us | 26.14 us | 24.45 us | 179.6875 | 85.9375 | 85.9375 | 1634.09 KB |
-|      'H3Lib.KRingDistances(hex, k = 50)' |   377.3 us |  1.83 us |  1.53 us |  99.6094 | 99.6094 | 99.6094 |  486.59 KB |
+|                                   Method |       Mean |    Error |   StdDev |    Gen 0 |   Gen 1 |   Gen 2 |  Allocated |
+|----------------------------------------- |-----------:|---------:|---------:|---------:|--------:|--------:|-----------:|
+|     'pocketken.H3.GetKRing(hex, k = 50)' |   460.1 us |  1.99 us |  1.86 us |  73.7305 | 36.6211 |       - |  607.75 KB |
+| 'pocketken.H3.GetKRingFast(hex, k = 50)' |   471.4 us |  2.48 us |  2.32 us |  66.4063 | 33.2031 |       - |  547.92 KB |
+| 'pocketken.H3.GetKRingSlow(hex, k = 50)' | 4,852.8 us | 38.70 us | 36.20 us | 179.6875 | 85.9375 | 85.9375 | 1634.09 KB |
+|      'H3Lib.KRingDistances(hex, k = 50)' |   381.6 us |  0.87 us |  0.68 us |  99.6094 | 99.6094 | 99.6094 |  486.59 KB |
 
 `pent` is a pentagon index (`8e0800000000007`) which forces the use of the iterative (recursive in the case of H3Lib) method of generating the ring due to the fast method's inability to handle pentagons.
 
-|                                    Method |          Mean |         Error |        StdDev |        Gen 0 |        Gen 1 |        Gen 2 |   Allocated |
-|------------------------------------------ |--------------:|--------------:|--------------:|-------------:|-------------:|-------------:|------------:|
-| 'pocketken.H3.GetKRingSlow(pent, k = 50)' |      5.644 ms |     0.0249 ms |     0.0233 ms |     179.6875 |      85.9375 |      85.9375 |      1.6 MB |
-|      'H3Lib.KRingDistances(pent, k = 50)' | 59,581.867 ms | 1,123.9235 ms | 1,154.1867 ms | 7683000.0000 | 6097000.0000 | 5055000.0000 | 71357.79 MB |
+|                                    Method |          Mean |       Error |      StdDev |        Gen 0 |        Gen 1 |        Gen 2 |   Allocated |
+|------------------------------------------ |--------------:|------------:|------------:|-------------:|-------------:|-------------:|------------:|
+|     'pocketken.H3.GetKRing(pent, k = 50)' |      4.088 ms |   0.0263 ms |   0.0246 ms |     179.6875 |      85.9375 |      85.9375 |      1.6 MB |
+| 'pocketken.H3.GetKRingSlow(pent, k = 50)' |      3.985 ms |   0.0138 ms |   0.0115 ms |     179.6875 |      85.9375 |      85.9375 |      1.6 MB |
+|      'H3Lib.KRingDistances(pent, k = 50)' | 59,216.102 ms | 960.4448 ms | 898.4006 ms | 7692000.0000 | 6112000.0000 | 5064000.0000 | 71358.66 MB |
 
 ### Sets
-* Compact: Result of compacting all base cells at resolution 5.
+* Compact: Result of compacting all cells at resolution 5.
 * Uncompact: Result of uncompacting all base cells to resolution of 5.
 
-|                Type |                 Method |     Mean |    Error |  StdDev |      Gen 0 |     Gen 1 |     Gen 2 | Allocated |
-|-------------------- |----------------------- |----------:|--------:|--------:|-----------:|----------:|----------:|----------:|
-|   CompactBenchmarks |   pocketken.H3.Compact |  356.1 ms | 6.75 ms | 6.63 ms | 11000.0000 | 3000.0000 |         - | 243.51 MB |
-|   CompactBenchmarks |          H3Lib.Compact |  389.1 ms | 6.56 ms | 6.14 ms |  9000.0000 | 4000.0000 | 2000.0000 | 305.24 MB |
-| UncompactBenchmarks | pocketken.H3.Uncompact |  138.7 ms | 1.45 ms | 1.36 ms |  6500.0000 | 3500.0000 | 1000.0000 |  78.18 MB |
-| UncompactBenchmarks |        H3Lib.Uncompact |  194.9 ms | 1.97 ms | 1.75 ms | 43000.0000 | 7333.3333 |  666.6667 | 493.02 MB |
+|                 Method |     Mean |   Error |  StdDev |      Gen 0 |     Gen 1 |     Gen 2 | Allocated |
+|----------------------- |---------:|--------:|--------:|-----------:|----------:|----------:|----------:|
+|   pocketken.H3.Compact | 330.3 ms | 5.50 ms | 5.14 ms | 11000.0000 | 3000.0000 |         - | 243.51 MB |
+|          H3Lib.Compact | 381.0 ms | 5.83 ms | 5.45 ms |  9000.0000 | 4000.0000 | 2000.0000 | 305.24 MB |
+| pocketken.H3.Uncompact | 136.6 ms | 0.36 ms | 0.32 ms |  6500.0000 | 3500.0000 | 1000.0000 |  78.18 MB |
+|        H3Lib.Uncompact | 203.3 ms | 4.05 ms | 4.16 ms | 43000.0000 | 7333.3333 |  666.6667 | 493.02 MB |

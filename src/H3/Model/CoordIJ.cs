@@ -20,13 +20,13 @@ namespace H3.Model {
             J = source.J;
         }
 
-        public static CoordIJ FromCoordIJK(CoordIJK ijk) => new CoordIJ {
+        public static CoordIJ FromCoordIJK(CoordIJK ijk) => new() {
             I = ijk.I - ijk.K,
             J = ijk.J - ijk.K
         };
 
         public static implicit operator CoordIJ((int, int) coord) =>
-            new CoordIJ(coord.Item1, coord.Item2);
+            new(coord.Item1, coord.Item2);
 
         public CoordIJK ToCoordIJK() => new CoordIJK(I, J, 0).Normalize();
 

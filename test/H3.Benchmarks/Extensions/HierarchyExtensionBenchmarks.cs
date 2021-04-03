@@ -29,5 +29,11 @@ namespace H3.Benchmarks.Extensions {
         [Benchmark(Description = "H3Lib.ToChildren")]
         public List<H3Lib.H3Index> H3LibGetChildrenForResolution() => H3LibTestIndex.ToChildren(resolution).ToList();
 
+        [Benchmark(Description = "pocketken.H3.GetParentForResolution")]
+        public H3Index GetParentForResolution() => TestHelpers.SfIndex.GetParentForResolution(0);
+
+        [Benchmark(Description = "H3Lib.ToParent")]
+        public H3Lib.H3Index H3LibGetParentForResolution() => H3LibTestIndex.ToParent(0);
+
     }
 }

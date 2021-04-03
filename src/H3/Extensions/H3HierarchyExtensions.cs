@@ -29,7 +29,7 @@ namespace H3.Extensions {
         /// (such as when crossing a face edge.)</param>
         /// <returns>H3Index of the specified neighbor or H3_NULL if deleted k-subsequence
         /// distortion is encountered.</returns>
-        public static H3Index GetDirectNeighbour(this H3Index origin, Direction direction, ref int rotations) {
+        public static (H3Index, int) GetDirectNeighbour(this H3Index origin, Direction direction, int rotations = 0) {
             H3Index outIndex = new(origin);
 
             Direction dir = direction;
@@ -116,7 +116,7 @@ namespace H3.Extensions {
                         // base cell.
                         if (oldLeadingDir == Direction.Center) {
                             // Undefined: the k direction is deleted from here
-                            return H3Index.Invalid;
+                            return (H3Index.Invalid, rotations);
                         } else if (oldLeadingDir == Direction.JK) {
                             // Rotate out of the deleted k subsequence
                             // We also need an additional change to the direction we're
@@ -131,7 +131,7 @@ namespace H3.Extensions {
                             rotations += 5;
                         } else {
                             // should never happen
-                            return H3Index.Invalid;
+                            return (H3Index.Invalid, rotations);
                         }
                     }
                 }
@@ -159,7 +159,7 @@ namespace H3.Extensions {
 
             rotations = (rotations + newRotations) % 6;
 
-            return outIndex;
+            return (outIndex, rotations);
         }
 
         /// <summary>
@@ -177,8 +177,7 @@ namespace H3.Extensions {
             bool isPentagon = origin.IsPentagon;
 
             for (Direction dir = isPentagon ? Direction.J : Direction.K; dir < Direction.Invalid; dir += 1) {
-                int rotations = 0;
-                H3Index neighbour = origin.GetDirectNeighbour(dir, ref rotations);
+                var neighbour = origin.GetDirectNeighbour(dir).Item1;
                 if (neighbour == destination) return dir;
             }
 
@@ -251,9 +250,8 @@ namespace H3.Extensions {
             H3Index parentIndex = new(origin) {
                 Resolution = parentResolution
             };
+            parentIndex.InvalidateDirectionsForResolutionRange(parentResolution + 1, resolution);
 
-            for (int r = parentResolution + 1; r <= resolution; r += 1)
-                parentIndex.SetDirectionForResolution(r, Direction.Invalid);
             return parentIndex;
         }
 
