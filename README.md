@@ -18,8 +18,10 @@ PRs to improve code, tests and documentation are definitely welcome, although pl
 Available on [nuget.org](https://nuget.org) as [pocketken.H3](https://www.nuget.org/packages/pocketken.H3/).
 
 ```
-PM> Install-Package pocketken.H3 -Version 3.7.1.2
+PM> Install-Package pocketken.H3 -Version 3.7.1.3
 ```
+
+See [CHANGES.md](CHANGES.md) for a list of changes between releases.
 
 ## Some Mostly-Pointless Benchmarks
 There is an extremely basic set of benchmarks using [BenchmarkDotNet](https://benchmarkdotnet.org/index.html) that I have begun to use in order to track performance and perform optimizations as things progress.  You can check the code out to run the benchmarks locally if you want, e.g.:

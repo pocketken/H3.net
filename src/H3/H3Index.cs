@@ -5,11 +5,13 @@ using static H3.Constants;
 using static H3.Utils;
 using NetTopologySuite.Geometries;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 #nullable enable
 
 namespace H3 {
 
+    [JsonConverter(typeof(H3IndexJsonConverter))]
     public class H3Index : IComparable<H3Index> {
 
         #region constants

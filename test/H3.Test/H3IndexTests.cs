@@ -8,6 +8,7 @@ using NetTopologySuite.Geometries;
 using NUnit.Framework;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 
 namespace H3.Test {
 
@@ -161,6 +162,52 @@ namespace H3.Test {
 
             return true;
         }
+
+        [Test]
+        public void Test_Serialization_ToJson() {
+            // Arrange
+            var expected = $@"""{TestHelpers.SfIndex}""";
+
+
+            // Act
+            var result = JsonSerializer.Serialize(TestHelpers.SfIndex);
+
+            // Assert
+            Assert.IsNotNull(result, "should not be null");
+            Assert.AreEqual(expected, result, "should serialize to hex string");
+        }
+
+        [Test]
+        public void Test_Serialization_FromJson() {
+            // Arrange
+            var indexJson = $@"""{TestHelpers.SfIndex}""";
+
+            // Act
+            var result = JsonSerializer.Deserialize<H3Index>(indexJson);
+
+            // Assert
+            Assert.AreEqual(TestHelpers.SfIndex, result, "should be equal");
+        }
+
+        internal record SerializationTest {
+            public int SomeOtherProperty { get; set; }
+            public H3Index Index { get; set; }
+        }
+
+        [Test]
+        public void Test_Serialization_ToFromJsonObject() {
+            // Arrange
+            var record = new SerializationTest { Index = TestHelpers.SfIndex, SomeOtherProperty = 242 };
+            var indexJson = JsonSerializer.Serialize(record);
+
+            // Act
+            var result = JsonSerializer.Deserialize<SerializationTest>(indexJson);
+
+            // Assert
+            Assert.AreEqual(242, result.SomeOtherProperty, "should have sentinel value");
+            Assert.AreEqual(TestHelpers.SfIndex, result.Index, "should be equal");
+        }
+
 
         private static void AssertKnownIndexValue(H3Index h3) {
             Assert.IsTrue(TestHelpers.TestIndexValue == h3, "ulong value should equal H3Index");
