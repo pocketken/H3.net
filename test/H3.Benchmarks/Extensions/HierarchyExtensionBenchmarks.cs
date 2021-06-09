@@ -3,15 +3,13 @@ using BenchmarkDotNet.Jobs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using H3.Extensions;
 using H3.Test;
 using H3Lib.Extensions;
 
 namespace H3.Benchmarks.Extensions {
 
-    [SimpleJob(RuntimeMoniker.NetCoreApp50)]
+    [SimpleJob(RuntimeMoniker.Net50)]
     [MemoryDiagnoser]
     public class HierarchyExtensionBenchmarks {
 
