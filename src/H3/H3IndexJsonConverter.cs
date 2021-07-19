@@ -10,7 +10,7 @@ namespace H3 {
     /// System.Text.Json.
     /// </summary>
     public class H3IndexJsonConverter : JsonConverter<H3Index> {
-        private static readonly Regex H3Pattern = new("^[a-f0-9]{15}$");
+        private static readonly Regex H3Pattern = new("^[a-fA-F0-9]{15}$");
 
         /// <inheritdoc/>
         public override H3Index Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {

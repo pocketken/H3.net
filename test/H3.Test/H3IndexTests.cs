@@ -274,6 +274,18 @@ namespace H3.Test {
         }
 
         [Test]
+        public void Test_Serialization_FromJson_CaseInsensitive() {
+            // Arrange
+            var indexJson = $@"""{TestHelpers.SfIndex.ToString().ToUpperInvariant()}""";
+
+            // Act
+            var result = JsonSerializer.Deserialize<H3Index>(indexJson);
+
+            // Assert
+            Assert.AreEqual(TestHelpers.SfIndex, result, "should be equal");
+        }
+
+        [Test]
         public void Test_Serialization_FromJson_ShouldNotSwallowInvalidStringValues() {
             // Arrange
             var indexJson = @"""zonk""";

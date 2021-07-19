@@ -157,9 +157,9 @@ namespace H3 {
                 if (LookupTables.BaseCells[bc].IsPentagon) {
                     while (r <= res) {
                         var d = value.GetTopBits(N_BITS_DIGIT);
-                        if (d == 0) {
+                        if (d == (ulong)Direction.Center) {
                             value <<= N_BITS_DIGIT;
-                        } else if (d == 1) {
+                        } else if (d == (ulong)Direction.K) {
                             return false;
                         } else {
                             // But don't increment `r`, since we still need to
@@ -341,13 +341,14 @@ namespace H3 {
                 // look for the first non-zero digit so we
                 // can adjust for deleted k-axes sequence
                 // if necessary
-                if (!foundFirstNonZeroDigit && GetDirectionForResolution(r) != Direction.Center) {
-                    foundFirstNonZeroDigit = true;
+                if (foundFirstNonZeroDigit || GetDirectionForResolution(r) == Direction.Center)
+                    continue;
 
-                    // adjust for deleted k-axes sequence
-                    if (LeadingNonZeroDirection == Direction.K) {
-                        rotateIndex();
-                    }
+                foundFirstNonZeroDigit = true;
+
+                // adjust for deleted k-axes sequence
+                if (LeadingNonZeroDirection == Direction.K) {
+                    rotateIndex();
                 }
             }
         }
@@ -398,10 +399,7 @@ namespace H3 {
             int resolution = Resolution;
 
             // center base cell hierarchy is entirely on this face
-            bool possibleOverage = true;
-            if (!BaseCell.IsPentagon && (resolution == 0 || (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0))) {
-                possibleOverage = false;
-            }
+            bool possibleOverage = !(!BaseCell.IsPentagon && (resolution == 0 || (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0)));
 
             for (int r = 1; r <= resolution; r += 1) {
                 if (IsResolutionClass3(r)) {
