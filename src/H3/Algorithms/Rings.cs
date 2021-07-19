@@ -24,12 +24,16 @@ namespace H3.Algorithms {
     }
 
     /// <summary>
-    /// Indicates that k ring traversal failed due to the ring starting on
+    /// Indicates that k-ring traversal failed due to the ring starting on
     /// a pentagon or due to encountering indexes within the pentagon distortion
     /// area.
     /// </summary>
     public class HexRingPentagonException : Exception { }
 
+    /// <summary>
+    /// Indicates that k-ring traversal failed due to the ring encountering
+    /// an index with deleted k-subsequence distortion.
+    /// </summary>
     public class HexRingKSequenceException : Exception { }
 
     /// <summary>
