@@ -40,7 +40,7 @@
         // The number of pentagon cells
         public const int NUM_PENTAGONS = 12;
 
-        // The number of vertices in a cell
+        // The number of vertices in a hexagon
         public const int NUM_HEX_VERTS = 6;
 
         // The number of vertices in a pentagon
