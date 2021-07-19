@@ -46,8 +46,6 @@
         // The number of vertices in a pentagon
         public const int NUM_PENT_VERTS = 5;
 
-        public const double DBL_EPSILON = 2.2204460492503131e-016; // smallest such that 1.0+DBL_EPSILON != 1.0
-
         /** epsilon of ~0.1mm in degrees */
         public const double EPSILON_DEG = .000000001;
 
