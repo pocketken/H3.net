@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 namespace H3.Test.Extensions {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class H3GeometryExtensionsTests {
 
         private static readonly H3Index[] PentagonFaceIndicies = new H3Index[] {

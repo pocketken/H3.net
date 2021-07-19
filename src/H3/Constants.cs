@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace H3 {
+﻿namespace H3 {
 
     public class Constants {
         public const double M_PI = 3.14159265358979323846;

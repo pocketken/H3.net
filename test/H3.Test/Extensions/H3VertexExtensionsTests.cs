@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using H3.Extensions;
 using H3.Model;
 using static H3.Constants;
@@ -8,6 +7,7 @@ using NUnit.Framework;
 namespace H3.Test.Extensions {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class H3VertexExtensionsTests {
 
         [Test]

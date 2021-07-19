@@ -13,6 +13,7 @@ using System.Text.Json;
 namespace H3.Test {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class H3IndexTests {
 
         /// <summary>

@@ -8,6 +8,7 @@ using System.Linq;
 namespace H3.Test.Extensions {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class H3SetExtensionsTests {
 
         // select h3_compact(array(select h3_k_ring('8e48e1d7038d527'::h3index, 2)));

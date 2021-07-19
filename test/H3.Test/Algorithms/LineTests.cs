@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using H3.Algorithms;
 using H3.Extensions;
 using NetTopologySuite.Geometries;
@@ -8,6 +7,7 @@ using NUnit.Framework;
 namespace H3.Test.Algorithms {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class LineTests {
 
         // result of select h3_line(h3_geo_to_h3(point(-110, 30), 14), h3_geo_to_h3(point(-110, 30.0005), 14));

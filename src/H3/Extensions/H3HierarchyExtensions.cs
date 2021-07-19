@@ -61,32 +61,36 @@ namespace H3.Extensions {
                     }
 
                     break;
+                }
+
+                Direction oldDir = outIndex.GetDirectionForResolution(resolution + 1);
+                Direction nextDir;
+
+                if (oldDir == Direction.Invalid) {
+                    // Only possible on invalid input
+                    return (H3Index.Invalid, rotations);
+                }
+
+                if (IsResolutionClass3(resolution + 1)) {
+                    outIndex.SetDirectionForResolution(
+                        resolution + 1,
+                        LookupTables.NewDirectionClass2[(int)oldDir, (int)dir]
+                    );
+                    nextDir = LookupTables.NewAdjustmentClass2[(int)oldDir, (int)dir];
                 } else {
-                    Direction oldDir = outIndex.GetDirectionForResolution(resolution + 1);
-                    Direction nextDir;
+                    outIndex.SetDirectionForResolution(
+                        resolution + 1,
+                        LookupTables.NewDirectionClass3[(int)oldDir, (int)dir]
+                    );
+                    nextDir = LookupTables.NewAdjustmentClass3[(int)oldDir, (int)dir];
+                }
 
-                    // TODO are these swapped...?
-                    if (IsResolutionClass3(resolution + 1)) {
-                        outIndex.SetDirectionForResolution(
-                            resolution + 1,
-                            LookupTables.NewDirectionClass2[(int)oldDir, (int)dir]
-                        );
-                        nextDir = LookupTables.NewAdjustmentClass2[(int)oldDir, (int)dir];
-                    } else {
-                        outIndex.SetDirectionForResolution(
-                            resolution + 1,
-                            LookupTables.NewDirectionClass3[(int)oldDir, (int)dir]
-                        );
-                        nextDir = LookupTables.NewAdjustmentClass3[(int)oldDir, (int)dir];
-                    }
-
-                    if (nextDir != Direction.Center) {
-                        dir = nextDir;
-                        resolution--;
-                    } else {
-                        // No more adjustment to perform
-                        break;
-                    }
+                if (nextDir != Direction.Center) {
+                    dir = nextDir;
+                    resolution--;
+                } else {
+                    // No more adjustment to perform
+                    break;
                 }
             }
 
@@ -117,7 +121,9 @@ namespace H3.Extensions {
                         if (oldLeadingDir == Direction.Center) {
                             // Undefined: the k direction is deleted from here
                             return (H3Index.Invalid, rotations);
-                        } else if (oldLeadingDir == Direction.JK) {
+                        }
+
+                        if (oldLeadingDir == Direction.JK) {
                             // Rotate out of the deleted k subsequence
                             // We also need an additional change to the direction we're
                             // moving in
