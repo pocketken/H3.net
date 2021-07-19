@@ -13,6 +13,7 @@ using System.Text.Json;
 namespace H3.Test {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class H3IndexTests {
 
         /// <summary>
@@ -164,6 +165,89 @@ namespace H3.Test {
         }
 
         [Test]
+        public void Test_Upstream_IsValid_InvalidBaseCell() {
+            // Arrange
+            var index = new H3Index {
+                BaseCellNumber = 122
+            };
+
+            // Act
+            var actual = index.IsValid;
+
+            // Assert
+            Assert.That(actual, Is.False, "should not be valid (invalid base cell)");
+        }
+
+        [Test]
+        [TestCase("0")]
+        [TestCase("2")]
+        [TestCase("3")]
+        [TestCase("4")]
+        [TestCase("5")]
+        [TestCase("6")]
+        [TestCase("7")]
+        [TestCase("8")]
+        [TestCase("9")]
+        [TestCase("10")]
+        [TestCase("11")]
+        [TestCase("12")]
+        [TestCase("13")]
+        [TestCase("14")]
+        [TestCase("15")]
+        public void Test_Upstream_IsValid_InvalidMode(string modeValue) {
+            // Arrange
+            var index = new H3Index {
+                Mode = Enum.Parse<Mode>(modeValue)
+            };
+
+            // Act
+            var actual = index.IsValid;
+
+            // Assert
+            Assert.That(actual, Is.False, "should not be valid (invalid mode)");
+        }
+
+        [Test]
+        public void Test_Upstream_IsValid_InvalidHighBit() {
+            // Arrange
+            var index = new H3Index {
+                HighBit = 1
+            };
+
+            // Act
+            var actual = index.IsValid;
+
+            // Assert
+            Assert.That(actual, Is.False, "should not be valid (invalid high bit)");
+        }
+
+        [Test]
+        public void Test_Upstream_IsValid_InvalidDigit() {
+            // Arrange
+            var index = new H3Index {
+                Resolution = 1
+            };
+
+            // Act
+            var actual = index.IsValid;
+
+            // Assert
+            Assert.That(actual, Is.False, "should not be valid (invalid/too large digit)");
+        }
+
+        [Test]
+        public void Test_Upstream_IsValid_InvalidDeletedSubsequence() {
+            // Arrange
+            var index = H3Index.Create(1, 4, Direction.K);
+
+            // Act
+            var actual = index.IsValid;
+
+            // Assert
+            Assert.That(actual, Is.False, "should not be valid (deleted subsequence)");
+        }
+
+        [Test]
         public void Test_Serialization_ToJson() {
             // Arrange
             var expected = $@"""{TestHelpers.SfIndex}""";
@@ -187,6 +271,44 @@ namespace H3.Test {
 
             // Assert
             Assert.AreEqual(TestHelpers.SfIndex, result, "should be equal");
+        }
+
+        [Test]
+        public void Test_Serialization_FromJson_CaseInsensitive() {
+            // Arrange
+            var indexJson = $@"""{TestHelpers.SfIndex.ToString().ToUpperInvariant()}""";
+
+            // Act
+            var result = JsonSerializer.Deserialize<H3Index>(indexJson);
+
+            // Assert
+            Assert.AreEqual(TestHelpers.SfIndex, result, "should be equal");
+        }
+
+        [Test]
+        public void Test_Serialization_FromJson_ShouldNotSwallowInvalidStringValues() {
+            // Arrange
+            var indexJson = @"""zonk""";
+
+            // Act
+            var exception = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<H3Index>(indexJson));
+
+            // Assert
+            Assert.That(exception, Is.Not.Null, "should not be null");
+            Assert.That(exception.Message, Is.EqualTo("Not a valid H3 hex string"), "should be equal");
+        }
+
+        [Test]
+        public void Test_Serialization_FromJson_ShouldNotSwallowEmptyStringValues() {
+            // Arrange
+            var indexJson = @"""""";
+
+            // Act
+            var exception = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<H3Index>(indexJson));
+
+            // Assert
+            Assert.That(exception, Is.Not.Null, "should not be null");
+            Assert.That(exception.Message, Is.EqualTo("Not a valid H3 hex string"), "should be equal");
         }
 
         internal record SerializationTest {
@@ -213,7 +335,7 @@ namespace H3.Test {
             Assert.IsTrue(TestHelpers.TestIndexValue == h3, "ulong value should equal H3Index");
             Assert.IsTrue(h3.IsValid, "should be valid");
             Assert.IsFalse(h3.IsPentagon, "should not be a pentagon");
-            Assert.AreEqual(Mode.Hexagon, h3.Mode, "should be mode of hexagon");
+            Assert.AreEqual(Mode.Cell, h3.Mode, "should be mode of hexagon");
             Assert.AreEqual(14, h3.Resolution, "should be res 14");
             Assert.AreEqual(36, h3.BaseCellNumber, "should be basecell 36");
             Assert.AreEqual(0, h3.ReservedBits, "should have reserved bits of 0");

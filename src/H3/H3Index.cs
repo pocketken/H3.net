@@ -34,6 +34,11 @@ namespace H3 {
         public const ulong H3_RESERVED_MASK_NEGATIVE = ~H3_RESERVED_MASK;
         public const ulong H3_DIGIT_MASK = 7;
 
+        // Number of bits in each of the resolution, base cell, and digit regions.
+        private const int N_BITS_RES = 4;
+        private const int N_BITS_BASE_CELL = 7;
+        private const int N_BITS_DIGIT = H3_PER_DIGIT_OFFSET;
+
         /// <summary>
         /// H3 index with mode 0, res 0, base cell 0, and 7 for all index digits.
         /// Typically used to initialize the creation of an H3 cell index, which
@@ -121,37 +126,67 @@ namespace H3 {
         /// Whether or not the index is valid.
         /// </summary>
         public bool IsValid {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get {
-                if (HighBit != 0) return false;
-                if (Mode != Mode.Hexagon) return false;
-                if (ReservedBits != 0) return false;
+                // the 1 high bit should be 0b0
+                // the 4 mode bits should be 0b0001 (H3_CELL_MODE)
+                // the 3 reserved bits should be 0b000
+                // in total, the top 8 bits should be 0b00001000
+                if (Value.GetTopBits(8) != 0b00001000) return false;
 
-                int baseCell = BaseCellNumber;
-                if (baseCell < 0 || baseCell >= NUM_BASE_CELLS) return false;
+                var value = Value << 8;
 
-                int resolution = Resolution;
-                if (resolution < 0 || resolution > MAX_H3_RES) return false;
+                // no need to check resolution; any 4-bit number is a valid resolution.
+                var res = value.GetTopBits(N_BITS_RES);
+                value <<= N_BITS_RES;
 
-                bool foundFirstNonZeroDigit = false;
-                for (int r = 1; r <= resolution; r += 1) {
-                    Direction idx = GetDirectionForResolution(r);
+                // check that base cell number is valid.
+                var bc = value.GetTopBits(N_BITS_BASE_CELL);
+                if (bc >= NUM_BASE_CELLS) {
+                    return false;
+                }
+                value <<= N_BITS_BASE_CELL;
 
-                    if (!foundFirstNonZeroDigit && idx != Direction.Center) {
-                        foundFirstNonZeroDigit = true;
-                        if (LookupTables.BaseCells[baseCell].IsPentagon && idx == Direction.K) {
+                // now check that each resolution digit is valid.
+                // let `r` denote the resolution we're currently checking.
+                var r = 1UL;
+
+                // Pentagon cells start with a sequence of 0's (CENTER_DIGIT's).
+                // The first nonzero digit can't be a 1 (i.e., "deleted subsequence",
+                // PENTAGON_SKIPPED_DIGIT, or K_AXES_DIGIT).
+                // Test for pentagon base cell first to avoid this loop if possible.
+                if (LookupTables.BaseCells[bc].IsPentagon) {
+                    while (r <= res) {
+                        var d = value.GetTopBits(N_BITS_DIGIT);
+                        if (d == (ulong)Direction.Center) {
+                            value <<= N_BITS_DIGIT;
+                        } else if (d == (ulong)Direction.K) {
                             return false;
+                        } else {
+                            // But don't increment `r`, since we still need to
+                            // check that it isn't INVALID_DIGIT.
+                            break;
                         }
-                    }
-
-                    if (idx < Direction.Center || idx >= Direction.Invalid) {
-                        return false;
+                        r++;
                     }
                 }
 
-                for (int r = resolution + 1; r <= MAX_H3_RES; r += 1)
-                    if (GetDirectionForResolution(r) != Direction.Invalid) return false;
+                // After (possibly) taking care of pentagon logic, check that
+                // the remaining digits up to `res` are not 7 (INVALID_DIGIT).
+                while (r <= res) {
+                    if (value.GetTopBits(N_BITS_DIGIT) == (ulong)Direction.Invalid) return false;
+                    value <<= N_BITS_DIGIT;
+                    r++;
+                }
 
-                return true;
+                // Now check that all the unused digits after `res` are
+                // set to 7 (INVALID_DIGIT).
+                int shift = (int)(15 - res) * 3;
+                ulong mask = 0;
+                mask = ~mask;
+                mask >>= shift;
+                mask = ~mask;
+                return value == mask;
             }
         }
 
@@ -203,7 +238,7 @@ namespace H3 {
 
         public static H3Index Create(int resolution, int baseCell, Direction direction) {
             H3Index index = new() {
-                Mode = Mode.Hexagon,
+                Mode = Mode.Cell,
                 Resolution = resolution,
                 Direction = direction,
                 BaseCellNumber = baseCell
@@ -307,13 +342,14 @@ namespace H3 {
                 // look for the first non-zero digit so we
                 // can adjust for deleted k-axes sequence
                 // if necessary
-                if (!foundFirstNonZeroDigit && GetDirectionForResolution(r) != Direction.Center) {
-                    foundFirstNonZeroDigit = true;
+                if (foundFirstNonZeroDigit || GetDirectionForResolution(r) == Direction.Center)
+                    continue;
 
-                    // adjust for deleted k-axes sequence
-                    if (LeadingNonZeroDirection == Direction.K) {
-                        rotateIndex();
-                    }
+                foundFirstNonZeroDigit = true;
+
+                // adjust for deleted k-axes sequence
+                if (LeadingNonZeroDirection == Direction.K) {
+                    rotateIndex();
                 }
             }
         }
@@ -364,10 +400,7 @@ namespace H3 {
             int resolution = Resolution;
 
             // center base cell hierarchy is entirely on this face
-            bool possibleOverage = true;
-            if (!BaseCell.IsPentagon && (resolution == 0 || (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0))) {
-                possibleOverage = false;
-            }
+            bool possibleOverage = !(!BaseCell.IsPentagon && (resolution == 0 || (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0)));
 
             for (int r = 1; r <= resolution; r += 1) {
                 if (IsResolutionClass3(r)) {
@@ -459,7 +492,7 @@ namespace H3 {
             if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;
 
             H3Index index = new() {
-                Mode = Mode.Hexagon,
+                Mode = Mode.Cell,
                 Resolution = resolution
             };
 

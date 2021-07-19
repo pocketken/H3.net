@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace H3 {
+﻿namespace H3 {
 
     public class Constants {
         public const double M_PI = 3.14159265358979323846;
@@ -17,10 +15,6 @@ namespace H3 {
 
         // rotation angle between Class II and Class III resolution axes
         public const double M_AP7_ROT_RADS = 0.333473172251832115336090755351601070065900389; // (asin(sqrt(3.0 / 28.0)))
-
-        public const double M_SIN_AP7_ROT = 0.3273268353539885718950318; // sin(M_AP7_ROT_RADS)
-
-        public const double M_COS_AP7_ROT = 0.9449111825230680680167902; // cos(M_AP7_ROT_RADS)
 
         // earth radius in kilometers using WGS84 authalic radius
         public const double EARTH_RADIUS_KM = 6371.007180918475;
@@ -47,8 +41,6 @@ namespace H3 {
 
         // The number of vertices in a pentagon
         public const int NUM_PENT_VERTS = 5;
-
-        public const double DBL_EPSILON = 2.2204460492503131e-016; // smallest such that 1.0+DBL_EPSILON != 1.0
 
         /** epsilon of ~0.1mm in degrees */
         public const double EPSILON_DEG = .000000001;

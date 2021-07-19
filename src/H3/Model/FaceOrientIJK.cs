@@ -5,7 +5,7 @@
 namespace H3.Model {
     public class FaceOrientIJK {
         public int Face { get; set; }
-        public CoordIJK Translate { get; set; } = new CoordIJK();
+        public CoordIJK Translate { get; set; } = new();
         public int CounterClockwiseRotations { get; set; }
 
         public FaceOrientIJK() { }

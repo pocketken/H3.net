@@ -16,7 +16,7 @@ namespace H3.Extensions {
     public static class H3HierarchyExtensions {
 
         /// <summary>
-        /// Returns the hexagon index neighboring the origin, in the direction dir.
+        /// Returns the cell index neighboring the origin, in the direction dir.
         ///
         /// Implementation note: The only reachable case where this returns 0 is if the
         /// origin is a pentagon and the translation is in the k direction. Thus,
@@ -61,32 +61,36 @@ namespace H3.Extensions {
                     }
 
                     break;
+                }
+
+                Direction oldDir = outIndex.GetDirectionForResolution(resolution + 1);
+                Direction nextDir;
+
+                if (oldDir == Direction.Invalid) {
+                    // Only possible on invalid input
+                    return (H3Index.Invalid, rotations);
+                }
+
+                if (IsResolutionClass3(resolution + 1)) {
+                    outIndex.SetDirectionForResolution(
+                        resolution + 1,
+                        LookupTables.NewDirectionClass2[(int)oldDir, (int)dir]
+                    );
+                    nextDir = LookupTables.NewAdjustmentClass2[(int)oldDir, (int)dir];
                 } else {
-                    Direction oldDir = outIndex.GetDirectionForResolution(resolution + 1);
-                    Direction nextDir;
+                    outIndex.SetDirectionForResolution(
+                        resolution + 1,
+                        LookupTables.NewDirectionClass3[(int)oldDir, (int)dir]
+                    );
+                    nextDir = LookupTables.NewAdjustmentClass3[(int)oldDir, (int)dir];
+                }
 
-                    // TODO are these swapped...?
-                    if (IsResolutionClass3(resolution + 1)) {
-                        outIndex.SetDirectionForResolution(
-                            resolution + 1,
-                            LookupTables.NewDirectionClass2[(int)oldDir, (int)dir]
-                        );
-                        nextDir = LookupTables.NewAdjustmentClass2[(int)oldDir, (int)dir];
-                    } else {
-                        outIndex.SetDirectionForResolution(
-                            resolution + 1,
-                            LookupTables.NewDirectionClass3[(int)oldDir, (int)dir]
-                        );
-                        nextDir = LookupTables.NewAdjustmentClass3[(int)oldDir, (int)dir];
-                    }
-
-                    if (nextDir != Direction.Center) {
-                        dir = nextDir;
-                        resolution--;
-                    } else {
-                        // No more adjustment to perform
-                        break;
-                    }
+                if (nextDir != Direction.Center) {
+                    dir = nextDir;
+                    resolution--;
+                } else {
+                    // No more adjustment to perform
+                    break;
                 }
             }
 
@@ -117,7 +121,9 @@ namespace H3.Extensions {
                         if (oldLeadingDir == Direction.Center) {
                             // Undefined: the k direction is deleted from here
                             return (H3Index.Invalid, rotations);
-                        } else if (oldLeadingDir == Direction.JK) {
+                        }
+
+                        if (oldLeadingDir == Direction.JK) {
                             // Rotate out of the deleted k subsequence
                             // We also need an additional change to the direction we're
                             // moving in
@@ -191,8 +197,8 @@ namespace H3.Extensions {
         /// <param name="destination">Destination H3 index</param>
         /// <returns>true if indexes are neighbours, false if not</returns>
         public static bool IsNeighbour(this H3Index origin, H3Index destination) {
-            // must be in hexagon mode
-            if (origin.Mode != Mode.Hexagon || destination.Mode != Mode.Hexagon) {
+            // must be in cell mode
+            if (origin.Mode != Mode.Cell || destination.Mode != Mode.Cell) {
                 return false;
             }
 
@@ -289,7 +295,7 @@ namespace H3.Extensions {
         }
 
         /// <summary>
-        /// Takes the given hexagon id and generates all of the children at the specified
+        /// Takes the given cell id and generates all of the children at the specified
         /// resolution.
         /// </summary>
         /// <param name="origin">index to find children for</param>
@@ -316,7 +322,7 @@ namespace H3.Extensions {
             int fnz = iterator.IsPentagon ? childResolution : -1;
 
             while (iterator != H3Index.Invalid) {
-                yield return new(iterator);
+                yield return new H3Index(iterator);
 
                 int childRes = iterator.Resolution;
                 iterator.IncrementDirectionForResolution(childRes);

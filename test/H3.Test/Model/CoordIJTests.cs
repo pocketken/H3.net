@@ -1,11 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using H3.Model;
 using NUnit.Framework;
 
 namespace H3.Test.Model {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class CoordIJTests {
 
         [Test]

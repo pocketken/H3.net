@@ -8,6 +8,7 @@ using NUnit.Framework;
 namespace H3.Test.Extensions {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class H3LocalIJExtensionsTests {
 
         private static readonly H3Index BaseCell15 = H3Index.Create(0, 15, 0);      // bc1

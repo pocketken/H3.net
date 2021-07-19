@@ -9,7 +9,7 @@ namespace H3.Model {
 
     public class FaceIJK {
         public int Face { get; set; } = 0;
-        public CoordIJK Coord { get; set; } = new CoordIJK();
+        public CoordIJK Coord { get; set; } = new();
 
         public const int IJ = 1;
         public const int KI = 2;
@@ -316,7 +316,7 @@ namespace H3.Model {
 
                 /*
                     Check for edge-crossing. Each face of the underlying icosahedron is a
-                    different projection plane. So if an edge of the hexagon crosses an
+                    different projection plane. So if an edge of the cell crosses an
                     icosahedron edge, an additional vertex must be introduced at that
                     intersection point. Then each half of the cell edge can be projected
                     to geographic coordinates using the appropriate icosahedron face

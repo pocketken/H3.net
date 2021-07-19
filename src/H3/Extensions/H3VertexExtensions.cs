@@ -274,7 +274,7 @@ namespace H3.Extensions {
             // Get the vertex number and owner from the vertex
             int vertexNum = vertex.ReservedBits;
             H3Index owner = new(vertex) {
-                Mode = Mode.Hexagon,
+                Mode = Mode.Cell,
                 ReservedBits = 0
             };
 
@@ -300,7 +300,7 @@ namespace H3.Extensions {
 
             int vertexNum = vertex.ReservedBits;
             H3Index owner = new(vertex) {
-                Mode = Mode.Hexagon,
+                Mode = Mode.Cell,
                 ReservedBits = 0
             };
 

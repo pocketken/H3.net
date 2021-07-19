@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace H3 {
 
@@ -13,13 +10,19 @@ namespace H3 {
     /// System.Text.Json.
     /// </summary>
     public class H3IndexJsonConverter : JsonConverter<H3Index> {
+        private static readonly Regex H3Pattern = new("^[a-fA-F0-9]{15}$");
 
         /// <inheritdoc/>
         public override H3Index Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
             if (reader.TokenType != JsonTokenType.String)
                 throw new JsonException("Expected string");
 
-            return new H3Index(reader.GetString());
+            var value = reader.GetString();
+            if (!H3Pattern.IsMatch(value)) {
+                throw new JsonException("Not a valid H3 hex string");
+            }
+
+            return new H3Index(value);
         }
 
         /// <inheritdoc/>

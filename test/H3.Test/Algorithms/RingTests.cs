@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using H3.Algorithms;
 using NUnit.Framework;
@@ -7,6 +6,7 @@ using NUnit.Framework;
 namespace H3.Test.Algorithms {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class RingTests {
 
         private static readonly IEnumerable<object[]> HexRingTestCases = new List<object[]> {
@@ -151,6 +151,21 @@ namespace H3.Test.Algorithms {
 
             // Act
             var exception = Assert.Throws<HexRingPentagonException>(() => onPentagon.GetHexRing(2).ToList(), "should throw pentagon exception");
+
+            // Assert
+            Assert.That(exception, Is.Not.Null, "should have thrown exception");
+        }
+
+        [Test]
+        public void Test_Upstream_372_GridDiskInvalidDigit() {
+            // Arrange
+            H3Index invalidDigit = 0x4d4b00fe5c5c3030;
+
+            // Act
+            var exception = Assert.Throws<HexRingKSequenceException>(() => invalidDigit.GetHexRing(2).First());
+
+            // Assert
+            Assert.That(exception, Is.Not.Null, "should have thrown exception");
         }
 
         private static void AssertRing((ulong, int)[] expectedRing, RingCell[] actualRing) {

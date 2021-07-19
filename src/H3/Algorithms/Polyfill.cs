@@ -10,7 +10,7 @@ using NetTopologySuite.LinearReferencing;
 
 namespace H3.Algorithms {
 
-    sealed internal class PositiveLonFilter : ICoordinateSequenceFilter {
+    internal sealed class PositiveLonFilter : ICoordinateSequenceFilter {
         public bool Done => false;
 
         public bool GeometryChanged => true;
@@ -21,7 +21,7 @@ namespace H3.Algorithms {
         }
     }
 
-    sealed internal class NegativeLonFilter : ICoordinateSequenceFilter {
+    internal sealed class NegativeLonFilter : ICoordinateSequenceFilter {
         public bool Done => false;
 
         public bool GeometryChanged => true;

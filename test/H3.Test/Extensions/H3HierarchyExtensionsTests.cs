@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using H3.Algorithms;
 using H3.Extensions;
@@ -10,6 +9,7 @@ using NUnit.Framework;
 namespace H3.Test.Extensions {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class H3HierarchyExtensionsTests {
         private static readonly H3Index BaseCell0 = H3Index.Create(0, 0, 0);
 

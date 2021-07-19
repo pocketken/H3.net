@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 namespace H3.Test.Extensions {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class H3GeometryExtensionsTests {
 
         private static readonly H3Index[] PentagonFaceIndicies = new H3Index[] {
@@ -33,22 +34,22 @@ namespace H3.Test.Extensions {
         // select st_astext(h3_to_geo_boundary_geometry('8075fffffffffff'::h3index));
         // and discarding final polygon point
         private static readonly Point[] Res0BoundaryVertices = new Point[] {
-            new Point(-4.01399844347047, 11.5452959754148),
-            new Point(-13.708146703918, 6.27096513627577),
-            new Point(-11.6647475421264, -4.46703160978452),
-            new Point(-0.782839175105521, -5.88992175431391),
-            new Point(3.94303615578645, 3.96879697660958),
+            new(-4.01399844347047, 11.5452959754148),
+            new(-13.708146703918, 6.27096513627577),
+            new(-11.6647475421264, -4.46703160978452),
+            new(-0.782839175105521, -5.88992175431391),
+            new(3.94303615578645, 3.96879697660958),
         };
 
         // select st_astext(h3_to_geo_boundary_geometry('8e48e1d7038d527'::h3index));
         // and discarding final polygon point
         private static readonly Point[] TestPointRes14BoundaryVertices = new Point[] {
-            new Point(-110.000000429101, 29.9999892327449),
-            new Point(-109.99998660383, 29.9999986861296),
-            new Point(-109.999989152051, 30.0000137159278),
-            new Point(-110.000005525548, 30.0000192923406),
-            new Point(-110.00001935082, 30.0000098389545),
-            new Point(-110.000016802594, 29.9999948091569)
+            new(-110.000000429101, 29.9999892327449),
+            new(-109.99998660383, 29.9999986861296),
+            new(-109.999989152051, 30.0000137159278),
+            new(-110.000005525548, 30.0000192923406),
+            new(-110.00001935082, 30.0000098389545),
+            new(-110.000016802594, 29.9999948091569)
         };
 
         // select st_astext(h3_to_geo_boundary_geometry('8e48e1d7038d527'::h3index));
@@ -82,7 +83,7 @@ namespace H3.Test.Extensions {
                             continue;
                         }
                         if (line == "{") {
-                            coords = new();
+                            coords = new List<GeoCoord>();
                             continue;
                         }
                         if (line == "}") {

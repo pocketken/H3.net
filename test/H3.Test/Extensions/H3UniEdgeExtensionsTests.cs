@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using H3.Algorithms;
 using H3.Extensions;
 using H3.Model;
@@ -10,6 +9,7 @@ using System.Collections.Generic;
 namespace H3.Test.Extensions {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class H3UniEdgeExtensionsTests {
 
         private static readonly int[,] SfExpectedVertices = new int[6, 2] {

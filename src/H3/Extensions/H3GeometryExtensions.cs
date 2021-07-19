@@ -115,7 +115,7 @@ namespace H3.Extensions {
             CellAreaInKmSquared(index) * 1000.0 * 1000.0;
 
         /// <summary>
-        /// Determines the radius of a given hexagon in Km
+        /// Determines the radius of a given cell in Km
         /// </summary>
         /// <param name="index">H3Index to get area for</param>
         /// <returns></returns>

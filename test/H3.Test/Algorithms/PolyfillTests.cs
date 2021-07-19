@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using NUnit.Framework;
 using H3.Algorithms;
 using H3.Extensions;
@@ -11,6 +10,7 @@ using NetTopologySuite.Geometries;
 namespace H3.Test.Algorithms {
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class PolyfillTests {
 
         // coordinates for the upstream lib's "SF" test poly

@@ -11,7 +11,7 @@ namespace H3.Extensions {
     public static class H3SetExtensions {
 
         /// <summary>
-        /// Takes a set of hexagons and compacts them by removing duplicates and
+        /// Takes a set of cells and compacts them by removing duplicates and
         /// pruning full child branches to the parent level. This is also done for
         /// all parents recursively to get the minimum number of indexes that perfectly
         /// cover the defined space.</summary>
@@ -21,8 +21,8 @@ namespace H3.Extensions {
         /// in H3Lib
         /// (https://github.com/RichardVasquez/h3net/blob/v3.7.1/H3Lib/Extensions/H3LibExtensions.cs#L359)
         /// </remarks>
-        /// <param name="indexEnumerable">set of hexagons to compact</param>
-        /// <returns>set of compacted hexagons</returns>
+        /// <param name="indexEnumerable">set of cells to compact</param>
+        /// <returns>set of compacted cells</returns>
         public static List<H3Index> Compact(this IEnumerable<H3Index> indexEnumerable) {
             Dictionary<int, HashSet<H3Index>> indexes = new();
             int maxResolution = -1;
@@ -94,13 +94,13 @@ namespace H3.Extensions {
         }
 
         /// <summary>
-        /// Takes a compacted set of hexagons and expands back to the original
-        /// set of hexagons at a specific resoution.
+        /// Takes a compacted set of cells and expands back to the original
+        /// set of cells at a specific resoution.
         /// </summary>
-        /// <param name="indexes">set of hexagons</param>
+        /// <param name="indexes">set of cells</param>
         /// <param name="resolution">resolution to expand to</param>
-        /// <returns>original set of hexagons. Thows ArgumentException if any
-        /// hexagon in the set is smaller than the output resolution or invalid
+        /// <returns>original set of cells. Thows ArgumentException if any
+        /// cell in the set is smaller than the output resolution or invalid
         /// resolution is requested.</returns>
         public static IEnumerable<H3Index> UncompactToResolution(this IEnumerable<H3Index> indexes, int resolution) =>
             indexes.Where(index => index != H3Index.Invalid)
@@ -108,7 +108,7 @@ namespace H3.Extensions {
                 .SelectMany(index => {
                     int currentResolution = index.Resolution;
                     if (!IsValidChildResolution(currentResolution, resolution)) {
-                        throw new ArgumentException("set contains hexagon smaller than target resolution");
+                        throw new ArgumentException("set contains cell smaller than target resolution");
                     }
 
                     return index.GetChildrenForResolution(resolution);
@@ -127,8 +127,8 @@ namespace H3.Extensions {
         /// Determines whether or not all H3Index entries within the enumerable are
         /// of the same resolution.
         /// </summary>
-        /// <param name="indexes">set of hexagons</param>
-        /// <returns>true if all hexagons are of the same resolution, false if
+        /// <param name="indexes">set of cells</param>
+        /// <returns>true if all cells are of the same resolution, false if
         /// not.
         /// </returns>
         public static bool AreOfSameResolution(this IEnumerable<H3Index> indexes) {
