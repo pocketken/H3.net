@@ -322,7 +322,7 @@ namespace H3.Extensions {
             int fnz = iterator.IsPentagon ? childResolution : -1;
 
             while (iterator != H3Index.Invalid) {
-                yield return new(iterator);
+                yield return new H3Index(iterator);
 
                 int childRes = iterator.Resolution;
                 iterator.IncrementDirectionForResolution(childRes);

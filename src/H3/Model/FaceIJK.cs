@@ -9,7 +9,7 @@ namespace H3.Model {
 
     public class FaceIJK {
         public int Face { get; set; } = 0;
-        public CoordIJK Coord { get; set; } = new CoordIJK();
+        public CoordIJK Coord { get; set; } = new();
 
         public const int IJ = 1;
         public const int KI = 2;

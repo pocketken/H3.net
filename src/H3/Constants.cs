@@ -16,10 +16,6 @@
         // rotation angle between Class II and Class III resolution axes
         public const double M_AP7_ROT_RADS = 0.333473172251832115336090755351601070065900389; // (asin(sqrt(3.0 / 28.0)))
 
-        public const double M_SIN_AP7_ROT = 0.3273268353539885718950318; // sin(M_AP7_ROT_RADS)
-
-        public const double M_COS_AP7_ROT = 0.9449111825230680680167902; // cos(M_AP7_ROT_RADS)
-
         // earth radius in kilometers using WGS84 authalic radius
         public const double EARTH_RADIUS_KM = 6371.007180918475;
 
