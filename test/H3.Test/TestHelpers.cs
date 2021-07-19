@@ -78,7 +78,7 @@ namespace H3.Test {
         public static readonly List<H3Index> AllResolution0Indexes =
             Enumerable.Range(0, NUM_BASE_CELLS)
                 .Select(baseCellNumber => new H3Index {
-                    Mode = Mode.Hexagon,
+                    Mode = Mode.Cell,
                     BaseCellNumber = baseCellNumber,
                     Resolution = 0
                 })

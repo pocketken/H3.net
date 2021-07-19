@@ -197,8 +197,8 @@ namespace H3.Extensions {
         /// <param name="destination">Destination H3 index</param>
         /// <returns>true if indexes are neighbours, false if not</returns>
         public static bool IsNeighbour(this H3Index origin, H3Index destination) {
-            // must be in hexagon mode
-            if (origin.Mode != Mode.Hexagon || destination.Mode != Mode.Hexagon) {
+            // must be in cell mode
+            if (origin.Mode != Mode.Cell || destination.Mode != Mode.Cell) {
                 return false;
             }
 

@@ -200,7 +200,7 @@ namespace H3.Test.Extensions {
 
             // Act
             H3Index owner = new(vert) {
-                Mode = Mode.Hexagon,
+                Mode = Mode.Cell,
                 ReservedBits = 0
             };
 

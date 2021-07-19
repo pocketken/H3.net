@@ -70,7 +70,7 @@ namespace H3.Extensions {
             }
 
             return new H3Index(edge) {
-                Mode = Mode.Hexagon,
+                Mode = Mode.Cell,
                 ReservedBits = 0
             };
         }

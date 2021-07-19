@@ -297,7 +297,7 @@ namespace H3.Test {
             Assert.IsTrue(TestHelpers.TestIndexValue == h3, "ulong value should equal H3Index");
             Assert.IsTrue(h3.IsValid, "should be valid");
             Assert.IsFalse(h3.IsPentagon, "should not be a pentagon");
-            Assert.AreEqual(Mode.Hexagon, h3.Mode, "should be mode of hexagon");
+            Assert.AreEqual(Mode.Cell, h3.Mode, "should be mode of hexagon");
             Assert.AreEqual(14, h3.Resolution, "should be res 14");
             Assert.AreEqual(36, h3.BaseCellNumber, "should be basecell 36");
             Assert.AreEqual(0, h3.ReservedBits, "should have reserved bits of 0");

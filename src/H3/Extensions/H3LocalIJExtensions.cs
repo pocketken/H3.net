@@ -267,7 +267,7 @@ namespace H3.Extensions {
             bool originOnPent = originBaseCell.IsPentagon;
 
             H3Index index = new() {
-                Mode = Mode.Hexagon,
+                Mode = Mode.Cell,
                 Resolution = resolution
             };
 

@@ -49,7 +49,7 @@ namespace H3.Model {
 
     public enum Mode {
         Unknown = 0,
-        Hexagon = 1,
+        Cell = 1,
         UniEdge = 2,
         Vertex = 4
     }

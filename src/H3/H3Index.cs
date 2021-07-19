@@ -237,7 +237,7 @@ namespace H3 {
 
         public static H3Index Create(int resolution, int baseCell, Direction direction) {
             H3Index index = new() {
-                Mode = Mode.Hexagon,
+                Mode = Mode.Cell,
                 Resolution = resolution,
                 Direction = direction,
                 BaseCellNumber = baseCell
@@ -493,7 +493,7 @@ namespace H3 {
             if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;
 
             H3Index index = new() {
-                Mode = Mode.Hexagon,
+                Mode = Mode.Cell,
                 Resolution = resolution
             };
 
