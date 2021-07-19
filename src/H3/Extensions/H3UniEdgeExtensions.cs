@@ -35,7 +35,7 @@ namespace H3.Extensions {
         }
 
         /// <summary>
-        /// Provides all of the unidirectional edges from the provided H3 hexagon
+        /// Provides all of the unidirectional edges from the provided H3 cell
         /// index.
         /// </summary>
         /// <param name="origin">Origin H3 index</param>
@@ -60,10 +60,10 @@ namespace H3.Extensions {
         }
 
         /// <summary>
-        /// Returns the origin hexagon from the unidirectional edge H3Index.
+        /// Returns the origin cell from the unidirectional edge H3Index.
         /// </summary>
         /// <param name="edge">Unidirectional edge H3 index</param>
-        /// <returns>The origin hexagon index, or Invalid on failure</returns>
+        /// <returns>The origin cell index, or Invalid on failure</returns>
         public static H3Index GetOriginFromUnidirectionalEdge(this H3Index edge) {
             if (edge.Mode != Mode.UniEdge) {
                 return H3Index.Invalid;
@@ -76,10 +76,10 @@ namespace H3.Extensions {
         }
 
         /// <summary>
-        /// Returns the destination hexagon from the unidirectional edge H3Index.
+        /// Returns the destination cell from the unidirectional edge H3Index.
         /// </summary>
         /// <param name="edge">Unidirectional edge H3 index</param>
-        /// <returns>The destination hexagon index, or Invalid on failure</returns>
+        /// <returns>The destination cell index, or Invalid on failure</returns>
         public static H3Index GetDestinationFromUnidirectionalEdge(this H3Index edge) {
             var origin = GetOriginFromUnidirectionalEdge(edge);
             if (origin == H3Index.Invalid) {
@@ -89,7 +89,7 @@ namespace H3.Extensions {
         }
 
         /// <summary>
-        /// Returns the origin, destination pair of hexagon indexes for the given edge.
+        /// Returns the origin, destination pair of cell indexes for the given edge.
         /// </summary>
         /// <param name="edge"></param>
         /// <returns></returns>

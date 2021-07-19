@@ -38,11 +38,11 @@ namespace H3.Algorithms {
     public static class Rings {
 
         /// <summary>
-        /// Returns the "hollow" ring of hexagons at exactly grid distance k from
-        /// the origin hexagon. In particular, k=0 returns just the origin hexagon.
+        /// Returns the "hollow" ring of cells at exactly grid distance k from
+        /// the origin cell. In particular, k=0 returns just the origin cell.
         ///
-        /// A nonzero failure code may be returned in some cases, for example,
-        /// if a pentagon is encountered.
+        /// An exception may be thrown in some cases, for example if a pentagon is
+        /// encountered.
         /// </summary>
         /// <param name="origin"></param>
         /// <param name="k"></param>

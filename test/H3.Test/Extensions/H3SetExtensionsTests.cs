@@ -173,7 +173,7 @@ namespace H3.Test.Extensions {
             var exception = Assert.Throws<ArgumentException>(() => UncompactSomeHexagons.UncompactToResolution(resolution).ToList());
 
             // Assert
-            Assert.AreEqual("set contains hexagon smaller than target resolution", exception.Message, "expected message");
+            Assert.AreEqual("set contains cell smaller than target resolution", exception.Message, "expected message");
         }
 
         [Test]

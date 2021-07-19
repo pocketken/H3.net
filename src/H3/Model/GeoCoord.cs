@@ -185,12 +185,12 @@ namespace H3.Model {
         public double GetPointDistanceInMeters(GeoCoord p2) => GetPointDistanceInKm(p2) * 1000.0;
 
         /// <summary>
-        /// Returns an estimated number of hexagons that trace the cartesian-projected
+        /// Returns an estimated number of cells that trace the cartesian-projected
         /// line
         /// </summary>
         /// <param name="other">Destination coordinates</param>
         /// <param name="resolution">H3 resolution used to trace the line</param>
-        /// <returns>Estimated number of hexagons required to trace the line</returns>
+        /// <returns>Estimated number of cells required to trace the line</returns>
         public int LineHexEstimate(GeoCoord other, int resolution) {
             // Get the area of the pentagon as the maximally-distorted area possible
             H3Index firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution].First();

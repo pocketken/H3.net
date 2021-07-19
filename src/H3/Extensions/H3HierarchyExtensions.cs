@@ -16,7 +16,7 @@ namespace H3.Extensions {
     public static class H3HierarchyExtensions {
 
         /// <summary>
-        /// Returns the hexagon index neighboring the origin, in the direction dir.
+        /// Returns the cell index neighboring the origin, in the direction dir.
         ///
         /// Implementation note: The only reachable case where this returns 0 is if the
         /// origin is a pentagon and the translation is in the k direction. Thus,
@@ -295,7 +295,7 @@ namespace H3.Extensions {
         }
 
         /// <summary>
-        /// Takes the given hexagon id and generates all of the children at the specified
+        /// Takes the given cell id and generates all of the children at the specified
         /// resolution.
         /// </summary>
         /// <param name="origin">index to find children for</param>
