@@ -126,6 +126,7 @@ namespace H3 {
         /// Whether or not the index is valid.
         /// </summary>
         public bool IsValid {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get {
                 // the 1 high bit should be 0b0
                 // the 4 mode bits should be 0b0001 (H3_CELL_MODE)
