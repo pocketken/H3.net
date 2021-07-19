@@ -273,6 +273,32 @@ namespace H3.Test {
             Assert.AreEqual(TestHelpers.SfIndex, result, "should be equal");
         }
 
+        [Test]
+        public void Test_Serialization_FromJson_ShouldNotSwallowInvalidStringValues() {
+            // Arrange
+            var indexJson = @"""zonk""";
+
+            // Act
+            var exception = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<H3Index>(indexJson));
+
+            // Assert
+            Assert.That(exception, Is.Not.Null, "should not be null");
+            Assert.That(exception.Message, Is.EqualTo("Not a valid H3 hex string"), "should be equal");
+        }
+
+        [Test]
+        public void Test_Serialization_FromJson_ShouldNotSwallowEmptyStringValues() {
+            // Arrange
+            var indexJson = @"""""";
+
+            // Act
+            var exception = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<H3Index>(indexJson));
+
+            // Assert
+            Assert.That(exception, Is.Not.Null, "should not be null");
+            Assert.That(exception.Message, Is.EqualTo("Not a valid H3 hex string"), "should be equal");
+        }
+
         internal record SerializationTest {
             public int SomeOtherProperty { get; set; }
             public H3Index Index { get; set; }
