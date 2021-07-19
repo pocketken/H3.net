@@ -7,6 +7,14 @@ namespace H3 {
         public static readonly GeometryFactory DefaultGeometryFactory =
             new(new PrecisionModel(1 / EPSILON), 4326);
 
+        /// <summary>
+        /// Gets the specified number of top bits from the provided value.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="numBits"></param>
+        /// <returns></returns>
+        public static ulong GetTopBits(this ulong value, int numBits) => value >> (64 - numBits);
+
         public static bool IsFinite(this double d) => !double.IsInfinity(d) && !double.IsNaN(d);
 
         public static double Square(double v) => v * v;
