@@ -28,16 +28,20 @@ namespace H3.Model {
             Vec2d s2 = new(p3.X - p2.X, p3.Y - p2.Y);
             float t = (float)(s2.X * (p0.Y - p2.Y) - s2.Y * (p0.X - p2.X)) /
                 (float)(-s2.X * s1.Y + s1.X * s2.Y);
-            return new Vec2d(p0.X + (t * s1.X), p0.Y + (t * s1.Y));
+
+            s2.X = p0.X + t * s1.X;
+            s2.Y = p0.Y + t * s1.Y;
+
+            return s2;
         }
 
-        public GeoCoord ToFaceGeoCoord(int face, int resolution, bool isSubstrate) {
-            double r = Magitude;
+        public static GeoCoord ToFaceGeoCoord(double x, double y, int face, int resolution, bool isSubstrate) {
+            double r = Math.Sqrt(x * x + y * y);
             if (r < EPSILON) {
                 return new GeoCoord(LookupTables.GeoFaceCenters[face]);
             }
 
-            double theta = Math.Atan2(Y, X);
+            double theta = Math.Atan2(y, x);
 
             for (var i = 0; i < resolution; i += 1) r /= M_SQRT7;
             if (isSubstrate) {
@@ -53,6 +57,9 @@ namespace H3.Model {
             theta = NormalizeAngle(LookupTables.AxisAzimuths[face, 0] - theta);
             return GeoCoord.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
         }
+
+        public GeoCoord ToFaceGeoCoord(int face, int resolution, bool isSubstrate) =>
+            ToFaceGeoCoord(X, Y, face, resolution, isSubstrate);
 
         public static bool operator ==(Vec2d a, Vec2d b) => a.X == b.X && a.Y == b.Y;
 

@@ -22,8 +22,8 @@ namespace H3.Test {
         public static IEnumerable<TestCaseData> ToGeoCoordTestCases {
             get {
                 var testFiles = TestHelpers
-                    .GetTestData(f => (f.Contains("bc") && f.Contains("centers")) ||
-                        (f.Contains("res") && f.Contains("ic")));
+                    .GetTestData(f => f.Contains("bc") && f.Contains("centers") ||
+                        f.Contains("res") && f.Contains("ic"));
 
                 var executingAssembly = Assembly.GetExecutingAssembly();
 

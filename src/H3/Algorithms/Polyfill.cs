@@ -37,6 +37,10 @@ namespace H3.Algorithms {
     /// </summary>
     public static class Polyfill {
 
+        private static readonly ICoordinateSequenceFilter _negativeLonFilter = new NegativeLonFilter();
+
+        private static readonly ICoordinateSequenceFilter _positiveLonFilter = new PositiveLonFilter();
+
         /// <summary>
         /// Returns all of the H3 indexes that are contained within the provided
         /// Polygon at the specified resolution.  Supports Polygons with holes.
@@ -46,13 +50,13 @@ namespace H3.Algorithms {
         /// <returns>Indicies where center point is contained within polygon</returns>
         public static IEnumerable<H3Index> Fill(this Polygon polygon, int resolution) {
             bool isTransMeridian = polygon.IsTransMeridian();
-            var testPoly = isTransMeridian ? SplitPolygon(polygon) : polygon;
+            var testPoly = isTransMeridian ? SplitGeometry(polygon) : polygon;
 
             HashSet<H3Index> searched = new();
 
             Stack<H3Index> toSearch = new(GetIndicies(testPoly.Coordinates, resolution));
             if (toSearch.Count == 0 && !testPoly.IsEmpty) {
-                toSearch.Push(H3Index.FromPoint(testPoly.InteriorPoint, resolution));
+                toSearch.Push(H3Index.FromCoordinate(testPoly.InteriorPoint.Coordinate, resolution));
             }
 
             IndexedPointInAreaLocator locator = new(testPoly);
@@ -60,12 +64,13 @@ namespace H3.Algorithms {
             while (toSearch.Count != 0) {
                 var index = toSearch.Pop();
 
-                if (index != H3Index.Invalid) {
-                    foreach (var neighbour in GetKRingInPolygon(index, locator, searched)) {
-                        if (neighbour == H3Index.Invalid) continue;
-                        yield return neighbour;
-                        toSearch.Push(neighbour);
-                    }
+                if (index == H3Index.Invalid)
+                    continue;
+
+                foreach (var neighbour in GetKRingInPolygon(index, locator, searched)) {
+                    if (neighbour == H3Index.Invalid) continue;
+                    yield return neighbour;
+                    toSearch.Push(neighbour);
                 }
             }
         }
@@ -129,16 +134,16 @@ namespace H3.Algorithms {
         /// a multipolygon by clipping coordinates on either side of it and
         /// then unioning them back together again.
         /// </summary>
-        /// <param name="originalPolygon"></param>
+        /// <param name="originalGeometry"></param>
         /// <returns></returns>
-        private static Geometry SplitPolygon(Polygon originalPolygon) {
-            var left = originalPolygon.Copy();
-            left.Apply(new NegativeLonFilter());
-            var right = originalPolygon.Copy();
-            right.Apply(new PositiveLonFilter());
+        private static Geometry SplitGeometry(Geometry originalGeometry) {
+            var left = originalGeometry.Copy();
+            left.Apply(_negativeLonFilter);
+            var right = originalGeometry.Copy();
+            right.Apply(_positiveLonFilter);
 
-            var polygon = left.Union(right);
-            return polygon.IsEmpty ? originalPolygon : polygon;
+            var geometry = left.Union(right);
+            return geometry.IsEmpty ? originalGeometry : geometry;
         }
 
         /// <summary>
@@ -155,19 +160,19 @@ namespace H3.Algorithms {
         /// </param>
         /// <returns>Neighbouring H3 indicies who's center points are contained
         /// within the provided polygon</returns>
-        private static IEnumerable<H3Index> GetKRingInPolygon(H3Index index, IndexedPointInAreaLocator locator, HashSet<H3Index> searched) =>
-            index.GetKRing(1)
-                .Where(cell => {
-                    if (searched.Contains(cell.Index)) {
-                        return false;
-                    }
-                    searched.Add(cell.Index);
-                    var coord = cell.Index.ToPoint().Coordinate;
-                    var location = locator.Locate(coord);
-                    return location == Location.Interior;
-                })
-                .Select(cell => cell.Index);
-
+        private static IEnumerable<H3Index> GetKRingInPolygon(H3Index index, IndexedPointInAreaLocator locator, HashSet<H3Index> searched) {
+            foreach (var cell in index.GetKRing(1)) {
+                if (searched.Contains(cell.Index)) {
+                    continue;
+                }
+                searched.Add(cell.Index);
+                var coord = cell.Index.ToPoint().Coordinate;
+                var location = locator.Locate(coord);
+                if (location == Location.Interior) {
+                    yield return cell.Index;
+                }
+            }
+        }
     }
 
 }

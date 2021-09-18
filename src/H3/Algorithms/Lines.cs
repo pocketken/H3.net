@@ -55,7 +55,7 @@ namespace H3.Algorithms {
                 startIjk = LocalCoordIJK.ToLocalIJK(origin, origin);
                 endIjk = LocalCoordIJK.ToLocalIJK(origin, destination);
             } catch {
-                return Enumerable.Empty<H3Index>();
+                yield break;
             }
 
             // get grid distance between start/end
@@ -74,15 +74,14 @@ namespace H3.Algorithms {
             double startJ = startIjk.J;
             double startK = startIjk.K;
 
-            return Enumerable.Range(0, distance + 1)
-                .Select(n => {
-                    var currentIjk = CoordIJK.CubeRound(
-                        startI + iStep * n,
-                        startJ + jStep * n,
-                        startK + kStep * n
-                    ).Uncube();
-                    return LocalCoordIJK.ToH3Index(origin, currentIjk);
-                });
+            for (var n = 0; n < distance + 1; n += 1) {
+                var currentIjk = CoordIJK.CubeRound(
+                    startI + iStep * n,
+                    startJ + jStep * n,
+                    startK + kStep * n
+                ).Uncube();
+                yield return LocalCoordIJK.ToH3Index(origin, currentIjk);
+            }
         }
 
     }

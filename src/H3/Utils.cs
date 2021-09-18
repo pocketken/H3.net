@@ -53,7 +53,7 @@ namespace H3 {
         /// <param name="resolution"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsResolutionClass3(int resolution) => (resolution % 2) != 0;
+        public static bool IsResolutionClass3(int resolution) => resolution % 2 != 0;
 
         /// <summary>
         /// Indicates whether or not the specified child resolution is valid relative to the

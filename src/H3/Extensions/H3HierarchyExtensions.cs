@@ -247,7 +247,7 @@ namespace H3.Extensions {
             int resolution = origin.Resolution;
 
             // ask for an invalid resolution or resolution greater than ours?
-            if (parentResolution < 0 || parentResolution > MAX_H3_RES || parentResolution > resolution) return H3Index.Invalid;
+            if (parentResolution is < 0 or > MAX_H3_RES || parentResolution > resolution) return H3Index.Invalid;
 
             // if its the same resolution, then we are our father.  err. yeah.
             if (resolution == parentResolution) return origin;

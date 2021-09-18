@@ -16,13 +16,13 @@ namespace H3.Test.Extensions {
     [Parallelizable(ParallelScope.All)]
     public class H3GeometryExtensionsTests {
 
-        private static readonly H3Index[] PentagonFaceIndicies = new H3Index[] {
+        private static readonly H3Index[] PentagonFaceIndicies = {
             H3Index.Create(1, 4, 0),
             H3Index.Create(2, 4, 0),
             H3Index.Create(15, 4, 0)
         };
 
-        private static readonly double[] CellAreasInKm2 = new double[] {
+        private static readonly double[] CellAreasInKm2 = {
             2.562182162955496e+06, 4.476842018179411e+05, 6.596162242711056e+04,
             9.228872919002590e+03, 1.318694490797110e+03, 1.879593512281298e+02,
             2.687164354763186e+01, 3.840848847060638e+00, 5.486939641329893e-01,
@@ -33,7 +33,7 @@ namespace H3.Test.Extensions {
 
         // select st_astext(h3_to_geo_boundary_geometry('8075fffffffffff'::h3index));
         // and discarding final polygon point
-        private static readonly Point[] Res0BoundaryVertices = new Point[] {
+        private static readonly Point[] Res0BoundaryVertices = {
             new(-4.01399844347047, 11.5452959754148),
             new(-13.708146703918, 6.27096513627577),
             new(-11.6647475421264, -4.46703160978452),
@@ -43,7 +43,7 @@ namespace H3.Test.Extensions {
 
         // select st_astext(h3_to_geo_boundary_geometry('8e48e1d7038d527'::h3index));
         // and discarding final polygon point
-        private static readonly Point[] TestPointRes14BoundaryVertices = new Point[] {
+        private static readonly Point[] TestPointRes14BoundaryVertices = {
             new(-110.000000429101, 29.9999892327449),
             new(-109.99998660383, 29.9999986861296),
             new(-109.999989152051, 30.0000137159278),
@@ -224,7 +224,7 @@ namespace H3.Test.Extensions {
         }
 
         private static int CountValidFaces(int[] faces) => faces
-            .Where(face => face >= 0 && face <= 19)
+            .Where(face => face is >= 0 and <= 19)
             .Count();
 
         private static void AssertCellBoundaryVertices(Point[] expected, GeoCoord[] actual) {

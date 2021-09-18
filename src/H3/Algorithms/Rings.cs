@@ -140,7 +140,7 @@ namespace H3.Algorithms {
                 if (nextK <= k) {
                     for (int i = 0; i < 6; i += 1) {
                         var neighbour = cell.Index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[i]).Item1;
-                        if (neighbour == origin || neighbour == H3Index.Invalid || (searched.TryGetValue(neighbour, out int previousK) && previousK <= nextK)) {
+                        if (neighbour == origin || neighbour == H3Index.Invalid || searched.TryGetValue(neighbour, out int previousK) && previousK <= nextK) {
                             continue;
                         }
                         searched[neighbour] = nextK;

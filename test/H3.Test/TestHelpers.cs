@@ -49,7 +49,7 @@ namespace H3.Test {
         };
 
         // select h3_k_ring_distances('8e48e1d7038d527'::h3index, 2);
-        public static readonly (ulong, int)[] TestIndexKRingsTo2 = new (ulong, int)[] {
+        public static readonly (H3Index, int)[] TestIndexKRingsTo2 = {
             (0x8e48e1d7038d527, 0),
             (0x8e48e1d7038dc9f, 1),
             (0x8e48e1d7038d537, 1),

@@ -8,132 +8,132 @@ namespace H3.Model {
     public static class LookupTables {
 
         #region basecells
-        public static readonly BaseCell[] BaseCells = new BaseCell[NUM_BASE_CELLS] {
-            ((1, (1, 0, 0)), 0, (0, 0)),     // base cell 0
-            ((2, (1, 1, 0)), 0, (0, 0)),     // base cell 1
-            ((1, (0, 0, 0)), 0, (0, 0)),     // base cell 2
-            ((2, (1, 0, 0)), 0, (0, 0)),     // base cell 3
-            ((0, (2, 0, 0)), 1, (-1, -1)),   // base cell 4
-            ((1, (1, 1, 0)), 0, (0, 0)),     // base cell 5
-            ((1, (0, 0, 1)), 0, (0, 0)),     // base cell 6
-            ((2, (0, 0, 0)), 0, (0, 0)),     // base cell 7
-            ((0, (1, 0, 0)), 0, (0, 0)),     // base cell 8
-            ((2, (0, 1, 0)), 0, (0, 0)),     // base cell 9
-            ((1, (0, 1, 0)), 0, (0, 0)),     // base cell 10
-            ((1, (0, 1, 1)), 0, (0, 0)),     // base cell 11
-            ((3, (1, 0, 0)), 0, (0, 0)),     // base cell 12
-            ((3, (1, 1, 0)), 0, (0, 0)),     // base cell 13
-            ((11, (2, 0, 0)), 1, (2, 6)),    // base cell 14
-            ((4, (1, 0, 0)), 0, (0, 0)),     // base cell 15
-            ((0, (0, 0, 0)), 0, (0, 0)),     // base cell 16
-            ((6, (0, 1, 0)), 0, (0, 0)),     // base cell 17
-            ((0, (0, 0, 1)), 0, (0, 0)),     // base cell 18
-            ((2, (0, 1, 1)), 0, (0, 0)),     // base cell 19
-            ((7, (0, 0, 1)), 0, (0, 0)),     // base cell 20
-            ((2, (0, 0, 1)), 0, (0, 0)),     // base cell 21
-            ((0, (1, 1, 0)), 0, (0, 0)),     // base cell 22
-            ((6, (0, 0, 1)), 0, (0, 0)),     // base cell 23
-            ((10, (2, 0, 0)), 1, (1, 5)),    // base cell 24
-            ((6, (0, 0, 0)), 0, (0, 0)),     // base cell 25
-            ((3, (0, 0, 0)), 0, (0, 0)),     // base cell 26
-            ((11, (1, 0, 0)), 0, (0, 0)),    // base cell 27
-            ((4, (1, 1, 0)), 0, (0, 0)),     // base cell 28
-            ((3, (0, 1, 0)), 0, (0, 0)),     // base cell 29
-            ((0, (0, 1, 1)), 0, (0, 0)),     // base cell 30
-            ((4, (0, 0, 0)), 0, (0, 0)),     // base cell 31
-            ((5, (0, 1, 0)), 0, (0, 0)),     // base cell 32
-            ((0, (0, 1, 0)), 0, (0, 0)),     // base cell 33
-            ((7, (0, 1, 0)), 0, (0, 0)),     // base cell 34
-            ((11, (1, 1, 0)), 0, (0, 0)),    // base cell 35
-            ((7, (0, 0, 0)), 0, (0, 0)),     // base cell 36
-            ((10, (1, 0, 0)), 0, (0, 0)),    // base cell 37
-            ((12, (2, 0, 0)), 1, (3, 7)),    // base cell 38
-            ((6, (1, 0, 1)), 0, (0, 0)),     // base cell 39
-            ((7, (1, 0, 1)), 0, (0, 0)),     // base cell 40
-            ((4, (0, 0, 1)), 0, (0, 0)),     // base cell 41
-            ((3, (0, 0, 1)), 0, (0, 0)),     // base cell 42
-            ((3, (0, 1, 1)), 0, (0, 0)),     // base cell 43
-            ((4, (0, 1, 0)), 0, (0, 0)),     // base cell 44
-            ((6, (1, 0, 0)), 0, (0, 0)),     // base cell 45
-            ((11, (0, 0, 0)), 0, (0, 0)),    // base cell 46
-            ((8, (0, 0, 1)), 0, (0, 0)),     // base cell 47
-            ((5, (0, 0, 1)), 0, (0, 0)),     // base cell 48
-            ((14, (2, 0, 0)), 1, (0, 9)),    // base cell 49
-            ((5, (0, 0, 0)), 0, (0, 0)),     // base cell 50
-            ((12, (1, 0, 0)), 0, (0, 0)),    // base cell 51
-            ((10, (1, 1, 0)), 0, (0, 0)),    // base cell 52
-            ((4, (0, 1, 1)), 0, (0, 0)),     // base cell 53
-            ((12, (1, 1, 0)), 0, (0, 0)),    // base cell 54
-            ((7, (1, 0, 0)), 0, (0, 0)),     // base cell 55
-            ((11, (0, 1, 0)), 0, (0, 0)),    // base cell 56
-            ((10, (0, 0, 0)), 0, (0, 0)),    // base cell 57
-            ((13, (2, 0, 0)), 1, (4, 8)),    // base cell 58
-            ((10, (0, 0, 1)), 0, (0, 0)),    // base cell 59
-            ((11, (0, 0, 1)), 0, (0, 0)),    // base cell 60
-            ((9, (0, 1, 0)), 0, (0, 0)),     // base cell 61
-            ((8, (0, 1, 0)), 0, (0, 0)),     // base cell 62
-            ((6, (2, 0, 0)), 1, (11, 15)),   // base cell 63
-            ((8, (0, 0, 0)), 0, (0, 0)),     // base cell 64
-            ((9, (0, 0, 1)), 0, (0, 0)),     // base cell 65
-            ((14, (1, 0, 0)), 0, (0, 0)),    // base cell 66
-            ((5, (1, 0, 1)), 0, (0, 0)),     // base cell 67
-            ((16, (0, 1, 1)), 0, (0, 0)),    // base cell 68
-            ((8, (1, 0, 1)), 0, (0, 0)),     // base cell 69
-            ((5, (1, 0, 0)), 0, (0, 0)),     // base cell 70
-            ((12, (0, 0, 0)), 0, (0, 0)),    // base cell 71
-            ((7, (2, 0, 0)), 1, (12, 16)),   // base cell 72
-            ((12, (0, 1, 0)), 0, (0, 0)),    // base cell 73
-            ((10, (0, 1, 0)), 0, (0, 0)),    // base cell 74
-            ((9, (0, 0, 0)), 0, (0, 0)),     // base cell 75
-            ((13, (1, 0, 0)), 0, (0, 0)),    // base cell 76
-            ((16, (0, 0, 1)), 0, (0, 0)),    // base cell 77
-            ((15, (0, 1, 1)), 0, (0, 0)),    // base cell 78
-            ((15, (0, 1, 0)), 0, (0, 0)),    // base cell 79
-            ((16, (0, 1, 0)), 0, (0, 0)),    // base cell 80
-            ((14, (1, 1, 0)), 0, (0, 0)),    // base cell 81
-            ((13, (1, 1, 0)), 0, (0, 0)),    // base cell 82
-            ((5, (2, 0, 0)), 1, (10, 19)),   // base cell 83
-            ((8, (1, 0, 0)), 0, (0, 0)),     // base cell 84
-            ((14, (0, 0, 0)), 0, (0, 0)),    // base cell 85
-            ((9, (1, 0, 1)), 0, (0, 0)),     // base cell 86
-            ((14, (0, 0, 1)), 0, (0, 0)),    // base cell 87
-            ((17, (0, 0, 1)), 0, (0, 0)),    // base cell 88
-            ((12, (0, 0, 1)), 0, (0, 0)),    // base cell 89
-            ((16, (0, 0, 0)), 0, (0, 0)),    // base cell 90
-            ((17, (0, 1, 1)), 0, (0, 0)),    // base cell 91
-            ((15, (0, 0, 1)), 0, (0, 0)),    // base cell 92
-            ((16, (1, 0, 1)), 0, (0, 0)),    // base cell 93
-            ((9, (1, 0, 0)), 0, (0, 0)),     // base cell 94
-            ((15, (0, 0, 0)), 0, (0, 0)),    // base cell 95
-            ((13, (0, 0, 0)), 0, (0, 0)),    // base cell 96
-            ((8, (2, 0, 0)), 1, (13, 17)),   // base cell 97
-            ((13, (0, 1, 0)), 0, (0, 0)),    // base cell 98
-            ((17, (1, 0, 1)), 0, (0, 0)),    // base cell 99
-            ((19, (0, 1, 0)), 0, (0, 0)),    // base cell 100
-            ((14, (0, 1, 0)), 0, (0, 0)),    // base cell 101
-            ((19, (0, 1, 1)), 0, (0, 0)),    // base cell 102
-            ((17, (0, 1, 0)), 0, (0, 0)),    // base cell 103
-            ((13, (0, 0, 1)), 0, (0, 0)),    // base cell 104
-            ((17, (0, 0, 0)), 0, (0, 0)),    // base cell 105
-            ((16, (1, 0, 0)), 0, (0, 0)),    // base cell 106
-            ((9, (2, 0, 0)), 1, (14, 18)),   // base cell 107
-            ((15, (1, 0, 1)), 0, (0, 0)),    // base cell 108
-            ((15, (1, 0, 0)), 0, (0, 0)),    // base cell 109
-            ((18, (0, 1, 1)), 0, (0, 0)),    // base cell 110
-            ((18, (0, 0, 1)), 0, (0, 0)),    // base cell 111
-            ((19, (0, 0, 1)), 0, (0, 0)),    // base cell 112
-            ((17, (1, 0, 0)), 0, (0, 0)),    // base cell 113
-            ((19, (0, 0, 0)), 0, (0, 0)),    // base cell 114
-            ((18, (0, 1, 0)), 0, (0, 0)),    // base cell 115
-            ((18, (1, 0, 1)), 0, (0, 0)),    // base cell 116
-            ((19, (2, 0, 0)), 1, (-1, -1)),  // base cell 117
-            ((19, (1, 0, 0)), 0, (0, 0)),    // base cell 118
-            ((18, (0, 0, 0)), 0, (0, 0)),    // base cell 119
-            ((19, (1, 0, 1)), 0, (0, 0)),    // base cell 120
-            ((18, (1, 0, 0)), 0, (0, 0))     // base cell 121
+        public static readonly BaseCell[] BaseCells = {
+            (0, (1, (1, 0, 0)), 0, (0, 0)),     // base cell 0
+            (1, (2, (1, 1, 0)), 0, (0, 0)),     // base cell 1
+            (2, (1, (0, 0, 0)), 0, (0, 0)),     // base cell 2
+            (3, (2, (1, 0, 0)), 0, (0, 0)),     // base cell 3
+            (4, (0, (2, 0, 0)), 1, (-1, -1)),   // base cell 4
+            (5, (1, (1, 1, 0)), 0, (0, 0)),     // base cell 5
+            (6, (1, (0, 0, 1)), 0, (0, 0)),     // base cell 6
+            (7, (2, (0, 0, 0)), 0, (0, 0)),     // base cell 7
+            (8, (0, (1, 0, 0)), 0, (0, 0)),     // base cell 8
+            (9, (2, (0, 1, 0)), 0, (0, 0)),     // base cell 9
+            (10, (1, (0, 1, 0)), 0, (0, 0)),     // base cell 10
+            (11, (1, (0, 1, 1)), 0, (0, 0)),     // base cell 11
+            (12, (3, (1, 0, 0)), 0, (0, 0)),     // base cell 12
+            (13, (3, (1, 1, 0)), 0, (0, 0)),     // base cell 13
+            (14, (11, (2, 0, 0)), 1, (2, 6)),    // base cell 14
+            (15, (4, (1, 0, 0)), 0, (0, 0)),     // base cell 15
+            (16, (0, (0, 0, 0)), 0, (0, 0)),     // base cell 16
+            (17, (6, (0, 1, 0)), 0, (0, 0)),     // base cell 17
+            (18, (0, (0, 0, 1)), 0, (0, 0)),     // base cell 18
+            (19, (2, (0, 1, 1)), 0, (0, 0)),     // base cell 19
+            (20, (7, (0, 0, 1)), 0, (0, 0)),     // base cell 20
+            (21, (2, (0, 0, 1)), 0, (0, 0)),     // base cell 21
+            (22, (0, (1, 1, 0)), 0, (0, 0)),     // base cell 22
+            (23, (6, (0, 0, 1)), 0, (0, 0)),     // base cell 23
+            (24, (10, (2, 0, 0)), 1, (1, 5)),    // base cell 24
+            (25, (6, (0, 0, 0)), 0, (0, 0)),     // base cell 25
+            (26, (3, (0, 0, 0)), 0, (0, 0)),     // base cell 26
+            (27, (11, (1, 0, 0)), 0, (0, 0)),    // base cell 27
+            (28, (4, (1, 1, 0)), 0, (0, 0)),     // base cell 28
+            (29, (3, (0, 1, 0)), 0, (0, 0)),     // base cell 29
+            (30, (0, (0, 1, 1)), 0, (0, 0)),     // base cell 30
+            (31, (4, (0, 0, 0)), 0, (0, 0)),     // base cell 31
+            (32, (5, (0, 1, 0)), 0, (0, 0)),     // base cell 32
+            (33, (0, (0, 1, 0)), 0, (0, 0)),     // base cell 33
+            (34, (7, (0, 1, 0)), 0, (0, 0)),     // base cell 34
+            (35, (11, (1, 1, 0)), 0, (0, 0)),    // base cell 35
+            (36, (7, (0, 0, 0)), 0, (0, 0)),     // base cell 36
+            (37, (10, (1, 0, 0)), 0, (0, 0)),    // base cell 37
+            (38, (12, (2, 0, 0)), 1, (3, 7)),    // base cell 38
+            (39, (6, (1, 0, 1)), 0, (0, 0)),     // base cell 39
+            (40, (7, (1, 0, 1)), 0, (0, 0)),     // base cell 40
+            (41, (4, (0, 0, 1)), 0, (0, 0)),     // base cell 41
+            (42, (3, (0, 0, 1)), 0, (0, 0)),     // base cell 42
+            (43, (3, (0, 1, 1)), 0, (0, 0)),     // base cell 43
+            (44, (4, (0, 1, 0)), 0, (0, 0)),     // base cell 44
+            (45, (6, (1, 0, 0)), 0, (0, 0)),     // base cell 45
+            (46, (11, (0, 0, 0)), 0, (0, 0)),    // base cell 46
+            (47, (8, (0, 0, 1)), 0, (0, 0)),     // base cell 47
+            (48, (5, (0, 0, 1)), 0, (0, 0)),     // base cell 48
+            (49, (14, (2, 0, 0)), 1, (0, 9)),    // base cell 49
+            (50, (5, (0, 0, 0)), 0, (0, 0)),     // base cell 50
+            (51, (12, (1, 0, 0)), 0, (0, 0)),    // base cell 51
+            (52, (10, (1, 1, 0)), 0, (0, 0)),    // base cell 52
+            (53, (4, (0, 1, 1)), 0, (0, 0)),     // base cell 53
+            (54, (12, (1, 1, 0)), 0, (0, 0)),    // base cell 54
+            (55, (7, (1, 0, 0)), 0, (0, 0)),     // base cell 55
+            (56, (11, (0, 1, 0)), 0, (0, 0)),    // base cell 56
+            (57, (10, (0, 0, 0)), 0, (0, 0)),    // base cell 57
+            (58, (13, (2, 0, 0)), 1, (4, 8)),    // base cell 58
+            (59, (10, (0, 0, 1)), 0, (0, 0)),    // base cell 59
+            (60, (11, (0, 0, 1)), 0, (0, 0)),    // base cell 60
+            (61, (9, (0, 1, 0)), 0, (0, 0)),     // base cell 61
+            (62, (8, (0, 1, 0)), 0, (0, 0)),     // base cell 62
+            (63, (6, (2, 0, 0)), 1, (11, 15)),   // base cell 63
+            (64, (8, (0, 0, 0)), 0, (0, 0)),     // base cell 64
+            (65, (9, (0, 0, 1)), 0, (0, 0)),     // base cell 65
+            (66, (14, (1, 0, 0)), 0, (0, 0)),    // base cell 66
+            (67, (5, (1, 0, 1)), 0, (0, 0)),     // base cell 67
+            (68, (16, (0, 1, 1)), 0, (0, 0)),    // base cell 68
+            (69, (8, (1, 0, 1)), 0, (0, 0)),     // base cell 69
+            (70, (5, (1, 0, 0)), 0, (0, 0)),     // base cell 70
+            (71, (12, (0, 0, 0)), 0, (0, 0)),    // base cell 71
+            (72, (7, (2, 0, 0)), 1, (12, 16)),   // base cell 72
+            (73, (12, (0, 1, 0)), 0, (0, 0)),    // base cell 73
+            (74, (10, (0, 1, 0)), 0, (0, 0)),    // base cell 74
+            (75, (9, (0, 0, 0)), 0, (0, 0)),     // base cell 75
+            (76, (13, (1, 0, 0)), 0, (0, 0)),    // base cell 76
+            (77, (16, (0, 0, 1)), 0, (0, 0)),    // base cell 77
+            (78, (15, (0, 1, 1)), 0, (0, 0)),    // base cell 78
+            (79, (15, (0, 1, 0)), 0, (0, 0)),    // base cell 79
+            (80, (16, (0, 1, 0)), 0, (0, 0)),    // base cell 80
+            (81, (14, (1, 1, 0)), 0, (0, 0)),    // base cell 81
+            (82, (13, (1, 1, 0)), 0, (0, 0)),    // base cell 82
+            (83, (5, (2, 0, 0)), 1, (10, 19)),   // base cell 83
+            (84, (8, (1, 0, 0)), 0, (0, 0)),     // base cell 84
+            (85, (14, (0, 0, 0)), 0, (0, 0)),    // base cell 85
+            (86, (9, (1, 0, 1)), 0, (0, 0)),     // base cell 86
+            (87, (14, (0, 0, 1)), 0, (0, 0)),    // base cell 87
+            (88, (17, (0, 0, 1)), 0, (0, 0)),    // base cell 88
+            (89, (12, (0, 0, 1)), 0, (0, 0)),    // base cell 89
+            (90, (16, (0, 0, 0)), 0, (0, 0)),    // base cell 90
+            (91, (17, (0, 1, 1)), 0, (0, 0)),    // base cell 91
+            (92, (15, (0, 0, 1)), 0, (0, 0)),    // base cell 92
+            (93, (16, (1, 0, 1)), 0, (0, 0)),    // base cell 93
+            (94, (9, (1, 0, 0)), 0, (0, 0)),     // base cell 94
+            (95, (15, (0, 0, 0)), 0, (0, 0)),    // base cell 95
+            (96, (13, (0, 0, 0)), 0, (0, 0)),    // base cell 96
+            (97, (8, (2, 0, 0)), 1, (13, 17)),   // base cell 97
+            (98, (13, (0, 1, 0)), 0, (0, 0)),    // base cell 98
+            (99, (17, (1, 0, 1)), 0, (0, 0)),    // base cell 99
+            (100, (19, (0, 1, 0)), 0, (0, 0)),    // base cell 100
+            (101, (14, (0, 1, 0)), 0, (0, 0)),    // base cell 101
+            (102, (19, (0, 1, 1)), 0, (0, 0)),    // base cell 102
+            (103, (17, (0, 1, 0)), 0, (0, 0)),    // base cell 103
+            (104, (13, (0, 0, 1)), 0, (0, 0)),    // base cell 104
+            (105, (17, (0, 0, 0)), 0, (0, 0)),    // base cell 105
+            (106, (16, (1, 0, 0)), 0, (0, 0)),    // base cell 106
+            (107, (9, (2, 0, 0)), 1, (14, 18)),   // base cell 107
+            (108, (15, (1, 0, 1)), 0, (0, 0)),    // base cell 108
+            (109, (15, (1, 0, 0)), 0, (0, 0)),    // base cell 109
+            (110, (18, (0, 1, 1)), 0, (0, 0)),    // base cell 110
+            (111, (18, (0, 0, 1)), 0, (0, 0)),    // base cell 111
+            (112, (19, (0, 0, 1)), 0, (0, 0)),    // base cell 112
+            (113, (17, (1, 0, 0)), 0, (0, 0)),    // base cell 113
+            (114, (19, (0, 0, 0)), 0, (0, 0)),    // base cell 114
+            (115, (18, (0, 1, 0)), 0, (0, 0)),    // base cell 115
+            (116, (18, (1, 0, 1)), 0, (0, 0)),    // base cell 116
+            (117, (19, (2, 0, 0)), 1, (-1, -1)),  // base cell 117
+            (118, (19, (1, 0, 0)), 0, (0, 0)),    // base cell 118
+            (119, (18, (0, 0, 0)), 0, (0, 0)),    // base cell 119
+            (120, (19, (1, 0, 1)), 0, (0, 0)),    // base cell 120
+            (121, (18, (1, 0, 0)), 0, (0, 0))     // base cell 121
         };
 
-        public static readonly int[,] NeighbourCounterClockwiseRotations = new int[NUM_BASE_CELLS, 7] {
+        public static readonly int[,] NeighbourCounterClockwiseRotations = {
             { 0, 5, 0, 0, 1, 5, 1},   // base cell 0
             { 0, 0, 1, 0, 1, 0, 1},   // base cell 1
             { 0, 0, 0, 0, 0, 5, 0},   // base cell 2
@@ -260,7 +260,7 @@ namespace H3.Model {
 
         public const int INVALID_BASE_CELL = 127;
 
-        public static readonly int[,] Neighbours = new int[NUM_BASE_CELLS, 7] {
+        public static readonly int[,] Neighbours = {
             {0, 1, 5, 2, 4, 3, 8},                              // base cell 0
             {1, 7, 6, 9, 0, 3, 2},                              // base cell 1
             {2, 6, 10, 11, 0, 1, 5},                            // base cell 2
@@ -395,7 +395,7 @@ namespace H3.Model {
         ///
         /// Valid lookup coordinates are from(0, 0, 0) to(2, 2, 2).
         /// </summary>
-        public static readonly BaseCellRotation[,,,] FaceIjkBaseCells = new BaseCellRotation[NUM_ICOSA_FACES, 3, 3, 3] {
+        public static readonly BaseCellRotation[,,,] FaceIjkBaseCells = {
             {
                 // face 0
                 {
@@ -817,10 +817,11 @@ namespace H3.Model {
                 }
             }
         };
+
         #endregion basecells
 
         #region coordinates + unit vectors
-        public static readonly CoordIJK[] UnitVectors = new CoordIJK[7] {
+        public static readonly CoordIJK[] UnitVectors = {
             new(0, 0, 0),  // Center
             new(0, 0, 1),  // K
             new(0, 1, 0),  // J
@@ -836,7 +837,7 @@ namespace H3.Model {
         /// vertices, and the 3r gets us back to Class II.  vertices listed ccw
         /// from the i-axes
         /// </summary>
-        public static readonly CoordIJK[] Class2HexVertices = new CoordIJK[NUM_HEX_VERTS] {
+        public static readonly CoordIJK[] Class2HexVertices = {
             new(2, 1, 0),
             new(1, 2, 0),
             new(0, 2, 1),
@@ -851,7 +852,7 @@ namespace H3.Model {
         /// vertices, and the 3r7r gets us to Class II.  vertices listed ccw from
         /// the i-axes
         /// </summary>
-        public static readonly CoordIJK[] Class3HexVertices = new CoordIJK[NUM_HEX_VERTS] {
+        public static readonly CoordIJK[] Class3HexVertices = {
             new(5, 4, 0),
             new(1, 5, 0),
             new(0, 5, 4),
@@ -866,7 +867,7 @@ namespace H3.Model {
         /// vertices, and the 3r gets us back to Class II.  vertices listed ccw from
         /// the i-axes
         /// </summary>
-        public static readonly CoordIJK[] Class2PentagonVertices = new CoordIJK[NUM_PENT_VERTS] {
+        public static readonly CoordIJK[] Class2PentagonVertices = {
             new(2, 1, 0),
             new(1, 2, 0),
             new(0, 2, 1),
@@ -880,7 +881,7 @@ namespace H3.Model {
         /// vertices, and the 3r7r gets us to Class II. vertices listed ccw from the
         /// i-axes
         /// </summary>
-        public static readonly CoordIJK[] Class3PentagonVertices = new CoordIJK[NUM_PENT_VERTS] {
+        public static readonly CoordIJK[] Class3PentagonVertices = {
             new(5, 4, 0),
             new(1, 5, 0),
             new(0, 5, 4),
@@ -902,7 +903,7 @@ namespace H3.Model {
         #region faces
 
         // TODO do we need [,3] here?  looks like only [0] is used..?
-        public static readonly double[,] AxisAzimuths = new double[NUM_ICOSA_FACES, 3] {
+        public static readonly double[,] AxisAzimuths = {
             { 5.619958268523939882, 3.525563166130744542, 1.431168063737548730 },  // face  0
             { 5.760339081714187279, 3.665943979320991689, 1.571548876927796127 },  // face  1
             { 0.780213654393430055, 4.969003859179821079, 2.874608756786625655 },  // face  2
@@ -929,7 +930,7 @@ namespace H3.Model {
         private const int JK = FaceIJK.JK;
         private const int IJ = FaceIJK.IJ;
 
-        public static readonly int[,] AdjacentFaceDirections = new int[NUM_ICOSA_FACES, NUM_ICOSA_FACES] {
+        public static readonly int[,] AdjacentFaceDirections = {
             {0,  KI, -1, -1, IJ, JK, -1, -1, -1, -1,
              -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},  // face 0
             {IJ, 0,  KI, -1, -1, -1, JK, -1, -1, -1,
@@ -972,7 +973,7 @@ namespace H3.Model {
              -1, -1, -1, -1, JK, IJ, -1, -1, KI, 0}    // face 19
         };
 
-        public static readonly FaceOrientIJK[,] OrientedFaceNeighbours = new FaceOrientIJK[NUM_ICOSA_FACES, 4] {
+        public static readonly FaceOrientIJK[,] OrientedFaceNeighbours = {
             {
                 // face 0
                 (0, (0, 0, 0), 0),  // central face
@@ -1115,7 +1116,7 @@ namespace H3.Model {
             }
         };
 
-        public static readonly GeoCoord[] GeoFaceCenters = new[] {
+        public static readonly GeoCoord[] GeoFaceCenters = {
             new GeoCoord(0.803582649718989942, 1.248397419617396099),    // face  0
             new GeoCoord(1.307747883455638156, 2.536945009877921159),    // face  1
             new GeoCoord(1.054751253523952054, -1.347517358900396623),   // face  2
@@ -1138,7 +1139,7 @@ namespace H3.Model {
             new GeoCoord(-1.054751253523952054, 1.794075294689396615),   // face 19
         };
 
-        public static readonly Vec3d[] FaceCenters = new Vec3d[NUM_ICOSA_FACES] {
+        public static readonly Vec3d[] FaceCenters = {
             new(0.2199307791404606, 0.6583691780274996, 0.7198475378926182),     // face  0
             new(-0.2139234834501421, 0.1478171829550703, 0.9656017935214205),    // face  1
             new(0.1092625278784797, -0.4811951572873210, 0.8697775121287253),    // face  2
@@ -1165,7 +1166,7 @@ namespace H3.Model {
         /// Table of direction-to-face mapping for each pentagon.   Note that
         /// faces are in directional order, starting at J_AXES_DIGIT.
         /// </summary>
-        public static readonly PentagonDirectionToFaceMapping[] PentagonDirectionFaces = new PentagonDirectionToFaceMapping[NUM_PENTAGONS] {
+        public static readonly PentagonDirectionToFaceMapping[] PentagonDirectionFaces = {
             (4, (4, 0, 2, 1, 3)),
             (14, (6, 11, 2, 7, 1)),
             (24, (5, 10, 1, 6, 0)),
@@ -1184,7 +1185,7 @@ namespace H3.Model {
         #endregion faces
 
         #region other
-        public static readonly int[] MaxDistanceByClass2Res = new int[] {
+        public static readonly int[] MaxDistanceByClass2Res = {
             2,        // res  0
             -1,       // res  1
             14,       // res  2
@@ -1204,7 +1205,7 @@ namespace H3.Model {
             11529602  // res 16
         };
 
-        public static readonly int[] UnitScaleByClass2Res = new int[] {
+        public static readonly int[] UnitScaleByClass2Res = {
             1,       // res  0
             -1,      // res  1
             7,       // res  2
@@ -1238,7 +1239,7 @@ namespace H3.Model {
         ///      \\2/
         /// </pre>
         /// </summary>
-        public static readonly Direction[] CounterClockwiseDirections = new Direction[6] {
+        public static readonly Direction[] CounterClockwiseDirections = {
             Direction.J,
             Direction.JK,
             Direction.K,
@@ -1257,7 +1258,7 @@ namespace H3.Model {
         ///
         /// Current digit -> direction -> new digit.
         /// </summary>
-        public static readonly Direction[,] NewDirectionClass2 = new Direction[7, 7] {
+        public static readonly Direction[,] NewDirectionClass2 = {
             {
                 Direction.Center, Direction.K, Direction.J, Direction.JK, Direction.I,
                 Direction.IK, Direction.IJ
@@ -1293,7 +1294,7 @@ namespace H3.Model {
         ///
         /// Current digit -> direction -> new ap7 move (at coarser level).
         /// </summary>
-        public static readonly Direction[,] NewAdjustmentClass2 = new Direction[7, 7] {
+        public static readonly Direction[,] NewAdjustmentClass2 = {
             {
                 Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.Center,
                 Direction.Center, Direction.Center
@@ -1329,7 +1330,7 @@ namespace H3.Model {
         ///
         /// Current digit -> direction -> new digit.
         /// </summary>
-        public static readonly Direction[,] NewDirectionClass3 = new Direction[7, 7] {
+        public static readonly Direction[,] NewDirectionClass3 = {
             {
                 Direction.Center, Direction.K, Direction.J, Direction.JK, Direction.I,
                 Direction.IK, Direction.IJ
@@ -1365,7 +1366,7 @@ namespace H3.Model {
         ///
         /// Current digit -> direction -> new ap7 move (at coarser level).
         /// </summary>
-        public static readonly Direction[,] NewAdjustmentClass3 = new Direction[7, 7] {
+        public static readonly Direction[,] NewAdjustmentClass3 = {
             {
                 Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.Center,
                 Direction.Center, Direction.Center
@@ -1401,7 +1402,7 @@ namespace H3.Model {
         /// Either being 1 (K axis) is invalid.
         /// No good default at 0.
         /// </summary>
-        public static readonly int[,] PentagonRotations = new int[7, 7] {
+        public static readonly int[,] PentagonRotations = {
             {0, -1, 0, 0, 0, 0, 0},        // 0
             {-1, -1, -1, -1, -1, -1, -1},  // 1
             {0, -1, 0, 0, 0, 1, 0},        // 2
@@ -1416,7 +1417,7 @@ namespace H3.Model {
         /// For reversing the rotation introduced in PnetagonRotations when
         /// the origin is on a pentagon (regardless of the base cell of the index.)
         /// </summary>
-        public static readonly int[,] PentagonRotationsInReverse = new int[7, 7] {
+        public static readonly int[,] PentagonRotationsInReverse = {
             {0, 0, 0, 0, 0, 0, 0},         // 0
             {-1, -1, -1, -1, -1, -1, -1},  // 1
             {0, 1, 0, 0, 0, 0, 0},         // 2
@@ -1431,7 +1432,7 @@ namespace H3.Model {
         /// For reversing the rotation introduced in PentagonRotations when the index is
         /// on a pentagon and the origin is not.
         /// </summary>
-        public static readonly int[,] NonPolarPentagonRotationsInReverse = new int[7, 7] {
+        public static readonly int[,] NonPolarPentagonRotationsInReverse = {
             {0, 0, 0, 0, 0, 0, 0},         // 0
             {-1, -1, -1, -1, -1, -1, -1},  // 1
             {0, 1, 0, 0, 0, 0, 0},         // 2
@@ -1446,7 +1447,7 @@ namespace H3.Model {
         /// For reversing the rotation introduced in PentagonRotations when the index is
         /// on a polar pentagon and the origin is not.
         /// </summary>
-        public static readonly int[,] PolarPentagonRotationsInReverse = new int[7, 7] {
+        public static readonly int[,] PolarPentagonRotationsInReverse = {
             {0, 0, 0, 0, 0, 0, 0},         // 0
             {-1, -1, -1, -1, -1, -1, -1},  // 1
             {0, 1, 1, 1, 1, 1, 1},         // 2
@@ -1471,7 +1472,7 @@ namespace H3.Model {
         /// set of a failure cases. Currently, the logic is any unfolding across more
         /// than one icosahedron face is not permitted.
         /// </remarks>
-        public static readonly bool[,] UnfoldableDirections = new bool[7, 7] {
+        public static readonly bool[,] UnfoldableDirections = {
             {false, false, false, false, false, false, false},  // 0
             {false, false, false, false, false, false, false},  // 1
             {false, false, false, false, true, true, false},    // 2
@@ -1484,17 +1485,17 @@ namespace H3.Model {
         /// <summary>
         /// A list of all hex indexes that are pentagons at each resolution.
         /// </summary>
-        public static readonly Dictionary<int, List<H3Index>> PentagonIndexesPerResolution = Enumerable.Range(0, MAX_H3_RES + 1)
+        public static readonly Dictionary<int, H3Index[]> PentagonIndexesPerResolution = Enumerable.Range(0, MAX_H3_RES + 1)
             .ToDictionary(resolution => resolution, resolution =>
                 Enumerable.Range(0, NUM_BASE_CELLS - 1)
                     .Where(baseCellNumber => BaseCells[baseCellNumber].IsPentagon)
-                    .Select(baseCellNumber => H3Index.Create(resolution, baseCellNumber, Direction.Center)).ToList()
+                    .Select(baseCellNumber => H3Index.Create(resolution, baseCellNumber, Direction.Center)).ToArray()
             );
 
         /// <summary>
         /// The area of hexagon cells at each resolution in km^2
         /// </summary>
-        public static readonly double[] HexgonAreasInKm2 = new double[16] {
+        public static readonly double[] HexgonAreasInKm2 = {
             4250546.848, 607220.9782, 86745.85403, 12392.26486,
             1770.323552, 252.9033645, 36.1290521,  5.1612932,
             0.7373276,   0.1053325,   0.0150475,   0.0021496,
@@ -1504,7 +1505,7 @@ namespace H3.Model {
         /// <summary>
         /// The area of hexagon cells at each resolution in m^2
         /// </summary>
-        public static readonly double[] HexagonAreasInM2 = new double[16] {
+        public static readonly double[] HexagonAreasInM2 = {
             4.25055E+12, 6.07221E+11, 86745854035, 12392264862,
             1770323552,  252903364.5, 36129052.1,  5161293.2,
             737327.6,    105332.5,    15047.5,     2149.6,
@@ -1514,7 +1515,7 @@ namespace H3.Model {
         /// <summary>
         /// TODO figure out what these are actually used for and doc accordingly
         /// </summary>
-        public static readonly double[] EdgeLengthsInKm = new double[16] {
+        public static readonly double[] EdgeLengthsInKm = {
             1107.712591, 418.6760055, 158.2446558, 59.81085794,
             22.6063794,  8.544408276, 3.229482772, 1.220629759,
             0.461354684, 0.174375668, 0.065907807, 0.024910561,
@@ -1524,7 +1525,7 @@ namespace H3.Model {
         /// <summary>
         /// TODO figure out what these are actually used for and doc accordingly
         /// </summary>
-        public static readonly double[] EdgeLengthsInM = new double[16] {
+        public static readonly double[] EdgeLengthsInM = {
             1107712.591, 418676.0055, 158244.6558, 59810.85794,
             22606.3794,  8544.408276, 3229.482772, 1220.629759,
             461.3546837, 174.3756681, 65.90780749, 24.9105614,

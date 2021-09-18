@@ -26,7 +26,7 @@ namespace H3.Test.Extensions {
             new object[] { BaseCell15, BaseCell31, -1, 0 }      // bc1 -> bc3
         };
 
-        private static readonly CoordIJ[] IjDirections = new CoordIJ[] {
+        private static readonly CoordIJ[] IjDirections = {
             (0, 1),
             (-1, 0),
             (-1, -1),

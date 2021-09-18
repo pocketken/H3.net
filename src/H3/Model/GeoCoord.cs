@@ -41,7 +41,10 @@ namespace H3.Model {
         /// </summary>
         /// <param name="c"></param>
         /// <returns></returns>
-        public static GeoCoord FromCoordinate(Coordinate c) => FromPoint(new Point(c.X, c.Y));
+        public static GeoCoord FromCoordinate(Coordinate c) => new() {
+            Latitude = c.Y * M_PI_180,
+            Longitude = c.X * M_PI_180
+        };
 
         /// <summary>
         /// Computes the point on the sphere a specified azimuth and distance from
@@ -193,7 +196,7 @@ namespace H3.Model {
         /// <returns>Estimated number of cells required to trace the line</returns>
         public int LineHexEstimate(GeoCoord other, int resolution) {
             // Get the area of the pentagon as the maximally-distorted area possible
-            H3Index firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution].First();
+            H3Index firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution][0];
             double pentagonRadiusKm = firstPentagon.GetRadiusInKm();
             double dist = GetPointDistanceInKm(other);
             int estimate = (int)Math.Ceiling(dist / (2 * pentagonRadiusKm));

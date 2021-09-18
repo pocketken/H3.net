@@ -51,7 +51,7 @@ namespace H3.Test.Algorithms {
         public void Test_Upstream_GetKRing() {
             // Arrange
             var index = H3Index.FromGeoCoord((0.659966917655, 2 * 3.14159 - 2.1364398519396), 0);
-            (ulong, int)[] expected = {
+            (H3Index, int)[] expected = {
                 (0x8029fffffffffff, 0),
                 (0x801dfffffffffff, 1),
                 (0x8013fffffffffff, 1),
@@ -72,7 +72,7 @@ namespace H3.Test.Algorithms {
         public void Test_Upstream_GetKRing_PolarPentagonRes0() {
             // Arrange
             var index = H3Index.Create(0, 4, 0);
-            (ulong, int)[] expected = {
+            (H3Index, int)[] expected = {
                 (0x8009fffffffffff, 0),
                 (0x8007fffffffffff, 1),
                 (0x8001fffffffffff, 1),
@@ -92,7 +92,7 @@ namespace H3.Test.Algorithms {
         public void Test_Upstream_GetKRing_PolarPentagonRes1() {
             // Arrange
             var index = H3Index.Create(1, 4, 0);
-            (ulong, int)[] expected = {
+            (H3Index, int)[] expected = {
                 (0x81083ffffffffff, 0),
                 (0x81093ffffffffff, 1),
                 (0x81097ffffffffff, 1),
@@ -168,12 +168,12 @@ namespace H3.Test.Algorithms {
             Assert.That(exception, Is.Not.Null, "should have thrown exception");
         }
 
-        private static void AssertRing((ulong, int)[] expectedRing, RingCell[] actualRing) {
+        private static void AssertRing((H3Index, int)[] expectedRing, RingCell[] actualRing) {
             Assert.AreEqual(expectedRing.Length, actualRing.Length, "should be same length");
             for (int i = 0; i < expectedRing.Length; i += 1) {
                 var expected = expectedRing[i];
 
-                Assert.IsNotNull(actualRing.Where(cell => cell.Index == expected.Item1 && cell.Distance == expected.Item2).FirstOrDefault(), $"can't find {expected.Item1:x} at k {expected.Item2}");
+                Assert.IsNotNull(actualRing.FirstOrDefault(cell => cell.Index == expected.Item1 && cell.Distance == expected.Item2), $"can't find {expected.Item1:x} at k {expected.Item2}");
             }
         }
 

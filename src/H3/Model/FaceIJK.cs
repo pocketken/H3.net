@@ -18,16 +18,9 @@ namespace H3.Model {
         public BaseCellRotation? BaseCellRotation {
             get {
                 if (Coord.I > MAX_FACE_COORD || Coord.J > MAX_FACE_COORD || Coord.K > MAX_FACE_COORD) return null;
-
-                try {
-                    return LookupTables.FaceIjkBaseCells[Face, Coord.I, Coord.J, Coord.K];
-                } catch {
-                    return null;
-                }
+                return LookupTables.FaceIjkBaseCells[Face, Coord.I, Coord.J, Coord.K];
             }
         }
-
-        public BaseCell? BaseCell => BaseCellRotation?.BaseCell ?? null;
 
         public FaceIJK() { }
 
@@ -48,10 +41,11 @@ namespace H3.Model {
             double sqd = v3d.PointSquareDistance(LookupTables.FaceCenters[0]);
             for (var f = 1; f < NUM_ICOSA_FACES; f += 1) {
                 double sqdT = v3d.PointSquareDistance(LookupTables.FaceCenters[f]);
-                if (sqdT < sqd) {
-                    result.Face = f;
-                    sqd = sqdT;
-                }
+                if (!(sqdT < sqd))
+                    continue;
+
+                result.Face = f;
+                sqd = sqdT;
             }
 
             double r = Math.Acos(1 - sqd / 2);
@@ -74,7 +68,14 @@ namespace H3.Model {
             return result;
         }
 
-        public GeoCoord ToGeoCoord(int resolution) => Coord.ToVec2d().ToFaceGeoCoord(Face, resolution, false);
+        public GeoCoord ToGeoCoord(int resolution) {
+            int i = Coord.I - Coord.K;
+            int j = Coord.J - Coord.K;
+            var x = i - 0.5 * j;
+            var y = j * M_SQRT3_2;
+
+            return Vec2d.ToFaceGeoCoord(x, y, Face, resolution, false);
+        }
 
         private FaceIJK[] GetVertices(CoordIJK[] class3Verts, CoordIJK[] class2Verts, ref int resolution) {
             var verts = IsResolutionClass3(resolution) ? class3Verts : class2Verts;
@@ -88,12 +89,12 @@ namespace H3.Model {
                 resolution += 1;
             }
 
-            List<FaceIJK> result = new();
+            var result = new FaceIJK[verts.Length];
             for (var v = 0; v < verts.Length; v += 1) {
-                result.Add(new FaceIJK(Face, (Coord + verts[v]).Normalize()));
+                result[v] = new FaceIJK(Face, (Coord + verts[v]).Normalize());
             }
 
-            return result.ToArray();
+            return result;
         }
 
         /// <summary>
@@ -172,7 +173,7 @@ namespace H3.Model {
                 Coord.Normalize();
 
                 // overage points on pentagon boundaries can end up on edges
-                if (isSubstrate && ((Coord.I + Coord.J + Coord.K) == maxDist)) {
+                if (isSubstrate && Coord.I + Coord.J + Coord.K == maxDist) {
                     overage = Overage.FaceEdge;
                 }
             }
@@ -242,7 +243,10 @@ namespace H3.Model {
                     // rotate and translate for adjacent face
                     for (int i = 0; i < fijkOrient.CounterClockwiseRotations; i += 1) ijk.RotateCounterClockwise();
 
-                    ijk += fijkOrient.Translate * (LookupTables.UnitScaleByClass2Res[adjustedResolution] * 3);
+                    var scale = LookupTables.UnitScaleByClass2Res[adjustedResolution] * 3;
+                    ijk.I += fijkOrient.Translate.I * scale;
+                    ijk.J += fijkOrient.Translate.J * scale;
+                    ijk.K += fijkOrient.Translate.K * scale;
                     ijk.Normalize();
 
                     Vec2d orig2d1 = ijk.ToVec2d();

@@ -7,6 +7,7 @@ using static H3.Constants;
 namespace H3.Model {
 
     public class CoordIJK {
+
         public int I { get; set; } = 0;
         public int J { get; set; } = 0;
         public int K { get; set; } = 0;
@@ -30,29 +31,26 @@ namespace H3.Model {
 
         public static CoordIJK FromVec2d(Vec2d v) {
             CoordIJK h = new();
-            double a1, a2;
-            double x1, x2;
-            int m1, m2;
-            double r1, r2;
+            int m2;
 
             // quantize into the ij system and then normalize
-            a1 = Math.Abs(v.X);
-            a2 = Math.Abs(v.Y);
+            var a1 = Math.Abs(v.X);
+            var a2 = Math.Abs(v.Y);
 
             // first do a reverse conversion
-            x2 = a2 / M_SIN60;
-            x1 = a1 + x2 / 2.0;
+            var x2 = a2 / M_SIN60;
+            var x1 = a1 + x2 / 2.0;
 
             // check if we have the center of a hex
-            m1 = (int)x1;
+            var m1 = (int)x1;
             m2 = (int)x2;
 
             // otherwise round correctly
-            r1 = x1 - m1;
-            r2 = x2 - m2;
+            var r1 = x1 - m1;
+            var r2 = x2 - m2;
 
-            if (r1 < 0.5) {
-                if (r1 < 1.0 / 3.0) {
+            switch (r1) {
+                case < 0.5 and < 1.0 / 3.0: {
                     if (r2 < (1.0 + r1) / 2.0) {
                         h.I = m1;
                         h.J = m2;
@@ -60,46 +58,58 @@ namespace H3.Model {
                         h.I = m1;
                         h.J = m2 + 1;
                     }
-                } else {
-                    if (r2 < (1.0 - r1)) {
-                        h.J = m2;
-                    } else {
-                        h.J = m2 + 1;
-                    }
 
-                    if ((1.0 - r1) <= r2 && r2 < (2.0 * r1)) {
-                        h.I = m1 + 1;
-                    } else {
-                        h.I = m1;
-                    }
+                    break;
                 }
-            } else {
-                if (r1 < 2.0 / 3.0) {
-                    if (r2 < (1.0 - r1)) {
+
+                case < 0.5: {
+                    if (r2 < 1.0 - r1) {
                         h.J = m2;
                     } else {
                         h.J = m2 + 1;
                     }
 
-                    if ((2.0 * r1 - 1.0) < r2 && r2 < (1.0 - r1)) {
+                    if (1.0 - r1 <= r2 && r2 < 2.0 * r1) {
+                        h.I = m1 + 1;
+                    } else {
+                        h.I = m1;
+                    }
+
+                    break;
+                }
+
+                case < 2.0 / 3.0: {
+                    if (r2 < 1.0 - r1) {
+                        h.J = m2;
+                    } else {
+                        h.J = m2 + 1;
+                    }
+
+                    if (2.0 * r1 - 1.0 < r2 && r2 < 1.0 - r1) {
                         h.I = m1;
                     } else {
                         h.I = m1 + 1;
                     }
-                } else {
-                    if (r2 < (r1 / 2.0)) {
+
+                    break;
+                }
+
+                default: {
+                    if (r2 < r1 / 2.0) {
                         h.I = m1 + 1;
                         h.J = m2;
                     } else {
                         h.I = m1 + 1;
                         h.J = m2 + 1;
                     }
+
+                    break;
                 }
             }
 
             // now fold across the axes if necessary
             if (v.X < 0.0) {
-                if ((h.J % 2) == 0)  // even
+                if (h.J % 2 == 0) // even
                 {
                     long axisi = h.J / 2;
                     long diff = h.I - axisi;
@@ -111,10 +121,11 @@ namespace H3.Model {
                 }
             }
 
-            if (v.Y < 0.0) {
-                h.I -= (2 * h.J + 1) / 2;
-                h.J *= -1;
-            }
+            if (!(v.Y < 0.0))
+                return h.Normalize();
+
+            h.I -= (2 * h.J + 1) / 2;
+            h.J *= -1;
 
             return h.Normalize();
         }
@@ -153,11 +164,12 @@ namespace H3.Model {
             if (K < min)
                 min = K;
 
-            if (min > 0) {
-                I -= min;
-                J -= min;
-                K -= min;
-            }
+            if (min <= 0)
+                return this;
+
+            I -= min;
+            J -= min;
+            K -= min;
 
             return this;
         }
@@ -171,9 +183,9 @@ namespace H3.Model {
             var uVecJ = LookupTables.DirectionToUnitVector[Direction.JK];
             var uVecK = LookupTables.DirectionToUnitVector[Direction.IK];
 
-            int i = (I * uVecI.I) + (J * uVecJ.I) + (K * uVecK.I);
-            int j = (I * uVecI.J) + (J * uVecJ.J) + (K * uVecK.J);
-            int k = (I * uVecI.K) + (J * uVecJ.K) + (K * uVecK.K);
+            int i = I * uVecI.I + J * uVecJ.I + K * uVecK.I;
+            int j = I * uVecI.J + J * uVecJ.J + K * uVecK.J;
+            int k = I * uVecI.K + J * uVecJ.K + K * uVecK.K;
 
             I = i;
             J = j;
@@ -191,9 +203,9 @@ namespace H3.Model {
             var uVecJ = LookupTables.DirectionToUnitVector[Direction.IJ];
             var uVecK = LookupTables.DirectionToUnitVector[Direction.JK];
 
-            int i = (I * uVecI.I) + (J * uVecJ.I) + (K * uVecK.I);
-            int j = (I * uVecI.J) + (J * uVecJ.J) + (K * uVecK.J);
-            int k = (I * uVecI.K) + (J * uVecJ.K) + (K * uVecK.K);
+            int i = I * uVecI.I + J * uVecJ.I + K * uVecK.I;
+            int j = I * uVecI.J + J * uVecJ.J + K * uVecK.J;
+            int k = I * uVecI.K + J * uVecJ.K + K * uVecK.K;
 
             I = i;
             J = j;
@@ -241,9 +253,9 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperature7CounterClockwise() {
-            int i = (3 * I) + J;
-            int j = (3 * J) + K;
-            int k = I + (3 * K);
+            int i = 3 * I + J;
+            int j = 3 * J + K;
+            int k = I + 3 * K;
 
             I = i;
             J = j;
@@ -258,9 +270,9 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperature7Clockwise() {
-            int i = (3 * I) + K;
-            int j = I + (3 * J);
-            int k = J + (3 * K);
+            int i = 3 * I + K;
+            int j = I + 3 * J;
+            int k = J + 3 * K;
 
             I = i;
             J = j;
@@ -276,9 +288,9 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperature3CounterClockwise() {
-            int i = (2 * I) + J;
-            int j = (2 * J) + K;
-            int k = I + (2 * K);
+            int i = 2 * I + J;
+            int j = 2 * J + K;
+            int k = I + 2 * K;
 
             I = i;
             J = j;
@@ -293,9 +305,9 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperature3Clockwise() {
-            int i = (2 * I) + K;
-            int j = I + (2 * J);
-            int k = J + (2 * K);
+            int i = 2 * I + K;
+            int j = I + 2 * J;
+            int k = J + 2 * K;
 
             I = i;
             J = j;
@@ -332,13 +344,14 @@ namespace H3.Model {
         /// <param name="direction">The digit direction from the original ijk coordinates.</param>
         /// <returns></returns>
         public CoordIJK ToNeighbour(Direction direction) {
-            if (direction > Direction.Center && direction < Direction.Invalid) {
-                var unitVector = LookupTables.DirectionToUnitVector[direction];
-                I += unitVector.I;
-                J += unitVector.J;
-                K += unitVector.K;
-                Normalize();
-            }
+            if (direction is <= Direction.Center or >= Direction.Invalid)
+                return this;
+
+            var unitVector = LookupTables.DirectionToUnitVector[direction];
+            I += unitVector.I;
+            J += unitVector.J;
+            K += unitVector.K;
+            Normalize();
             return this;
         }
 
@@ -414,6 +427,7 @@ namespace H3.Model {
                 (int)Math.Round(j, MidpointRounding.AwayFromZero),
                 (int)Math.Round(k, MidpointRounding.AwayFromZero)
             );
+
             double iDiff = Math.Abs(coord.I - i);
             double jDiff = Math.Abs(coord.J - j);
             double kDiff = Math.Abs(coord.K - k);
@@ -503,6 +517,7 @@ namespace H3.Model {
         }
 
         public override int GetHashCode() => HashCode.Combine(I, J, K);
+
     }
 
 }

@@ -271,8 +271,8 @@ namespace H3 {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetDirectionForResolution(int resolution, Direction direction) {
             int offset = (MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET;
-            Value = (Value & ~(H3_DIGIT_MASK << (offset))) |
-                (((ulong)direction) << (offset));
+            Value = (Value & ~(H3_DIGIT_MASK << offset)) |
+                ((ulong)direction << offset);
         }
 
         /// <summary>
@@ -400,7 +400,7 @@ namespace H3 {
             int resolution = Resolution;
 
             // center base cell hierarchy is entirely on this face
-            bool possibleOverage = !(!BaseCell.IsPentagon && (resolution == 0 || (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0)));
+            bool possibleOverage = !(!BaseCell.IsPentagon && (resolution == 0 || faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0));
 
             for (int r = 1; r <= resolution; r += 1) {
                 if (IsResolutionClass3(r)) {
@@ -450,8 +450,7 @@ namespace H3 {
                 // if the base cell is a pentagon we have the potential for secondary
                 // overages
                 if (BaseCell.IsPentagon) {
-                    while (fijk.AdjustOverageClass2(resolution, false, false) != Overage.None)
-                        continue;
+                    while (fijk.AdjustOverageClass2(resolution, false, false) != Overage.None) { }
                 }
 
                 if (resolution != Resolution) {
@@ -489,7 +488,7 @@ namespace H3 {
         /// <param name="resolution">The cell resolution</param>
         /// <returns></returns>
         public static H3Index FromFaceIJK(FaceIJK face, int resolution) {
-            if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;
+            if (resolution is < 0 or > MAX_H3_RES) return Invalid;
 
             H3Index index = new() {
                 Mode = Mode.Cell,
@@ -582,7 +581,7 @@ namespace H3 {
         /// <param name="resolution">The desired H3 resolution for the encoding</param>
         /// <returns>Returns H3Index.Invalid (H3_NULL) on invalid input</returns>
         public static H3Index FromGeoCoord(GeoCoord geoCoord, int resolution) {
-            if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;
+            if (resolution is < 0 or > MAX_H3_RES) return Invalid;
 
             if (!geoCoord.Latitude.IsFinite() || !geoCoord.Longitude.IsFinite()) return Invalid;
 
@@ -593,7 +592,7 @@ namespace H3 {
             FromGeoCoord(GeoCoord.FromPoint(point), resolution);
 
         public static H3Index FromCoordinate(Coordinate coordinate, int resolution) =>
-            FromGeoCoord(GeoCoord.FromPoint(new Point(coordinate.X, coordinate.Y)), resolution);
+            FromGeoCoord(GeoCoord.FromCoordinate(coordinate), resolution);
 
         public static implicit operator ulong(H3Index index) => index.Value;
 
@@ -604,8 +603,7 @@ namespace H3 {
         #endregion conversions
 
         public int CompareTo(H3Index? other) {
-            if (other == null) return 1;
-            return Value.CompareTo(other.Value);
+            return other == null ? 1 : Value.CompareTo(other.Value);
         }
 
         public static bool operator ==(H3Index? a, H3Index? b) => a?.Value == b?.Value;
@@ -616,8 +614,8 @@ namespace H3 {
 
         public static bool operator !=(H3Index? a, ulong b) => a?.Value != b;
 
-        public override bool Equals(object? other) => (other is H3Index i && Value == i.Value) ||
-            (other is ulong l && Value == l);
+        public override bool Equals(object? other) => other is H3Index i && Value == i.Value ||
+            other is ulong l && Value == l;
 
         public override int GetHashCode() => Value.GetHashCode();
 

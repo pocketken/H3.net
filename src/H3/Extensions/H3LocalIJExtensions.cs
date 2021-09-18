@@ -257,7 +257,7 @@ namespace H3.Extensions {
         /// The coordinate space used by this function may have deleted
         /// regions or warping due to pentagonal distortion.
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="origin"></param>
         /// <param name="ijk"></param>
         /// <returns></returns>
         public static H3Index ToH3Index(H3Index origin, CoordIJK ijk) {
