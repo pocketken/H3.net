@@ -117,30 +117,36 @@ namespace H3.Extensions {
 
                         alreadyAdjustedKSubsequence = true;
                     } else {
-                        // In this case, we traversed into the deleted
-                        // k subsequence from within the same pentagon
-                        // base cell.
-                        if (oldLeadingDir == Direction.Center) {
-                            // Undefined: the k direction is deleted from here
-                            return (H3Index.Invalid, rotations);
+                        // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+                        switch (oldLeadingDir) {
+                            // In this case, we traversed into the deleted
+                            // k subsequence from within the same pentagon
+                            // base cell.
+                            case Direction.Center:
+                                // Undefined: the k direction is deleted from here
+                                return (H3Index.Invalid, rotations);
+
+                            case Direction.JK:
+                                // Rotate out of the deleted k subsequence
+                                // We also need an additional change to the direction we're
+                                // moving in
+                                outIndex.RotateCounterClockwise();
+                                rotations += 1;
+                                break;
+
+                            case Direction.IK:
+                                // Rotate out of the deleted k subsequence
+                                // We also need an additional change to the direction we're
+                                // moving in
+                                outIndex.RotateClockwise();
+                                rotations += 5;
+                                break;
+
+                            default:
+                                // should never happen
+                                return (H3Index.Invalid, rotations);
                         }
 
-                        if (oldLeadingDir == Direction.JK) {
-                            // Rotate out of the deleted k subsequence
-                            // We also need an additional change to the direction we're
-                            // moving in
-                            outIndex.RotateCounterClockwise();
-                            rotations += 1;
-                        } else if (oldLeadingDir == Direction.IK) {
-                            // Rotate out of the deleted k subsequence
-                            // We also need an additional change to the direction we're
-                            // moving in
-                            outIndex.RotateClockwise();
-                            rotations += 5;
-                        } else {
-                            // should never happen
-                            return (H3Index.Invalid, rotations);
-                        }
                     }
                 }
 
@@ -168,6 +174,21 @@ namespace H3.Extensions {
             rotations = (rotations + newRotations) % 6;
 
             return (outIndex, rotations);
+        }
+
+        /// <summary>
+        /// Gets all of the neighbouring cells of <paramref name="origin"/>.  This is just a wrapper
+        /// around calling <see cref="GetDirectNeighbour"/> for each <see cref="Direction"/> and
+        /// filtering for <see cref="H3Index.Invalid"/>.
+        /// </summary>
+        /// <param name="origin">cell to get neighbours of</param>
+        /// <returns></returns>
+        public static IEnumerable<H3Index> GetNeighbours(this H3Index origin) {
+            for (var direction = Direction.Center; direction < Direction.Invalid; direction += 1) {
+                var (neighbour, _) = origin.GetDirectNeighbour(direction);
+                if (neighbour == H3Index.Invalid) continue;
+                yield return neighbour;
+            }
         }
 
         /// <summary>

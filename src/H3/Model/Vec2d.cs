@@ -23,6 +23,11 @@ namespace H3.Model {
             Y = source.Y;
         }
 
+        public Vec2d((double, double) components) {
+            X = components.Item1;
+            Y = components.Item2;
+        }
+
         public static Vec2d Intersect(Vec2d p0, Vec2d p1, Vec2d p2, Vec2d p3) {
             Vec2d s1 = new(p1.X - p0.X, p1.Y - p0.Y);
             Vec2d s2 = new(p3.X - p2.X, p3.Y - p2.Y);
@@ -56,6 +61,11 @@ namespace H3.Model {
 
             theta = NormalizeAngle(LookupTables.AxisAzimuths[face, 0] - theta);
             return GeoCoord.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
+        }
+
+        public static GeoCoord ToFaceGeoCoord(FaceIJK faceIjk, int resolution, bool isSubstrate) {
+            var (x, y) = faceIjk.Coord.GetVec2dComponents();
+            return ToFaceGeoCoord(x, y, faceIjk.Face, resolution, isSubstrate);
         }
 
         public GeoCoord ToFaceGeoCoord(int face, int resolution, bool isSubstrate) =>

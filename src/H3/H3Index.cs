@@ -55,7 +55,7 @@ namespace H3 {
 
         #region properties
 
-        internal ulong Value { get; set; } = 0;
+        internal ulong Value { get; set; }
 
         public BaseCell BaseCell {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

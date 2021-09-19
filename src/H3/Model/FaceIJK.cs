@@ -8,8 +8,8 @@ using static H3.Utils;
 namespace H3.Model {
 
     public class FaceIJK {
-        public int Face { get; set; } = 0;
-        public CoordIJK Coord { get; set; } = new();
+        public int Face { get; set; }
+        public CoordIJK Coord { get; set; } = new(0, 0, 0);
 
         public const int IJ = 1;
         public const int KI = 2;
@@ -287,7 +287,7 @@ namespace H3.Model {
                 }
 
                 if (vert < start + NUM_PENT_VERTS) {
-                    yield return fijk.Coord.ToVec2d().ToFaceGeoCoord(fijk.Face, adjustedResolution, true);
+                    yield return Vec2d.ToFaceGeoCoord(fijk, adjustedResolution, true);
                 }
 
                 lastFijk = fijk;
@@ -375,7 +375,7 @@ namespace H3.Model {
                 // vert == start + NUM_HEX_VERTS is only used to test for possible
                 // intersection on last edge
                 if (vert < start + NUM_HEX_VERTS) {
-                    yield return fijk.Coord.ToVec2d().ToFaceGeoCoord(fijk.Face, adjustedResolution, true);
+                    yield return Vec2d.ToFaceGeoCoord(fijk, adjustedResolution, true);
                 }
 
                 lastFace = fijk.Face;
@@ -383,11 +383,19 @@ namespace H3.Model {
             }
         }
 
-        public static bool operator ==(FaceIJK? a, FaceIJK? b) => a?.Face == b?.Face && a?.Coord == b?.Coord;
+        public static bool operator ==(FaceIJK? a, FaceIJK? b) {
+            if (a is null) return b is null;
+            if (b is null) return false;
+            return a.Face == b.Face && a.Coord == b.Coord;
+        }
 
-        public static bool operator !=(FaceIJK? a, FaceIJK? b) => a?.Face != b?.Face || a?.Coord != b?.Coord;
+        public static bool operator !=(FaceIJK? a, FaceIJK? b) {
+            if (a is null) return b is not null;
+            if (b is null) return true;
+            return a.Face != b.Face || a.Coord != b.Coord;
+        }
 
-        public override bool Equals(object? other) => other is FaceIJK f && Face == f.Face && Coord == f.Coord;
+        public override bool Equals(object? other) => other is FaceIJK f && this == f;
 
         public override int GetHashCode() => HashCode.Combine(Face, Coord);
     }

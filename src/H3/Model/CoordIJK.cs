@@ -8,9 +8,9 @@ namespace H3.Model {
 
     public class CoordIJK {
 
-        public int I { get; set; } = 0;
-        public int J { get; set; } = 0;
-        public int K { get; set; } = 0;
+        public int I { get; set; }
+        public int J { get; set; }
+        public int K { get; set; }
         public bool IsValid => this != InvalidIJKCoordinate;
 
         public static readonly CoordIJK InvalidIJKCoordinate = new(-int.MaxValue, -int.MaxValue, -int.MaxValue);
@@ -366,13 +366,14 @@ namespace H3.Model {
         }
 
         public Vec2d ToVec2d() {
+            return new Vec2d(GetVec2dComponents());
+        }
+
+        public (double, double) GetVec2dComponents() {
             int i = I - K;
             int j = J - K;
 
-            return new Vec2d {
-                X = i - 0.5 * j,
-                Y = j * M_SQRT3_2
-            };
+            return (i - 0.5 * j, j * M_SQRT3_2);
         }
 
         public CoordIJ ToCoordIJ() => CoordIJ.FromCoordIJK(this);
@@ -503,14 +504,20 @@ namespace H3.Model {
             };
         }
 
-        public static bool operator ==(CoordIJK? a, CoordIJK? b) =>
-            a?.I == b?.I && a?.J == b?.J && a?.K == b?.K;
+        public static bool operator ==(CoordIJK? a, CoordIJK? b) {
+            if (a is null) return b is null;
+            if (b is null) return false;
+            return a.I == b.I && a.J == b.J && a.K == b.K;
+        }
 
-        public static bool operator !=(CoordIJK? a, CoordIJK? b) =>
-            a?.I != b?.I || a?.J != b?.J || a?.K != b?.K;
+        public static bool operator !=(CoordIJK? a, CoordIJK? b) {
+            if (a is null) return b is not null;
+            if (b is null) return true;
+            return a.I != b.I || a.J != b.J || a.K != b.K;
+        }
 
         public override bool Equals(object? other) =>
-            other is CoordIJK c && I == c.I && J == c.J && K == c.K;
+            other is CoordIJK c && this == c;
 
         public override string ToString() {
             return $"({I}, {J}, {K})";

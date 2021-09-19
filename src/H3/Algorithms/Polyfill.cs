@@ -61,24 +61,24 @@ namespace H3.Algorithms {
             }
 
             IndexedPointInAreaLocator locator = new(testPoly);
+            var coordinate = new Coordinate();
 
             while (toSearch.Count != 0) {
                 var index = toSearch.Pop();
 
-                if (index == H3Index.Invalid)
-                    continue;
-
-                foreach (var cell in index.GetKRing(1)) {
-                    if (cell.Index == H3Index.Invalid || searched.Contains(cell.Index)) continue;
-                    searched.Add(cell.Index);
-                    var coordinate = cell.Index.ToPoint().Coordinate;
+                foreach (var neighbour in index.GetNeighbours()) {
+                    if (searched.Contains(neighbour)) continue;
+                    searched.Add(neighbour);
+                    var geoCoord = neighbour.ToGeoCoord();
+                    coordinate.X = geoCoord.LongitudeDegrees;
+                    coordinate.Y = geoCoord.LatitudeDegrees;
                     var location = locator.Locate(coordinate);
 
                     if (location != Location.Interior)
                         continue;
 
-                    yield return cell.Index;
-                    toSearch.Push(cell.Index);
+                    yield return neighbour;
+                    toSearch.Push(neighbour);
                 }
             }
         }
@@ -116,7 +116,7 @@ namespace H3.Algorithms {
 
                 for (int j = 1; j < count; j += 1) {
                     // interpolate line
-                    var interpolated = LinearLocation.PointAlongSegmentByFraction(vertA, vertB, j / count);
+                    var interpolated = LinearLocation.PointAlongSegmentByFraction(vertA, vertB, (double)j / count);
                     var index = H3Index.FromCoordinate(interpolated, resolution);
                     indicies.Add(index);
                 }
