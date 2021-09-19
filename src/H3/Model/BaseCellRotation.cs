@@ -8,7 +8,7 @@ namespace H3.Model {
     public class BaseCellRotation {
         public int Cell { get; private init;  }
         public int CounterClockwiseRotations { get; init; }
-        public BaseCell BaseCell { get; private init; }
+        public BaseCell BaseCell { get; private init; } = null!;
 
         public const int InvalidRotations = -1;
 
