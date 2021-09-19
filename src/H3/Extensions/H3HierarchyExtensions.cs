@@ -44,11 +44,13 @@ namespace H3.Extensions {
             // Adjust the indexing digits and, if needed, the base cell.
             int resolution = outIndex.Resolution - 1;
             while (true) {
+                int nextResolution = resolution + 1;
                 if (resolution == -1) {
-                    outIndex.BaseCellNumber = LookupTables.Neighbours[oldBaseCell.Cell, (int)dir];
+                    var newBaseCellNumber = LookupTables.Neighbours[oldBaseCell.Cell, (int)dir];
+                    outIndex.BaseCellNumber = newBaseCellNumber;
                     newRotations = LookupTables.NeighbourCounterClockwiseRotations[oldBaseCell.Cell, (int)dir];
 
-                    if (outIndex.BaseCellNumber == LookupTables.INVALID_BASE_CELL) {
+                    if (newBaseCellNumber == LookupTables.INVALID_BASE_CELL) {
                         // Adjust for the deleted k vertex at the base cell level.
                         // This edge actually borders a different neighbor.
                         outIndex.BaseCellNumber = LookupTables.Neighbours[oldBaseCell.Cell, (int)Direction.IK];
@@ -63,7 +65,7 @@ namespace H3.Extensions {
                     break;
                 }
 
-                Direction oldDir = outIndex.GetDirectionForResolution(resolution + 1);
+                Direction oldDir = outIndex.GetDirectionForResolution(nextResolution);
                 Direction nextDir;
 
                 if (oldDir == Direction.Invalid) {
@@ -71,15 +73,15 @@ namespace H3.Extensions {
                     return (H3Index.Invalid, rotations);
                 }
 
-                if (IsResolutionClass3(resolution + 1)) {
+                if (IsResolutionClass3(nextResolution)) {
                     outIndex.SetDirectionForResolution(
-                        resolution + 1,
+                        nextResolution,
                         LookupTables.NewDirectionClass2[(int)oldDir, (int)dir]
                     );
                     nextDir = LookupTables.NewAdjustmentClass2[(int)oldDir, (int)dir];
                 } else {
                     outIndex.SetDirectionForResolution(
-                        resolution + 1,
+                        nextResolution,
                         LookupTables.NewDirectionClass3[(int)oldDir, (int)dir]
                     );
                     nextDir = LookupTables.NewAdjustmentClass3[(int)oldDir, (int)dir];

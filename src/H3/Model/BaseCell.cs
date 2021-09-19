@@ -47,11 +47,15 @@ namespace H3.Model {
         public static bool FaceMatchesOffset(int cell, int face) => LookupTables.BaseCells[cell].FaceMatchesOffset(face);
 
         public static bool operator ==(BaseCell? a, BaseCell? b) {
-            return a?.Cell == b?.Cell;
+            if (a is null) return b is null;
+            if (b is null) return false;
+            return a.Cell == b.Cell;
         }
 
         public static bool operator !=(BaseCell? a, BaseCell? b) {
-            return a?.Cell != b?.Cell;
+            if (a is null) return b is not null;
+            if (b is null) return true;
+            return a.Cell != b.Cell;
         }
 
         public override bool Equals(object? other) {

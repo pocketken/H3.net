@@ -83,7 +83,7 @@ namespace H3 {
         }
 
         /// <summary>
-        /// The base cell number of the index.  Must be >= 0 < NUM_BASE_CELLS
+        /// The base cell number of the index.  Must be &gt;= 0 &lt; NUM_BASE_CELLS
         /// </summary>
         public int BaseCellNumber {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -93,7 +93,7 @@ namespace H3 {
         }
 
         /// <summary>
-        /// The resolution of the index.  Must be >= 0 <= MAX_H3_RES
+        /// The resolution of the index.  Must be &gt;= 0 &lt;= MAX_H3_RES
         /// </summary>
         public int Resolution {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -324,20 +324,15 @@ namespace H3 {
         }
 
         /// <summary>
-        /// Rotates the index in place; skips any leading 1 digits (k-axis)
+        /// Performs an in-place 60 degree counter-clockwise pentagonal rotation of the index.
         /// </summary>
-        /// <param name="rotateIndex">Callback to be fired in order to actually perform
-        /// index rotation (eg clockwise or counter-clockwise)</param>
-        /// <param name="rotateCell">Callback to be fired in order to actually perform
-        /// direction digit rotation around the cell (eg clockwise or counter-clockwise)
-        /// </param>
-        private void RotatePentagon(Action rotateIndex, Func<Direction, Direction> rotateCell) {
+        public void RotatePentagonCounterClockwise() {
             int resolution = Resolution;
             bool foundFirstNonZeroDigit = false;
 
             for (int r = 1; r <= resolution; r += 1) {
                 // rotate digit
-                SetDirectionForResolution(r, rotateCell(GetDirectionForResolution(r)));
+                SetDirectionForResolution(r, GetDirectionForResolution(r).RotateCounterClockwise());
 
                 // look for the first non-zero digit so we
                 // can adjust for deleted k-axes sequence
@@ -349,22 +344,36 @@ namespace H3 {
 
                 // adjust for deleted k-axes sequence
                 if (LeadingNonZeroDirection == Direction.K) {
-                    rotateIndex();
+                    RotateCounterClockwise();
                 }
             }
         }
 
         /// <summary>
-        /// Performs an in-place 60 degree counter-clockwise pentagonal rotation of the index.
-        /// </summary>
-        public void RotatePentagonCounterClockwise() =>
-            RotatePentagon(RotateCounterClockwise, cell => cell.RotateCounterClockwise());
-
-        /// <summary>
         /// Performs an in-place 60 degree clockwise pentagonal rotation of the index.
         /// </summary>
-        public void RotatePentagonClockwise() =>
-            RotatePentagon(RotateClockwise, cell => cell.RotateClockwise());
+        public void RotatePentagonClockwise() {
+            int resolution = Resolution;
+            bool foundFirstNonZeroDigit = false;
+
+            for (int r = 1; r <= resolution; r += 1) {
+                // rotate digit
+                SetDirectionForResolution(r, GetDirectionForResolution(r).RotateClockwise());
+
+                // look for the first non-zero digit so we
+                // can adjust for deleted k-axes sequence
+                // if necessary
+                if (foundFirstNonZeroDigit || GetDirectionForResolution(r) == Direction.Center)
+                    continue;
+
+                foundFirstNonZeroDigit = true;
+
+                // adjust for deleted k-axes sequence
+                if (LeadingNonZeroDirection == Direction.K) {
+                    RotateClockwise();
+                }
+            }
+        }
 
         /// <summary>
         /// Performs an in-place 60 degree counter-clockwise rotation of the index.
@@ -437,7 +446,8 @@ namespace H3 {
             CoordIJK origIJK = new(fijk.Coord);
 
             // if we're in Class III, drop into the next finer Class II grid
-            int resolution = index.Resolution;
+            var currentResolution = Resolution;
+            var resolution = currentResolution;
             if (IsResolutionClass3(resolution)) {
                 fijk.Coord.DownAperature7Clockwise();
                 resolution++;
@@ -445,7 +455,7 @@ namespace H3 {
 
             // adjust for overage if needed
             // a pentagon base cell with a leading 4 digit requires special handling
-            bool pentLeading4 = BaseCell.IsPentagon && index.LeadingNonZeroDirection == Direction.I;
+            var pentLeading4 = BaseCell.IsPentagon && index.LeadingNonZeroDirection == Direction.I;
             if (fijk.AdjustOverageClass2(resolution, pentLeading4, false) != Overage.None) {
                 // if the base cell is a pentagon we have the potential for secondary
                 // overages
@@ -453,10 +463,10 @@ namespace H3 {
                     while (fijk.AdjustOverageClass2(resolution, false, false) != Overage.None) { }
                 }
 
-                if (resolution != Resolution) {
+                if (resolution != currentResolution) {
                     fijk.Coord.UpAperature7Clockwise();
                 }
-            } else if (resolution != Resolution) {
+            } else if (resolution != currentResolution) {
                 fijk.Coord = origIJK;
             }
 
@@ -606,13 +616,27 @@ namespace H3 {
             return other == null ? 1 : Value.CompareTo(other.Value);
         }
 
-        public static bool operator ==(H3Index? a, H3Index? b) => a?.Value == b?.Value;
+        public static bool operator ==(H3Index? a, H3Index? b) {
+            if (a is null) return b is null;
+            if (b is null) return false;
+            return a.Value == b.Value;
+        }
 
-        public static bool operator !=(H3Index? a, H3Index? b) => a?.Value != b?.Value;
+        public static bool operator !=(H3Index? a, H3Index? b) {
+            if (a is null) return b is not null;
+            if (b is null) return true;
+            return a.Value != b.Value;
+        }
 
-        public static bool operator ==(H3Index? a, ulong b) => a?.Value == b;
+        public static bool operator ==(H3Index? a, ulong b) {
+            if (a is null) return false;
+            return a.Value == b;
+        }
 
-        public static bool operator !=(H3Index? a, ulong b) => a?.Value != b;
+        public static bool operator !=(H3Index? a, ulong b) {
+            if (a is null) return true;
+            return a.Value != b;
+        }
 
         public override bool Equals(object? other) => other is H3Index i && Value == i.Value ||
             other is ulong l && Value == l;

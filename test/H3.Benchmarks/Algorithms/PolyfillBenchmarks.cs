@@ -57,13 +57,17 @@ namespace H3.Benchmarks.Algorithms {
         };
 
         [Benchmark(Description = "pocketken.H3.Fill(worldPolygon, 4)")]
-        public int Polyfill() => EntireWorldGeometry.Fill(4).Count();
+        public int PolyfillWorld() => EntireWorldGeometry.Fill(4).Count();
 
         [Benchmark(Description = "pocketken.H3.Fill(sfPolygon, 10)")]
         public int PolyfillSf() => SfGeometry.Fill(10).Count();
 
         [Benchmark(Description = "H3Lib.Polyfill(sfPolygon, 10)")]
-        public int H3LibPolyfill() => SfGeoPolygon.Polyfill(10).Count;
+        public int H3LibPolyfillSf() => SfGeoPolygon.Polyfill(10).Count;
+
+        [Benchmark(Description = "pocketken.H3.Fill(sfPolygon, 14)")]
+        public int PolyfillSf14() => SfGeometry.Fill(14).Count();
+
 
     }
 

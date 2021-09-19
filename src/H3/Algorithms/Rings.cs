@@ -129,7 +129,7 @@ namespace H3.Algorithms {
 
             // since k >= 0, start with origin
             Queue<RingCell> queue = new();
-            Dictionary<H3Index, int> searched = new();
+            Dictionary<ulong, int> searched = new();
             queue.Enqueue(new RingCell { Index = origin, Distance = 0 });
 
             while (queue.Count != 0) {
