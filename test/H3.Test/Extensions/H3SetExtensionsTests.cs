@@ -12,7 +12,7 @@ namespace H3.Test.Extensions {
     public class H3SetExtensionsTests {
 
         // select h3_compact(array(select h3_k_ring('8e48e1d7038d527'::h3index, 2)));
-        private static readonly H3Index[] TestCompactArray = new H3Index[] {
+        private static readonly H3Index[] TestCompactArray = {
             0x8e48e1d7038dc9f,
             0x8e48e1d7038dcd7,
             0x8e48e1d7038dc8f,
@@ -29,7 +29,7 @@ namespace H3.Test.Extensions {
         };
 
         // select h3_uncompact(array(select h3_compact(array(select h3_k_ring('8e48e1d7038d527'::h3index, 2)))), 14);
-        private static readonly H3Index[] TestUncompactArray = new H3Index[] {
+        private static readonly H3Index[] TestUncompactArray = {
             0x8e48e1d7038dc9f,
             0x8e48e1d7038dcd7,
             0x8e48e1d7038dc8f,
@@ -53,13 +53,13 @@ namespace H3.Test.Extensions {
 
         private static readonly H3Index Sunnyvale = 0x89283470c27ffff;
 
-        private static readonly H3Index[] Uncompactable = new H3Index[] {
+        private static readonly H3Index[] Uncompactable = {
             0x89283470803ffff,
             0x8928347081bffff,
             0x8928347080bffff
         };
 
-        private static readonly H3Index[] UncompactableWithZero = new H3Index[] {
+        private static readonly H3Index[] UncompactableWithZero = {
             0x89283470803ffff,
             0x8928347081bffff,
             0,
@@ -72,7 +72,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_Compact_CanCompactMixedResolutions() {
             // Arrange
-            H3Index[] indicies = new[] { TestHelpers.SfIndex, (H3Index)TestHelpers.TestIndexValue };
+            H3Index[] indicies = { TestHelpers.SfIndex, (H3Index)TestHelpers.TestIndexValue };
 
             // Act
             var actual = indicies.Compact().ToArray();
@@ -182,7 +182,7 @@ namespace H3.Test.Extensions {
         public void Test_Upstream_Uncompact_SomeHexagonAndPentagon(int baseCellNumber) {
             // Arrange
             var index = H3Index.Create(1, baseCellNumber, 0);
-            var indexes = new H3Index[] { index };
+            var indexes = new[] { index };
             var expectedChildren = index.GetChildrenForResolution(2);
 
             // Act
@@ -198,7 +198,7 @@ namespace H3.Test.Extensions {
         public void Test_Upstream_Compact_SomeHexagonAndPentagon(int baseCellNumber) {
             // Arrange
             var index = H3Index.Create(1, baseCellNumber, 0);
-            var expectedIndexes = new H3Index[] { index };
+            var expectedIndexes = new[] { index };
             var children = index.GetChildrenForResolution(2);
 
             // Act

@@ -11,6 +11,114 @@ using static H3.Utils;
 namespace H3.Extensions {
 
     public static class H3GeometryExtensions {
+
+        /// <summary>
+        /// Determines the spherical coordinates of the center point of a <see cref="H3Index"/>.
+        /// </summary>
+        /// <param name="inputIndex"></param>
+        /// <param name="result">optional result object; defaults to new <see cref="Coordinate"/>
+        /// instance.</param>
+        /// <returns></returns>
+        public static Coordinate ToCoordinate(this H3Index inputIndex, Coordinate? result = default, FaceIJK? toUpdateFaceIjk = default) {
+            result ??= new Coordinate();
+
+            var index = inputIndex;
+            var resolution = index.Resolution;
+            var faceIjk = index.ToFaceIJK(toUpdateFaceIjk);
+
+            var center = LookupTables.GeoFaceCenters[faceIjk.Face];
+            var (x, y) = faceIjk.Coord.GetVec2dOrdinates();
+
+            var distance = Math.Sqrt(x * x + y * y);
+            if (distance < EPSILON) {
+                result.X = center.LongitudeDegrees;
+                result.Y = center.LatitudeDegrees;
+                return result;
+            }
+
+            var azimuth = Math.Atan2(y, x);
+
+            for (var i = 0; i < resolution; i += 1) distance /= M_SQRT7;
+
+            distance = Math.Atan(distance * RES0_U_GNOMONIC);
+            if (IsResolutionClass3(resolution)) {
+                azimuth = NormalizeAngle(azimuth + M_AP7_ROT_RADS);
+            }
+
+            azimuth = NormalizeAngle(LookupTables.AxisAzimuths[faceIjk.Face] - azimuth);
+
+            double latitude;
+            double longitude;
+
+            if (azimuth < EPSILON || Math.Abs(azimuth - M_PI) < EPSILON) {
+                // due north or south
+                latitude = azimuth < EPSILON ? center.Latitude + distance : center.Latitude - distance;
+
+                if (Math.Abs(latitude - M_PI_2) < EPSILON) {
+                    // north pole
+                    latitude = M_PI_2;
+                    longitude = 0;
+                } else if (Math.Abs(latitude + M_PI_2) < EPSILON) {
+                    // south pole
+                    latitude = -M_PI_2;
+                    longitude = 0;
+                } else {
+                    longitude = ConstrainLongitude(center.Longitude);
+                }
+            } else {
+                // not due north or south
+                var sinP1Lat = Math.Sin(center.Latitude);
+                var cosP1Lat = Math.Cos(center.Latitude);
+                var sinDist = Math.Sin(distance);
+                var cosDist = Math.Cos(distance);
+                var sinLat = Math.Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(azimuth), -1.0, 1.0);
+                latitude = Math.Asin(sinLat);
+
+                if (Math.Abs(latitude - M_PI_2) < EPSILON) {
+                    // north pole
+                    latitude = M_PI_2;
+                    longitude = 0;
+                } else if (Math.Abs(latitude + M_PI_2) < EPSILON) {
+                    // south pole
+                    latitude = -M_PI_2;
+                    longitude = 0;
+                } else {
+                    var cosP2Lat = Math.Cos(latitude);
+                    var sinLon = Math.Clamp(Math.Sin(azimuth) * sinDist / cosP2Lat, -1.0, 1.0);
+                    var cosLon = Math.Clamp((cosDist - sinP1Lat * Math.Sin(latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    longitude = ConstrainLongitude(center.Longitude + Math.Atan2(sinLon, cosLon));
+                }
+            }
+
+            result.X = longitude * M_180_PI;
+            result.Y = latitude * M_180_PI;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Convert a <see cref="Coordinate"/> to a H3 index at the specified resolution.
+        /// </summary>
+        /// <param name="coordinate"></param>
+        /// <param name="resolution"></param>
+        /// <param name="faceIjk">optional <see cref="FaceIJK"/> instance to re-use for the conversion</param>
+        /// <param name="v3d">optional <see cref="Vec3d"/> instance to re-use for the conversion</param>
+        /// <returns></returns>
+        public static H3Index ToH3Index(this Coordinate coordinate, int resolution, FaceIJK? faceIjk = default, Vec3d? v3d = default) {
+            if (resolution is < 0 or > MAX_H3_RES) return H3Index.Invalid;
+            if (!coordinate.X.IsFinite() || !coordinate.Y.IsFinite()) return H3Index.Invalid;
+            return H3Index.FromFaceIJK(
+                FaceIJK.FromGeoCoord(
+                    coordinate.X * M_PI_180,
+                    coordinate.Y * M_PI_180,
+                    resolution,
+                    faceIjk,
+                    v3d
+                ),
+                resolution
+            );
+        }
+
         /// <summary>
         /// Find all icosahedron faces intersected by a given H3 index, represented
         /// as integers from 0-19. The results are sparse; since 0 is a valid value,
@@ -168,6 +276,7 @@ namespace H3.Extensions {
             var gf = geomFactory ?? DefaultGeometryFactory;
             return gf.CreateMultiPolygon(indicies.Select(index => index.GetCellBoundary()).ToArray());
         }
+
     }
 
 }

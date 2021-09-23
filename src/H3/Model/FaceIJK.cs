@@ -7,27 +7,23 @@ using static H3.Utils;
 
 namespace H3.Model {
 
-    public class FaceIJK {
-        public int Face { get; set; } = 0;
-        public CoordIJK Coord { get; set; } = new();
+    public sealed class FaceIJK {
+
+        public int Face { get; set; }
+        public CoordIJK Coord { get; set; } = new(0, 0, 0);
 
         public const int IJ = 1;
         public const int KI = 2;
         public const int JK = 3;
 
-        public BaseCellRotation? BaseCellRotation {
-            get {
+        public BaseCellRotation? BaseCellRotation
+        {
+            get
+            {
                 if (Coord.I > MAX_FACE_COORD || Coord.J > MAX_FACE_COORD || Coord.K > MAX_FACE_COORD) return null;
-
-                try {
-                    return LookupTables.FaceIjkBaseCells[Face, Coord.I, Coord.J, Coord.K];
-                } catch {
-                    return null;
-                }
+                return LookupTables.FaceIjkBaseCells[Face, Coord.I, Coord.J, Coord.K];
             }
         }
-
-        public BaseCell? BaseCell => BaseCellRotation?.BaseCell ?? null;
 
         public FaceIJK() { }
 
@@ -41,59 +37,65 @@ namespace H3.Model {
             Coord = new CoordIJK(coord);
         }
 
-        public static FaceIJK FromGeoCoord(GeoCoord coord, int resolution) {
-            Vec3d v3d = Vec3d.FromGeoCoord(coord);
-            FaceIJK result = new();
+        public static FaceIJK FromGeoCoord(double longitudeRadians, double latitudeRadians, int resolution, FaceIJK? toUpdate = default, Vec3d? workVec3d = default) {
+            Vec3d v3d = Vec3d.FromLonLat(longitudeRadians, latitudeRadians, workVec3d);
+            FaceIJK result = toUpdate ?? new FaceIJK();
+
+            result.Face = 0;
+            result.Coord.I = 0;
+            result.Coord.J = 0;
+            result.Coord.K = 0;
 
             double sqd = v3d.PointSquareDistance(LookupTables.FaceCenters[0]);
             for (var f = 1; f < NUM_ICOSA_FACES; f += 1) {
                 double sqdT = v3d.PointSquareDistance(LookupTables.FaceCenters[f]);
-                if (sqdT < sqd) {
-                    result.Face = f;
-                    sqd = sqdT;
-                }
+                if (!(sqdT < sqd))
+                    continue;
+
+                result.Face = f;
+                sqd = sqdT;
             }
 
-            double r = Math.Acos(1 - sqd / 2);
-            Vec2d v = new();
+            var r = Math.Acos(1 - sqd / 2);
+            double x = 0;
+            double y = 0;
 
             if (r >= EPSILON) {
-                double theta = NormalizeAngle(LookupTables.AxisAzimuths[result.Face, 0] -
-                    NormalizeAngle(LookupTables.GeoFaceCenters[result.Face].GetAzimuthInRadians(coord)));
+                var center = LookupTables.GeoFaceCenters[result.Face];
+                double az = NormalizeAngle(AzimuthInRadians(center.Longitude, center.Latitude, longitudeRadians, latitudeRadians));
+                double theta = NormalizeAngle(LookupTables.AxisAzimuths[result.Face] - az);
 
                 if (IsResolutionClass3(resolution)) theta = NormalizeAngle(theta - M_AP7_ROT_RADS);
 
                 r = Math.Tan(r) / RES0_U_GNOMONIC;
                 for (var i = 0; i < resolution; i += 1) r *= M_SQRT7;
 
-                v.X = r * Math.Cos(theta);
-                v.Y = r * Math.Sin(theta);
+                x = r * Math.Cos(theta);
+                y = r * Math.Sin(theta);
             }
 
-            result.Coord = CoordIJK.FromVec2d(v);
+            result.Coord = CoordIJK.FromVec2d(x, y, result.Coord);
             return result;
         }
 
-        public GeoCoord ToGeoCoord(int resolution) => Coord.ToVec2d().ToFaceGeoCoord(Face, resolution, false);
-
         private FaceIJK[] GetVertices(CoordIJK[] class3Verts, CoordIJK[] class2Verts, ref int resolution) {
             var verts = IsResolutionClass3(resolution) ? class3Verts : class2Verts;
-            Coord.DownAperature3CounterClockwise();
-            Coord.DownAperature3Clockwise();
+            Coord.DownAperture3CounterClockwise();
+            Coord.DownAperture3Clockwise();
 
             // if res is Class III we need to add a cw aperture 7 to get to
             // icosahedral Class II
             if (IsResolutionClass3(resolution)) {
-                Coord.DownAperature7Clockwise();
+                Coord.DownAperture7Clockwise();
                 resolution += 1;
             }
 
-            List<FaceIJK> result = new();
+            var result = new FaceIJK[verts.Length];
             for (var v = 0; v < verts.Length; v += 1) {
-                result.Add(new FaceIJK(Face, (Coord + verts[v]).Normalize()));
+                result[v] = new FaceIJK(Face, (Coord + verts[v]).Normalize());
             }
 
-            return result.ToArray();
+            return result;
         }
 
         /// <summary>
@@ -172,7 +174,7 @@ namespace H3.Model {
                 Coord.Normalize();
 
                 // overage points on pentagon boundaries can end up on edges
-                if (isSubstrate && ((Coord.I + Coord.J + Coord.K) == maxDist)) {
+                if (isSubstrate && Coord.I + Coord.J + Coord.K == maxDist) {
                     overage = Overage.FaceEdge;
                 }
             }
@@ -242,7 +244,10 @@ namespace H3.Model {
                     // rotate and translate for adjacent face
                     for (int i = 0; i < fijkOrient.CounterClockwiseRotations; i += 1) ijk.RotateCounterClockwise();
 
-                    ijk += fijkOrient.Translate * (LookupTables.UnitScaleByClass2Res[adjustedResolution] * 3);
+                    var scale = LookupTables.UnitScaleByClass2Res[adjustedResolution] * 3;
+                    ijk.I += fijkOrient.Translate.I * scale;
+                    ijk.J += fijkOrient.Translate.J * scale;
+                    ijk.K += fijkOrient.Translate.K * scale;
                     ijk.Normalize();
 
                     Vec2d orig2d1 = ijk.ToVec2d();
@@ -283,7 +288,7 @@ namespace H3.Model {
                 }
 
                 if (vert < start + NUM_PENT_VERTS) {
-                    yield return fijk.Coord.ToVec2d().ToFaceGeoCoord(fijk.Face, adjustedResolution, true);
+                    yield return fijk.ToFaceGeoCoord(adjustedResolution, true);
                 }
 
                 lastFijk = fijk;
@@ -371,7 +376,7 @@ namespace H3.Model {
                 // vert == start + NUM_HEX_VERTS is only used to test for possible
                 // intersection on last edge
                 if (vert < start + NUM_HEX_VERTS) {
-                    yield return fijk.Coord.ToVec2d().ToFaceGeoCoord(fijk.Face, adjustedResolution, true);
+                    yield return fijk.ToFaceGeoCoord(adjustedResolution, true);
                 }
 
                 lastFace = fijk.Face;
@@ -379,13 +384,54 @@ namespace H3.Model {
             }
         }
 
-        public static bool operator ==(FaceIJK? a, FaceIJK? b) => a?.Face == b?.Face && a?.Coord == b?.Coord;
+        public GeoCoord ToGeoCoord(int resolution) {
+            return ToFaceGeoCoord(resolution, false);
+        }
 
-        public static bool operator !=(FaceIJK? a, FaceIJK? b) => a?.Face != b?.Face || a?.Coord != b?.Coord;
+        public GeoCoord ToFaceGeoCoord(int resolution, bool isSubstrate) {
+            var (x, y) = Coord.GetVec2dOrdinates();
+            return ToFaceGeoCoord(x, y, Face, resolution, isSubstrate);
+        }
 
-        public override bool Equals(object? other) => other is FaceIJK f && Face == f.Face && Coord == f.Coord;
+        public static GeoCoord ToFaceGeoCoord(double x, double y, int face, int resolution, bool isSubstrate) {
+            var r = Math.Sqrt(x * x + y * y);
+            if (r < EPSILON) {
+                return new GeoCoord(LookupTables.GeoFaceCenters[face]);
+            }
+
+            var theta = Math.Atan2(y, x);
+
+            for (var i = 0; i < resolution; i += 1) r /= M_SQRT7;
+            if (isSubstrate) {
+                r /= 3.0;
+                if (IsResolutionClass3(resolution)) r /= M_SQRT7;
+            }
+
+            r = Math.Atan(r * RES0_U_GNOMONIC);
+            if (!isSubstrate && IsResolutionClass3(resolution)) {
+                theta = NormalizeAngle(theta + M_AP7_ROT_RADS);
+            }
+
+            theta = NormalizeAngle(LookupTables.AxisAzimuths[face] - theta);
+            return GeoCoord.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
+        }
+
+        public static bool operator ==(FaceIJK? a, FaceIJK? b) {
+            if (a is null) return b is null;
+            if (b is null) return false;
+            return a.Face == b.Face && a.Coord == b.Coord;
+        }
+
+        public static bool operator !=(FaceIJK? a, FaceIJK? b) {
+            if (a is null) return b is not null;
+            if (b is null) return true;
+            return a.Face != b.Face || a.Coord != b.Coord;
+        }
+
+        public override bool Equals(object? other) => other is FaceIJK f && this == f;
 
         public override int GetHashCode() => HashCode.Combine(Face, Coord);
+
     }
 
 }

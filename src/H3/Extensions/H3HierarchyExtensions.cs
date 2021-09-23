@@ -44,11 +44,13 @@ namespace H3.Extensions {
             // Adjust the indexing digits and, if needed, the base cell.
             int resolution = outIndex.Resolution - 1;
             while (true) {
+                int nextResolution = resolution + 1;
                 if (resolution == -1) {
-                    outIndex.BaseCellNumber = LookupTables.Neighbours[oldBaseCell.Cell, (int)dir];
+                    var newBaseCellNumber = LookupTables.Neighbours[oldBaseCell.Cell, (int)dir];
+                    outIndex.BaseCellNumber = newBaseCellNumber;
                     newRotations = LookupTables.NeighbourCounterClockwiseRotations[oldBaseCell.Cell, (int)dir];
 
-                    if (outIndex.BaseCellNumber == LookupTables.INVALID_BASE_CELL) {
+                    if (newBaseCellNumber == LookupTables.INVALID_BASE_CELL) {
                         // Adjust for the deleted k vertex at the base cell level.
                         // This edge actually borders a different neighbor.
                         outIndex.BaseCellNumber = LookupTables.Neighbours[oldBaseCell.Cell, (int)Direction.IK];
@@ -63,7 +65,7 @@ namespace H3.Extensions {
                     break;
                 }
 
-                Direction oldDir = outIndex.GetDirectionForResolution(resolution + 1);
+                Direction oldDir = outIndex.GetDirectionForResolution(nextResolution);
                 Direction nextDir;
 
                 if (oldDir == Direction.Invalid) {
@@ -71,15 +73,15 @@ namespace H3.Extensions {
                     return (H3Index.Invalid, rotations);
                 }
 
-                if (IsResolutionClass3(resolution + 1)) {
+                if (IsResolutionClass3(nextResolution)) {
                     outIndex.SetDirectionForResolution(
-                        resolution + 1,
+                        nextResolution,
                         LookupTables.NewDirectionClass2[(int)oldDir, (int)dir]
                     );
                     nextDir = LookupTables.NewAdjustmentClass2[(int)oldDir, (int)dir];
                 } else {
                     outIndex.SetDirectionForResolution(
-                        resolution + 1,
+                        nextResolution,
                         LookupTables.NewDirectionClass3[(int)oldDir, (int)dir]
                     );
                     nextDir = LookupTables.NewAdjustmentClass3[(int)oldDir, (int)dir];
@@ -115,30 +117,36 @@ namespace H3.Extensions {
 
                         alreadyAdjustedKSubsequence = true;
                     } else {
-                        // In this case, we traversed into the deleted
-                        // k subsequence from within the same pentagon
-                        // base cell.
-                        if (oldLeadingDir == Direction.Center) {
-                            // Undefined: the k direction is deleted from here
-                            return (H3Index.Invalid, rotations);
+                        // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+                        switch (oldLeadingDir) {
+                            // In this case, we traversed into the deleted
+                            // k subsequence from within the same pentagon
+                            // base cell.
+                            case Direction.Center:
+                                // Undefined: the k direction is deleted from here
+                                return (H3Index.Invalid, rotations);
+
+                            case Direction.JK:
+                                // Rotate out of the deleted k subsequence
+                                // We also need an additional change to the direction we're
+                                // moving in
+                                outIndex.RotateCounterClockwise();
+                                rotations += 1;
+                                break;
+
+                            case Direction.IK:
+                                // Rotate out of the deleted k subsequence
+                                // We also need an additional change to the direction we're
+                                // moving in
+                                outIndex.RotateClockwise();
+                                rotations += 5;
+                                break;
+
+                            default:
+                                // should never happen
+                                return (H3Index.Invalid, rotations);
                         }
 
-                        if (oldLeadingDir == Direction.JK) {
-                            // Rotate out of the deleted k subsequence
-                            // We also need an additional change to the direction we're
-                            // moving in
-                            outIndex.RotateCounterClockwise();
-                            rotations += 1;
-                        } else if (oldLeadingDir == Direction.IK) {
-                            // Rotate out of the deleted k subsequence
-                            // We also need an additional change to the direction we're
-                            // moving in
-                            outIndex.RotateClockwise();
-                            rotations += 5;
-                        } else {
-                            // should never happen
-                            return (H3Index.Invalid, rotations);
-                        }
                     }
                 }
 
@@ -166,6 +174,21 @@ namespace H3.Extensions {
             rotations = (rotations + newRotations) % 6;
 
             return (outIndex, rotations);
+        }
+
+        /// <summary>
+        /// Gets all of the neighbouring cells of <paramref name="origin"/>.  This is just a wrapper
+        /// around calling <see cref="GetDirectNeighbour"/> for each <see cref="Direction"/> and
+        /// filtering for <see cref="H3Index.Invalid"/>.
+        /// </summary>
+        /// <param name="origin">cell to get neighbours of</param>
+        /// <returns></returns>
+        public static IEnumerable<H3Index> GetNeighbours(this H3Index origin) {
+            for (var direction = Direction.Center; direction < Direction.Invalid; direction += 1) {
+                var (neighbour, _) = origin.GetDirectNeighbour(direction);
+                if (neighbour == H3Index.Invalid) continue;
+                yield return neighbour;
+            }
         }
 
         /// <summary>
@@ -247,7 +270,7 @@ namespace H3.Extensions {
             int resolution = origin.Resolution;
 
             // ask for an invalid resolution or resolution greater than ours?
-            if (parentResolution < 0 || parentResolution > MAX_H3_RES || parentResolution > resolution) return H3Index.Invalid;
+            if (parentResolution is < 0 or > MAX_H3_RES || parentResolution > resolution) return H3Index.Invalid;
 
             // if its the same resolution, then we are our father.  err. yeah.
             if (resolution == parentResolution) return origin;

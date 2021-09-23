@@ -14,7 +14,7 @@ namespace H3.Test.Algorithms {
     public class PolyfillTests {
 
         // coordinates for the upstream lib's "SF" test poly
-        private static readonly GeoCoord[] UberSfTestPoly = new GeoCoord[] {
+        private static readonly GeoCoord[] UberSfTestPoly = {
             (0.659966917655, -2.1364398519396),
             (0.6595011102219, -2.1359434279405),
             (0.6583348114025, -2.1354884206045),
@@ -25,26 +25,26 @@ namespace H3.Test.Algorithms {
         };
 
         // upstream lib's prime meridian test poly
-        private static readonly GeoCoord[] PrimeMeridianVerts = new GeoCoord[] {
+        private static readonly GeoCoord[] PrimeMeridianVerts = {
              (0.01, 0.01), (0.01, -0.01), (-0.01, -0.01), (-0.01, 0.01), (0.01, 0.01)
         };
 
         // upstream lib's trans meridian test poly/holes
-        private static readonly GeoCoord[] TransMeridianVerts = new GeoCoord[] {
+        private static readonly GeoCoord[] TransMeridianVerts = {
             (0.01, -M_PI + 0.01),
             (0.01, M_PI - 0.01),
             (-0.01, M_PI - 0.01),
             (-0.01, -M_PI + 0.01),
             (0.01, -M_PI + 0.01)
         };
-        private static readonly GeoCoord[] TransMeridianHoleVerts = new GeoCoord[] {
+        private static readonly GeoCoord[] TransMeridianHoleVerts = {
             (0.005, -M_PI + 0.005),
             (0.005, M_PI - 0.005),
             (-0.005, M_PI - 0.005),
             (-0.005, -M_PI + 0.005),
             (0.005, -M_PI + 0.005),
         };
-        private static readonly GeoCoord[] TransMeridianComplexVerts = new GeoCoord[] {
+        private static readonly GeoCoord[] TransMeridianComplexVerts = {
             (0.1, -M_PI + 0.00001),
             (0.1, M_PI - 0.00001),
             (0.05, M_PI - 0.2),
@@ -55,7 +55,7 @@ namespace H3.Test.Algorithms {
         };
 
         // upstream lib's "entire world" test poly
-        private static readonly GeoCoord[] EntireWorld = new GeoCoord[] {
+        private static readonly GeoCoord[] EntireWorld = {
             (M_PI_2, -M_PI),
             (M_PI_2, M_PI),
             (-M_PI_2, M_PI),

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using H3.Extensions;
 using NetTopologySuite.Geometries;
 using static H3.Constants;
@@ -8,6 +7,7 @@ using static H3.Utils;
 #nullable enable
 
 namespace H3.Model {
+
     public class GeoCoord {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
@@ -41,7 +41,10 @@ namespace H3.Model {
         /// </summary>
         /// <param name="c"></param>
         /// <returns></returns>
-        public static GeoCoord FromCoordinate(Coordinate c) => FromPoint(new Point(c.X, c.Y));
+        public static GeoCoord FromCoordinate(Coordinate c) => new() {
+            Latitude = c.Y * M_PI_180,
+            Longitude = c.X * M_PI_180
+        };
 
         /// <summary>
         /// Computes the point on the sphere a specified azimuth and distance from
@@ -57,7 +60,7 @@ namespace H3.Model {
             GeoCoord p2 = new(p1);
             if (distance < EPSILON) return p2;
 
-            double az = NormalizeAngle(azimuth);
+            var az = NormalizeAngle(azimuth);
 
             if (az < EPSILON || Math.Abs(az - M_PI) < EPSILON) {
                 // due north or south
@@ -131,9 +134,8 @@ namespace H3.Model {
         /// </summary>
         /// <param name="geometryFactory"></param>
         /// <returns></returns>
-        public Coordinate ToCoordinate(GeometryFactory? geometryFactory = null) {
-            var point = ToPoint(geometryFactory);
-            return point.Coordinate;
+        public Coordinate ToCoordinate() {
+            return new Coordinate(LongitudeDegrees, LatitudeDegrees);
         }
 
         /// <summary>
@@ -142,12 +144,7 @@ namespace H3.Model {
         /// <param name="p2">Destination spherical coordinate</param>
         /// <returns>The azimuth in radians from this to p2</returns>
         public double GetAzimuthInRadians(GeoCoord p2) {
-            double cosP2Lat = Math.Cos(p2.Latitude);
-            return Math.Atan2(
-                cosP2Lat * Math.Sin(p2.Longitude - Longitude),
-                Math.Cos(Latitude) * Math.Sin(p2.Latitude) -
-                    Math.Sin(Latitude) * cosP2Lat * Math.Cos(p2.Longitude - Longitude)
-            );
+            return AzimuthInRadians(Longitude, Latitude, p2.Longitude, p2.Latitude);
         }
 
         /// <summary>
@@ -162,10 +159,7 @@ namespace H3.Model {
         /// <returns>The great circle distance in radians between this coordinate
         /// and the destination coordinate.</returns>
         public double GetPointDistanceInRadians(GeoCoord p2) {
-            double sinLat = Math.Sin((p2.Latitude - Latitude) / 2.0);
-            double sinLon = Math.Sin((p2.Longitude - Longitude) / 2.0);
-            double a = sinLat * sinLat + Math.Cos(Latitude) * Math.Cos(p2.Latitude) * sinLon * sinLon;
-            return 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return PointDistanceInRadians(Longitude, Latitude, p2.Longitude, p2.Latitude);
         }
 
         /// <summary>
@@ -193,7 +187,7 @@ namespace H3.Model {
         /// <returns>Estimated number of cells required to trace the line</returns>
         public int LineHexEstimate(GeoCoord other, int resolution) {
             // Get the area of the pentagon as the maximally-distorted area possible
-            H3Index firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution].First();
+            H3Index firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution][0];
             double pentagonRadiusKm = firstPentagon.GetRadiusInKm();
             double dist = GetPointDistanceInKm(other);
             int estimate = (int)Math.Ceiling(dist / (2 * pentagonRadiusKm));

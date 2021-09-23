@@ -5,10 +5,10 @@ using static H3.Constants;
 
 namespace H3.Model {
 
-    public class BaseCellRotation {
-        public int Cell { get; init; }
-        public int CounterClockwiseRotations { get; init; }
-        public BaseCell BaseCell => LookupTables.BaseCells[Cell];
+    public sealed class BaseCellRotation {
+        public int Cell { get; private init; }
+        public int CounterClockwiseRotations { get; private init; }
+        public BaseCell BaseCell { get; private init; } = null!;
 
         public const int InvalidRotations = -1;
 
@@ -17,11 +17,12 @@ namespace H3.Model {
         public static implicit operator BaseCellRotation((int, int) tuple) =>
             new() {
                 Cell = tuple.Item1,
-                CounterClockwiseRotations = tuple.Item2
+                CounterClockwiseRotations = tuple.Item2,
+                BaseCell =  LookupTables.BaseCells[tuple.Item1]
             };
 
         public static int GetCounterClockwiseRotationsForBaseCell(int cell, int face) {
-            if (face < 0 || face > NUM_ICOSA_FACES) return InvalidRotations;
+            if (face is < 0 or > NUM_ICOSA_FACES) return InvalidRotations;
 
             for (var i = 0; i < 3; i+= 1) {
                 for (var j = 0; j < 3; j += 1) {

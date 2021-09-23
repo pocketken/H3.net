@@ -152,7 +152,7 @@ namespace H3.Extensions {
             }
 
             Direction neighbourDirection = (Direction)edge.ReservedBits;
-            if (neighbourDirection <= Direction.Center || neighbourDirection >= Direction.Invalid) {
+            if (neighbourDirection is <= Direction.Center or >= Direction.Invalid) {
                 return false;
             }
 

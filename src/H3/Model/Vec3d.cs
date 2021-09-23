@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using NetTopologySuite.Geometries;
 using static H3.Utils;
 
@@ -6,7 +7,8 @@ using static H3.Utils;
 
 namespace H3.Model {
 
-    public class Vec3d {
+    public sealed class Vec3d {
+
         public double X { get; set; }
         public double Y { get; set; }
         public double Z { get; set; }
@@ -25,15 +27,21 @@ namespace H3.Model {
             Z = source.Z;
         }
 
-        public double PointSquareDistance(Vec3d v2) => Square(X - v2.X) + Square(Y - v2.Y) + Square(Z - v2.Z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public double PointSquareDistance(Vec3d v2) =>
+            Square(X - v2.X) + Square(Y - v2.Y) + Square(Z - v2.Z);
 
-        public static Vec3d FromGeoCoord(GeoCoord coord) {
-            double r = Math.Cos(coord.Latitude);
-            return new Vec3d {
-                Z = Math.Sin(coord.Latitude),
-                X = Math.Cos(coord.Longitude) * r,
-                Y = Math.Sin(coord.Longitude) * r
-            };
+        public static Vec3d FromGeoCoord(GeoCoord coord, Vec3d? result = default) {
+            return FromLonLat(coord.Longitude, coord.Latitude, result);
+        }
+
+        public static Vec3d FromLonLat(double longitudeRadians, double latitudeRadians, Vec3d? result = default) {
+            var ret = result ?? new Vec3d();
+            var r = Math.Cos(latitudeRadians);
+            ret.X = Math.Cos(longitudeRadians) * r;
+            ret.Y = Math.Sin(longitudeRadians) * r;
+            ret.Z = Math.Sin(latitudeRadians);
+            return ret;
         }
 
         public static Vec3d FromPoint(Point point) => FromGeoCoord(GeoCoord.FromPoint(point));
@@ -45,6 +53,7 @@ namespace H3.Model {
         public override bool Equals(object? other) => other is Vec3d v && X == v.X && Y == v.Y && Z == v.Z;
 
         public override int GetHashCode() => HashCode.Combine(X, Y, Z);
+
     }
 
 }

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+
 using H3.Extensions;
 using H3.Model;
 
@@ -55,34 +55,34 @@ namespace H3.Algorithms {
                 startIjk = LocalCoordIJK.ToLocalIJK(origin, origin);
                 endIjk = LocalCoordIJK.ToLocalIJK(origin, destination);
             } catch {
-                return Enumerable.Empty<H3Index>();
+                yield break;
             }
 
             // get grid distance between start/end
-            int distance = startIjk.GetDistanceTo(endIjk);
+            var distance = startIjk.GetDistanceTo(endIjk);
 
             // Convert IJK to cube coordinates suitable for linear interpolation
             startIjk.Cube();
             endIjk.Cube();
 
             double d = distance;
-            double iStep = distance > 0 ? (endIjk.I - startIjk.I) / d : 0.0;
-            double jStep = distance > 0 ? (endIjk.J - startIjk.J) / d : 0.0;
-            double kStep = distance > 0 ? (endIjk.K - startIjk.K) / d : 0.0;
+            var iStep = distance > 0 ? (endIjk.I - startIjk.I) / d : 0.0;
+            var jStep = distance > 0 ? (endIjk.J - startIjk.J) / d : 0.0;
+            var kStep = distance > 0 ? (endIjk.K - startIjk.K) / d : 0.0;
 
             double startI = startIjk.I;
             double startJ = startIjk.J;
             double startK = startIjk.K;
 
-            return Enumerable.Range(0, distance + 1)
-                .Select(n => {
-                    var currentIjk = CoordIJK.CubeRound(
-                        startI + iStep * n,
-                        startJ + jStep * n,
-                        startK + kStep * n
-                    ).Uncube();
-                    return LocalCoordIJK.ToH3Index(origin, currentIjk);
-                });
+            for (var n = 0; n < distance + 1; n += 1) {
+                CoordIJK.CubeRound(
+                    startI + iStep * n,
+                    startJ + jStep * n,
+                    startK + kStep * n,
+                    endIjk
+                ).Uncube();
+                yield return LocalCoordIJK.ToH3Index(origin, endIjk);
+            }
         }
 
     }

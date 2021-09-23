@@ -26,7 +26,7 @@ namespace H3.Test.Extensions {
             new object[] { BaseCell15, BaseCell31, -1, 0 }      // bc1 -> bc3
         };
 
-        private static readonly CoordIJ[] IjDirections = new CoordIJ[] {
+        private static readonly CoordIJ[] IjDirections = {
             (0, 1),
             (-1, 0),
             (-1, -1),
@@ -236,7 +236,7 @@ namespace H3.Test.Extensions {
             var coords = TestHelpers.GetAllCellsForResolution(2)
                 .Select(index => {
                     CoordIJK expected = new(LookupTables.DirectionToUnitVector[index.GetDirectionForResolution(1)]);
-                    expected.DownAperature7Clockwise().ToNeighbour(index.GetDirectionForResolution(2));
+                    expected.DownAperture7Clockwise().ToNeighbour(index.GetDirectionForResolution(2));
 
                     return (
                         Origin: index,

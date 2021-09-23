@@ -19,7 +19,7 @@ namespace H3.Extensions {
         /// Hexagon direction to vertex number relationships (same face).
         /// Note that we don't use direction 0 (center).
         /// </summary>
-        private static readonly int[] HexDirectionToVertexNum = new int[7] {
+        private static readonly int[] HexDirectionToVertexNum = {
             7, 3, 1, 2, 5, 4, 0
         };
 
@@ -34,7 +34,7 @@ namespace H3.Extensions {
         /// <summary>
         /// Vertex number to hexagon direction relationships (same face).
         /// </summary>
-        private static readonly Direction[] HexVertexNumToDirection = new Direction[NUM_HEX_VERTS] {
+        private static readonly Direction[] HexVertexNumToDirection = {
             Direction.IJ,
             Direction.J,
             Direction.JK,
@@ -46,7 +46,7 @@ namespace H3.Extensions {
         /// <summary>
         /// Vertex number to pentagon direction relationships (same face).
         /// </summary>
-        private static readonly Direction[] PentagonVertexNumToDirection = new Direction[NUM_PENT_VERTS] {
+        private static readonly Direction[] PentagonVertexNumToDirection = {
             Direction.IJ,
             Direction.J,
             Direction.JK,
@@ -57,7 +57,7 @@ namespace H3.Extensions {
         /// <summary>
         /// Directions in CCW order.
         /// </summary>
-        private static readonly Direction[] HexDirections = new Direction[NUM_HEX_VERTS] {
+        private static readonly Direction[] HexDirections = {
             Direction.J,
             Direction.JK,
             Direction.K,
@@ -65,7 +65,8 @@ namespace H3.Extensions {
             Direction.I,
             Direction.IJ
         };
-        private static readonly int[] HexNeighbourDirections = new int[7] {
+
+        private static readonly int[] HexNeighbourDirections = {
             7, 5, 3, 4, 1, 0, 2
         };
 
@@ -98,7 +99,7 @@ namespace H3.Extensions {
                 }
 
                 // additional CCW rotation for polar neighbors or IK neighbors
-                if ((fijk.Face != baseFijk.Face && index.BaseCell.IsPolarPentagon) || fijk.Face == dirFaces.Faces[(int)Direction.IK - DirectionIndexOffset]) {
+                if (fijk.Face != baseFijk.Face && index.BaseCell.IsPolarPentagon || fijk.Face == dirFaces.Faces[(int)Direction.IK - DirectionIndexOffset]) {
                     ccwRotations = (ccwRotations + 1) % 6;
                 }
 
@@ -128,7 +129,7 @@ namespace H3.Extensions {
             bool isPentagon = origin.IsPentagon;
 
             // check for invalid directions
-            if (direction == Direction.Center || direction >= Direction.Invalid || (isPentagon && direction == Direction.K)) {
+            if (direction is Direction.Center or >= Direction.Invalid || isPentagon && direction == Direction.K) {
                 return InvalidVertex;
             }
 
@@ -240,7 +241,7 @@ namespace H3.Extensions {
                     // edge, which may involve looping around the vertex nums
                     ownerVertexNum = GetVertexNumberForDirection(owner, dir) + 1;
 
-                    if (ownerVertexNum == NUM_HEX_VERTS || (ownerIsPentagon && ownerVertexNum == NUM_PENT_VERTS)) {
+                    if (ownerVertexNum == NUM_HEX_VERTS || ownerIsPentagon && ownerVertexNum == NUM_PENT_VERTS) {
                         ownerVertexNum = 0;
                     }
                 }

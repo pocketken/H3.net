@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 namespace H3 {
 
     [JsonConverter(typeof(H3IndexJsonConverter))]
-    public class H3Index : IComparable<H3Index> {
+    public sealed class H3Index : IComparable<H3Index> {
 
         #region constants
 
@@ -55,7 +55,7 @@ namespace H3 {
 
         #region properties
 
-        internal ulong Value { get; set; } = 0;
+        internal ulong Value { get; set; }
 
         public BaseCell BaseCell {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -83,7 +83,7 @@ namespace H3 {
         }
 
         /// <summary>
-        /// The base cell number of the index.  Must be >= 0 < NUM_BASE_CELLS
+        /// The base cell number of the index.  Must be &gt;= 0 &lt; NUM_BASE_CELLS
         /// </summary>
         public int BaseCellNumber {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -93,7 +93,7 @@ namespace H3 {
         }
 
         /// <summary>
-        /// The resolution of the index.  Must be >= 0 <= MAX_H3_RES
+        /// The resolution of the index.  Must be &gt;= 0 &lt;= MAX_H3_RES
         /// </summary>
         public int Resolution {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -271,8 +271,8 @@ namespace H3 {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetDirectionForResolution(int resolution, Direction direction) {
             int offset = (MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET;
-            Value = (Value & ~(H3_DIGIT_MASK << (offset))) |
-                (((ulong)direction) << (offset));
+            Value = (Value & ~(H3_DIGIT_MASK << offset)) |
+                ((ulong)direction << offset);
         }
 
         /// <summary>
@@ -324,20 +324,15 @@ namespace H3 {
         }
 
         /// <summary>
-        /// Rotates the index in place; skips any leading 1 digits (k-axis)
+        /// Performs an in-place 60 degree counter-clockwise pentagonal rotation of the index.
         /// </summary>
-        /// <param name="rotateIndex">Callback to be fired in order to actually perform
-        /// index rotation (eg clockwise or counter-clockwise)</param>
-        /// <param name="rotateCell">Callback to be fired in order to actually perform
-        /// direction digit rotation around the cell (eg clockwise or counter-clockwise)
-        /// </param>
-        private void RotatePentagon(Action rotateIndex, Func<Direction, Direction> rotateCell) {
+        public void RotatePentagonCounterClockwise() {
             int resolution = Resolution;
             bool foundFirstNonZeroDigit = false;
 
             for (int r = 1; r <= resolution; r += 1) {
                 // rotate digit
-                SetDirectionForResolution(r, rotateCell(GetDirectionForResolution(r)));
+                SetDirectionForResolution(r, GetDirectionForResolution(r).RotateCounterClockwise());
 
                 // look for the first non-zero digit so we
                 // can adjust for deleted k-axes sequence
@@ -349,22 +344,36 @@ namespace H3 {
 
                 // adjust for deleted k-axes sequence
                 if (LeadingNonZeroDirection == Direction.K) {
-                    rotateIndex();
+                    RotateCounterClockwise();
                 }
             }
         }
 
         /// <summary>
-        /// Performs an in-place 60 degree counter-clockwise pentagonal rotation of the index.
-        /// </summary>
-        public void RotatePentagonCounterClockwise() =>
-            RotatePentagon(RotateCounterClockwise, cell => cell.RotateCounterClockwise());
-
-        /// <summary>
         /// Performs an in-place 60 degree clockwise pentagonal rotation of the index.
         /// </summary>
-        public void RotatePentagonClockwise() =>
-            RotatePentagon(RotateClockwise, cell => cell.RotateClockwise());
+        public void RotatePentagonClockwise() {
+            int resolution = Resolution;
+            bool foundFirstNonZeroDigit = false;
+
+            for (int r = 1; r <= resolution; r += 1) {
+                // rotate digit
+                SetDirectionForResolution(r, GetDirectionForResolution(r).RotateClockwise());
+
+                // look for the first non-zero digit so we
+                // can adjust for deleted k-axes sequence
+                // if necessary
+                if (foundFirstNonZeroDigit || GetDirectionForResolution(r) == Direction.Center)
+                    continue;
+
+                foundFirstNonZeroDigit = true;
+
+                // adjust for deleted k-axes sequence
+                if (LeadingNonZeroDirection == Direction.K) {
+                    RotateClockwise();
+                }
+            }
+        }
 
         /// <summary>
         /// Performs an in-place 60 degree counter-clockwise rotation of the index.
@@ -391,74 +400,84 @@ namespace H3 {
         #region conversions
 
         /// <summary>
-        /// Convert an H3Index to the FaceIJK address on a specified icosahedral face.
+        /// Convert an H3Index to the FaceIJK address on a specified icosahedral face.  Note that
+        /// <paramref name="faceIjk"/> will be mutated by this function.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public (FaceIJK, bool) ToFaceWithInitializedFijk(FaceIJK inputFaceIjk) {
-            FaceIJK faceIjk = new(inputFaceIjk);
+        public bool ToFaceWithInitializedFijk(FaceIJK faceIjk) {
             int resolution = Resolution;
 
             // center base cell hierarchy is entirely on this face
-            bool possibleOverage = !(!BaseCell.IsPentagon && (resolution == 0 || (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0)));
+            bool possibleOverage = !(!BaseCell.IsPentagon && (resolution == 0 || faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0));
 
             for (int r = 1; r <= resolution; r += 1) {
                 if (IsResolutionClass3(r)) {
-                    faceIjk.Coord.DownAperature7CounterClockwise();
+                    faceIjk.Coord.DownAperture7CounterClockwise();
                 } else {
-                    faceIjk.Coord.DownAperature7Clockwise();
+                    faceIjk.Coord.DownAperture7Clockwise();
                 }
 
                 faceIjk.Coord.ToNeighbour(GetDirectionForResolution(r));
             }
 
-            return (faceIjk, possibleOverage);
+            return possibleOverage;
         }
 
         /// <summary>
         /// Convert an H3Index to a FaceIJK address.
         /// </summary>
         /// <returns></returns>
-        public FaceIJK ToFaceIJK() {
-            H3Index index = new(this);
+        public FaceIJK ToFaceIJK(FaceIJK? toUpdateFijk = default) {
+            H3Index index = this;
 
             if (BaseCell.IsPentagon && LeadingNonZeroDirection == Direction.IK) {
+                index = new(this);
                 index.RotateClockwise();
             }
 
             // start with the "home" face and ijk+ coordinates for the base cell of c
-            var (fijk, overage) = index.ToFaceWithInitializedFijk(BaseCell.Home);
+            var fijk = toUpdateFijk ?? new FaceIJK();
+            fijk.Face = BaseCell.Home.Face;
+            fijk.Coord.I = BaseCell.Home.Coord.I;
+            fijk.Coord.J = BaseCell.Home.Coord.J;
+            fijk.Coord.K = BaseCell.Home.Coord.K;
+            var overage = index.ToFaceWithInitializedFijk(fijk);
 
             // no overage is possible; h lies on this face
             if (!overage) return fijk;
 
             // if we're here we have the potential for an "overage"; i.e., it is
             // possible that c lies on an adjacent face
-            CoordIJK origIJK = new(fijk.Coord);
+            var pI = fijk.Coord.I;
+            var pJ = fijk.Coord.J;
+            var pK = fijk.Coord.K;
 
             // if we're in Class III, drop into the next finer Class II grid
-            int resolution = index.Resolution;
+            var currentResolution = Resolution;
+            var resolution = currentResolution;
             if (IsResolutionClass3(resolution)) {
-                fijk.Coord.DownAperature7Clockwise();
+                fijk.Coord.DownAperture7Clockwise();
                 resolution++;
             }
 
             // adjust for overage if needed
             // a pentagon base cell with a leading 4 digit requires special handling
-            bool pentLeading4 = BaseCell.IsPentagon && index.LeadingNonZeroDirection == Direction.I;
+            var pentLeading4 = BaseCell.IsPentagon && index.LeadingNonZeroDirection == Direction.I;
             if (fijk.AdjustOverageClass2(resolution, pentLeading4, false) != Overage.None) {
                 // if the base cell is a pentagon we have the potential for secondary
                 // overages
                 if (BaseCell.IsPentagon) {
-                    while (fijk.AdjustOverageClass2(resolution, false, false) != Overage.None)
-                        continue;
+                    while (fijk.AdjustOverageClass2(resolution, false, false) != Overage.None) { }
                 }
 
-                if (resolution != Resolution) {
-                    fijk.Coord.UpAperature7Clockwise();
+                if (resolution != currentResolution) {
+                    fijk.Coord.UpAperture7Clockwise();
                 }
-            } else if (resolution != Resolution) {
-                fijk.Coord = origIJK;
+            } else if (resolution != currentResolution) {
+                fijk.Coord.I = pI;
+                fijk.Coord.J = pJ;
+                fijk.Coord.K = pK;
             }
 
             return fijk;
@@ -489,7 +508,7 @@ namespace H3 {
         /// <param name="resolution">The cell resolution</param>
         /// <returns></returns>
         public static H3Index FromFaceIJK(FaceIJK face, int resolution) {
-            if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;
+            if (resolution is < 0 or > MAX_H3_RES) return Invalid;
 
             H3Index index = new() {
                 Mode = Mode.Cell,
@@ -505,49 +524,47 @@ namespace H3 {
             // we need to find the correct base cell FaceIJK for this H3 index;
             // start with the passed in face and resolution res ijk coordinates
             // in that face's coordinate system
-            FaceIJK ijk = new(face);
+            CoordIJK ijk = new(face.Coord);
 
             // build the H3Index from finest res up
             // adjust r for the fact that the res 0 base cell offsets the indexing
             // digits
-            CoordIJK diff = new();
             CoordIJK last = new();
             CoordIJK lastCenter = new();
-            for (int r = resolution - 1; r >= 0; r--) {
-                last.I = ijk.Coord.I;
-                last.J = ijk.Coord.J;
-                last.K = ijk.Coord.K;
+            for (var r = resolution - 1; r >= 0; r--) {
+                last.I = ijk.I;
+                last.J = ijk.J;
+                last.K = ijk.K;
 
                 if (IsResolutionClass3(r + 1)) {
                     // rotate ccw
-                    ijk.Coord.UpAperature7CounterClockwise();
-                    lastCenter.I = ijk.Coord.I;
-                    lastCenter.J = ijk.Coord.J;
-                    lastCenter.K = ijk.Coord.K;
-                    lastCenter.DownAperature7CounterClockwise();
+                    ijk.UpAperture7CounterClockwise();
+                    lastCenter.I = ijk.I;
+                    lastCenter.J = ijk.J;
+                    lastCenter.K = ijk.K;
+                    lastCenter.DownAperture7CounterClockwise();
                 } else {
                     // rotate cw
-                    ijk.Coord.UpAperature7Clockwise();
-                    lastCenter.I = ijk.Coord.I;
-                    lastCenter.J = ijk.Coord.J;
-                    lastCenter.K = ijk.Coord.K;
-                    lastCenter.DownAperature7Clockwise();
+                    ijk.UpAperture7Clockwise();
+                    lastCenter.I = ijk.I;
+                    lastCenter.J = ijk.J;
+                    lastCenter.K = ijk.K;
+                    lastCenter.DownAperture7Clockwise();
                 }
 
-                diff.I = last.I - lastCenter.I;
-                diff.J = last.J - lastCenter.J;
-                diff.K = last.K - lastCenter.K;
-                index.SetDirectionForResolution(r + 1, diff);
+                last.I -= lastCenter.I;
+                last.J -= lastCenter.J;
+                last.K -= lastCenter.K;
+                index.SetDirectionForResolution(r + 1, last);
             }
 
-            if (ijk.BaseCellRotation == null) {
-                return Invalid;
-            }
+            if (ijk.I > MAX_FACE_COORD || ijk.J > MAX_FACE_COORD || ijk.K > MAX_FACE_COORD) return Invalid;
+            var baseCellRotation = LookupTables.FaceIjkBaseCells[face.Face, ijk.I, ijk.J, ijk.K];
 
             // found our base cell
-            index.BaseCellNumber = ijk.BaseCellRotation.Cell;
-            var baseCell = ijk.BaseCellRotation.BaseCell;
-            int numRotations = ijk.BaseCellRotation.CounterClockwiseRotations;
+            index.BaseCellNumber = baseCellRotation.Cell;
+            var baseCell = baseCellRotation.BaseCell;
+            var numRotations = baseCellRotation.CounterClockwiseRotations;
 
             // rotate if necessary to get canonical base cell orientation
             // for this base cell
@@ -555,18 +572,18 @@ namespace H3 {
                 // force rotation out of missing k-axes sub-sequence
                 if (index.LeadingNonZeroDirection == Direction.K) {
                     // check for a cw/ ccw offset face; default is ccw
-                    if (baseCell.FaceMatchesOffset(ijk.Face)) {
+                    if (baseCell.FaceMatchesOffset(face.Face)) {
                         index.RotateClockwise();
                     } else {
                         index.RotateCounterClockwise();
                     }
                 }
 
-                for (int i = 0; i < numRotations; i += 1) {
+                for (var i = 0; i < numRotations; i += 1) {
                     index.RotatePentagonCounterClockwise();
                 }
             } else {
-                for (int i = 0; i < numRotations; i += 1) {
+                for (var i = 0; i < numRotations; i += 1) {
                     index.RotateCounterClockwise();
                 }
             }
@@ -582,18 +599,15 @@ namespace H3 {
         /// <param name="resolution">The desired H3 resolution for the encoding</param>
         /// <returns>Returns H3Index.Invalid (H3_NULL) on invalid input</returns>
         public static H3Index FromGeoCoord(GeoCoord geoCoord, int resolution) {
-            if (resolution < 0 || resolution > MAX_H3_RES) return Invalid;
+            if (resolution is < 0 or > MAX_H3_RES) return Invalid;
 
             if (!geoCoord.Latitude.IsFinite() || !geoCoord.Longitude.IsFinite()) return Invalid;
 
-            return FromFaceIJK(FaceIJK.FromGeoCoord(geoCoord, resolution), resolution);
+            return FromFaceIJK(FaceIJK.FromGeoCoord(geoCoord.Longitude, geoCoord.Latitude, resolution), resolution);
         }
 
         public static H3Index FromPoint(Point point, int resolution) =>
             FromGeoCoord(GeoCoord.FromPoint(point), resolution);
-
-        public static H3Index FromCoordinate(Coordinate coordinate, int resolution) =>
-            FromGeoCoord(GeoCoord.FromPoint(new Point(coordinate.X, coordinate.Y)), resolution);
 
         public static implicit operator ulong(H3Index index) => index.Value;
 
@@ -604,20 +618,33 @@ namespace H3 {
         #endregion conversions
 
         public int CompareTo(H3Index? other) {
-            if (other == null) return 1;
-            return Value.CompareTo(other.Value);
+            return other == null ? 1 : Value.CompareTo(other.Value);
         }
 
-        public static bool operator ==(H3Index? a, H3Index? b) => a?.Value == b?.Value;
+        public static bool operator ==(H3Index? a, H3Index? b) {
+            if (a is null) return b is null;
+            if (b is null) return false;
+            return a.Value == b.Value;
+        }
 
-        public static bool operator !=(H3Index? a, H3Index? b) => a?.Value != b?.Value;
+        public static bool operator !=(H3Index? a, H3Index? b) {
+            if (a is null) return b is not null;
+            if (b is null) return true;
+            return a.Value != b.Value;
+        }
 
-        public static bool operator ==(H3Index? a, ulong b) => a?.Value == b;
+        public static bool operator ==(H3Index? a, ulong b) {
+            if (a is null) return false;
+            return a.Value == b;
+        }
 
-        public static bool operator !=(H3Index? a, ulong b) => a?.Value != b;
+        public static bool operator !=(H3Index? a, ulong b) {
+            if (a is null) return true;
+            return a.Value != b;
+        }
 
-        public override bool Equals(object? other) => (other is H3Index i && Value == i.Value) ||
-            (other is ulong l && Value == l);
+        public override bool Equals(object? other) => other is H3Index i && Value == i.Value ||
+            other is ulong l && Value == l;
 
         public override int GetHashCode() => Value.GetHashCode();
 
