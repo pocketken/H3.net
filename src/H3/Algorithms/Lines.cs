@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+
 using H3.Extensions;
 using H3.Model;
 
@@ -59,28 +59,29 @@ namespace H3.Algorithms {
             }
 
             // get grid distance between start/end
-            int distance = startIjk.GetDistanceTo(endIjk);
+            var distance = startIjk.GetDistanceTo(endIjk);
 
             // Convert IJK to cube coordinates suitable for linear interpolation
             startIjk.Cube();
             endIjk.Cube();
 
             double d = distance;
-            double iStep = distance > 0 ? (endIjk.I - startIjk.I) / d : 0.0;
-            double jStep = distance > 0 ? (endIjk.J - startIjk.J) / d : 0.0;
-            double kStep = distance > 0 ? (endIjk.K - startIjk.K) / d : 0.0;
+            var iStep = distance > 0 ? (endIjk.I - startIjk.I) / d : 0.0;
+            var jStep = distance > 0 ? (endIjk.J - startIjk.J) / d : 0.0;
+            var kStep = distance > 0 ? (endIjk.K - startIjk.K) / d : 0.0;
 
             double startI = startIjk.I;
             double startJ = startIjk.J;
             double startK = startIjk.K;
 
             for (var n = 0; n < distance + 1; n += 1) {
-                var currentIjk = CoordIJK.CubeRound(
+                CoordIJK.CubeRound(
                     startI + iStep * n,
                     startJ + jStep * n,
-                    startK + kStep * n
+                    startK + kStep * n,
+                    endIjk
                 ).Uncube();
-                yield return LocalCoordIJK.ToH3Index(origin, currentIjk);
+                yield return LocalCoordIJK.ToH3Index(origin, endIjk);
             }
         }
 

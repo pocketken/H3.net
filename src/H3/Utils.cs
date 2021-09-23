@@ -17,9 +17,48 @@ namespace H3 {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong GetTopBits(this ulong value, int numBits) => value >> (64 - numBits);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsFinite(this double d) => !double.IsInfinity(d) && !double.IsNaN(d);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Square(double v) => v * v;
+
+        /// <summary>
+        /// Determines the azimuth to p2 from p1 in radians.
+        /// </summary>
+        /// <param name="p1Lon">p1 longitude, in radians</param>
+        /// <param name="p1Lat">p1 latitude, in radians</param>
+        /// <param name="p2Lon">p2 longitude, in radians</param>
+        /// <param name="p2Lat">p2 latitude, in radians</param>
+        /// <returns>azimuth, ...in radians!</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double AzimuthInRadians(double p1Lon, double p1Lat, double p2Lon, double p2Lat) {
+            double cosP2Lat = Math.Cos(p2Lat);
+            return Math.Atan2(
+                cosP2Lat * Math.Sin(p2Lon - p1Lon),
+                Math.Cos(p1Lat) * Math.Sin(p2Lat) -
+                Math.Sin(p1Lat) * cosP2Lat * Math.Cos(p2Lon - p1Lon)
+            );
+        }
+
+        /// <summary>
+        /// The great circle distance in radians between two spherical coordinates.
+        ///
+        /// This function uses the Haversine formula.
+        /// For math details, see:
+        ///  * https://en.wikipedia.org/wiki/Haversine_formula
+        ///  * https://www.movable-type.co.uk/scripts/latlong.html
+        /// </summary>
+        /// <param name="p2">Destination coordinate</param>
+        /// <returns>The great circle distance in radians between this coordinate
+        /// and the destination coordinate.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double PointDistanceInRadians(double p1Lon, double p1Lat, double p2Lon, double p2Lat) {
+            double sinLat = Math.Sin((p2Lat - p1Lat) / 2.0);
+            double sinLon = Math.Sin((p2Lon - p1Lon) / 2.0);
+            double a = sinLat * sinLat + Math.Cos(p1Lat) * Math.Cos(p2Lat) * sinLon * sinLon;
+            return 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double NormalizeAngle(double radians) {

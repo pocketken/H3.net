@@ -5,8 +5,8 @@ using System.Linq;
 using H3.Algorithms;
 using H3.Extensions;
 using H3.Test;
-using BenchmarkDotNet.Jobs;
 using H3Lib.Extensions;
+using BenchmarkDotNet.Jobs;
 
 namespace H3.Benchmarks.Algorithms {
 

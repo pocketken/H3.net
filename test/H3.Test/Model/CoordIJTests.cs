@@ -11,7 +11,7 @@ namespace H3.Test.Model {
         [Test]
         public void Test_Upstream_IJKToIJ_Zero() {
             // Arrange
-            CoordIJK ijk = new();
+            CoordIJK ijk = new(0, 0, 0);
 
             // Act
             var actual = CoordIJ.FromCoordIJK(ijk);
@@ -24,7 +24,7 @@ namespace H3.Test.Model {
         [Test]
         public void Test_Upstream_IJToIJK_Zero() {
             // Arrange
-            CoordIJ ij = new();
+            CoordIJ ij = new(0, 0);
 
             // Act
             var actual = ij.ToCoordIJK();

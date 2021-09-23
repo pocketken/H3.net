@@ -4,11 +4,11 @@
 
 namespace H3.Model {
 
-    public class CoordIJ {
+    public sealed class CoordIJ {
+
         public int I { get; set; }
         public int J { get; set; }
 
-        public CoordIJ() { }
 
         public CoordIJ(int i, int j) {
             I = i;
@@ -20,10 +20,7 @@ namespace H3.Model {
             J = source.J;
         }
 
-        public static CoordIJ FromCoordIJK(CoordIJK ijk) => new() {
-            I = ijk.I - ijk.K,
-            J = ijk.J - ijk.K
-        };
+        public static CoordIJ FromCoordIJK(CoordIJK ijk) => new(ijk.I - ijk.K, ijk.J - ijk.K);
 
         public static implicit operator CoordIJ((int, int) coord) =>
             new(coord.Item1, coord.Item2);

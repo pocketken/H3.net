@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 namespace H3 {
 
     [JsonConverter(typeof(H3IndexJsonConverter))]
-    public class H3Index : IComparable<H3Index> {
+    public sealed class H3Index : IComparable<H3Index> {
 
         #region constants
 
@@ -400,12 +400,12 @@ namespace H3 {
         #region conversions
 
         /// <summary>
-        /// Convert an H3Index to the FaceIJK address on a specified icosahedral face.
+        /// Convert an H3Index to the FaceIJK address on a specified icosahedral face.  Note that
+        /// <paramref name="faceIjk"/> will be mutated by this function.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public (FaceIJK, bool) ToFaceWithInitializedFijk(FaceIJK inputFaceIjk) {
-            FaceIJK faceIjk = new(inputFaceIjk);
+        public bool ToFaceWithInitializedFijk(FaceIJK faceIjk) {
             int resolution = Resolution;
 
             // center base cell hierarchy is entirely on this face
@@ -413,43 +413,51 @@ namespace H3 {
 
             for (int r = 1; r <= resolution; r += 1) {
                 if (IsResolutionClass3(r)) {
-                    faceIjk.Coord.DownAperature7CounterClockwise();
+                    faceIjk.Coord.DownAperture7CounterClockwise();
                 } else {
-                    faceIjk.Coord.DownAperature7Clockwise();
+                    faceIjk.Coord.DownAperture7Clockwise();
                 }
 
                 faceIjk.Coord.ToNeighbour(GetDirectionForResolution(r));
             }
 
-            return (faceIjk, possibleOverage);
+            return possibleOverage;
         }
 
         /// <summary>
         /// Convert an H3Index to a FaceIJK address.
         /// </summary>
         /// <returns></returns>
-        public FaceIJK ToFaceIJK() {
-            H3Index index = new(this);
+        public FaceIJK ToFaceIJK(FaceIJK? toUpdateFijk = default) {
+            H3Index index = this;
 
             if (BaseCell.IsPentagon && LeadingNonZeroDirection == Direction.IK) {
+                index = new(this);
                 index.RotateClockwise();
             }
 
             // start with the "home" face and ijk+ coordinates for the base cell of c
-            var (fijk, overage) = index.ToFaceWithInitializedFijk(BaseCell.Home);
+            var fijk = toUpdateFijk ?? new FaceIJK();
+            fijk.Face = BaseCell.Home.Face;
+            fijk.Coord.I = BaseCell.Home.Coord.I;
+            fijk.Coord.J = BaseCell.Home.Coord.J;
+            fijk.Coord.K = BaseCell.Home.Coord.K;
+            var overage = index.ToFaceWithInitializedFijk(fijk);
 
             // no overage is possible; h lies on this face
             if (!overage) return fijk;
 
             // if we're here we have the potential for an "overage"; i.e., it is
             // possible that c lies on an adjacent face
-            CoordIJK origIJK = new(fijk.Coord);
+            var pI = fijk.Coord.I;
+            var pJ = fijk.Coord.J;
+            var pK = fijk.Coord.K;
 
             // if we're in Class III, drop into the next finer Class II grid
             var currentResolution = Resolution;
             var resolution = currentResolution;
             if (IsResolutionClass3(resolution)) {
-                fijk.Coord.DownAperature7Clockwise();
+                fijk.Coord.DownAperture7Clockwise();
                 resolution++;
             }
 
@@ -464,10 +472,12 @@ namespace H3 {
                 }
 
                 if (resolution != currentResolution) {
-                    fijk.Coord.UpAperature7Clockwise();
+                    fijk.Coord.UpAperture7Clockwise();
                 }
             } else if (resolution != currentResolution) {
-                fijk.Coord = origIJK;
+                fijk.Coord.I = pI;
+                fijk.Coord.J = pJ;
+                fijk.Coord.K = pK;
             }
 
             return fijk;
@@ -514,49 +524,47 @@ namespace H3 {
             // we need to find the correct base cell FaceIJK for this H3 index;
             // start with the passed in face and resolution res ijk coordinates
             // in that face's coordinate system
-            FaceIJK ijk = new(face);
+            CoordIJK ijk = new(face.Coord);
 
             // build the H3Index from finest res up
             // adjust r for the fact that the res 0 base cell offsets the indexing
             // digits
-            CoordIJK diff = new();
             CoordIJK last = new();
             CoordIJK lastCenter = new();
-            for (int r = resolution - 1; r >= 0; r--) {
-                last.I = ijk.Coord.I;
-                last.J = ijk.Coord.J;
-                last.K = ijk.Coord.K;
+            for (var r = resolution - 1; r >= 0; r--) {
+                last.I = ijk.I;
+                last.J = ijk.J;
+                last.K = ijk.K;
 
                 if (IsResolutionClass3(r + 1)) {
                     // rotate ccw
-                    ijk.Coord.UpAperature7CounterClockwise();
-                    lastCenter.I = ijk.Coord.I;
-                    lastCenter.J = ijk.Coord.J;
-                    lastCenter.K = ijk.Coord.K;
-                    lastCenter.DownAperature7CounterClockwise();
+                    ijk.UpAperture7CounterClockwise();
+                    lastCenter.I = ijk.I;
+                    lastCenter.J = ijk.J;
+                    lastCenter.K = ijk.K;
+                    lastCenter.DownAperture7CounterClockwise();
                 } else {
                     // rotate cw
-                    ijk.Coord.UpAperature7Clockwise();
-                    lastCenter.I = ijk.Coord.I;
-                    lastCenter.J = ijk.Coord.J;
-                    lastCenter.K = ijk.Coord.K;
-                    lastCenter.DownAperature7Clockwise();
+                    ijk.UpAperture7Clockwise();
+                    lastCenter.I = ijk.I;
+                    lastCenter.J = ijk.J;
+                    lastCenter.K = ijk.K;
+                    lastCenter.DownAperture7Clockwise();
                 }
 
-                diff.I = last.I - lastCenter.I;
-                diff.J = last.J - lastCenter.J;
-                diff.K = last.K - lastCenter.K;
-                index.SetDirectionForResolution(r + 1, diff);
+                last.I -= lastCenter.I;
+                last.J -= lastCenter.J;
+                last.K -= lastCenter.K;
+                index.SetDirectionForResolution(r + 1, last);
             }
 
-            if (ijk.BaseCellRotation == null) {
-                return Invalid;
-            }
+            if (ijk.I > MAX_FACE_COORD || ijk.J > MAX_FACE_COORD || ijk.K > MAX_FACE_COORD) return Invalid;
+            var baseCellRotation = LookupTables.FaceIjkBaseCells[face.Face, ijk.I, ijk.J, ijk.K];
 
             // found our base cell
-            index.BaseCellNumber = ijk.BaseCellRotation.Cell;
-            var baseCell = ijk.BaseCellRotation.BaseCell;
-            int numRotations = ijk.BaseCellRotation.CounterClockwiseRotations;
+            index.BaseCellNumber = baseCellRotation.Cell;
+            var baseCell = baseCellRotation.BaseCell;
+            var numRotations = baseCellRotation.CounterClockwiseRotations;
 
             // rotate if necessary to get canonical base cell orientation
             // for this base cell
@@ -564,18 +572,18 @@ namespace H3 {
                 // force rotation out of missing k-axes sub-sequence
                 if (index.LeadingNonZeroDirection == Direction.K) {
                     // check for a cw/ ccw offset face; default is ccw
-                    if (baseCell.FaceMatchesOffset(ijk.Face)) {
+                    if (baseCell.FaceMatchesOffset(face.Face)) {
                         index.RotateClockwise();
                     } else {
                         index.RotateCounterClockwise();
                     }
                 }
 
-                for (int i = 0; i < numRotations; i += 1) {
+                for (var i = 0; i < numRotations; i += 1) {
                     index.RotatePentagonCounterClockwise();
                 }
             } else {
-                for (int i = 0; i < numRotations; i += 1) {
+                for (var i = 0; i < numRotations; i += 1) {
                     index.RotateCounterClockwise();
                 }
             }
@@ -595,14 +603,11 @@ namespace H3 {
 
             if (!geoCoord.Latitude.IsFinite() || !geoCoord.Longitude.IsFinite()) return Invalid;
 
-            return FromFaceIJK(FaceIJK.FromGeoCoord(geoCoord, resolution), resolution);
+            return FromFaceIJK(FaceIJK.FromGeoCoord(geoCoord.Longitude, geoCoord.Latitude, resolution), resolution);
         }
 
         public static H3Index FromPoint(Point point, int resolution) =>
             FromGeoCoord(GeoCoord.FromPoint(point), resolution);
-
-        public static H3Index FromCoordinate(Coordinate coordinate, int resolution) =>
-            FromGeoCoord(GeoCoord.FromCoordinate(coordinate), resolution);
 
         public static implicit operator ulong(H3Index index) => index.Value;
 

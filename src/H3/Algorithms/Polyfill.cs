@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using H3.Extensions;
 using H3.Model;
+using static H3.Constants;
 using NetTopologySuite.Algorithm.Locate;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.LinearReferencing;
@@ -12,6 +12,7 @@ using NetTopologySuite.LinearReferencing;
 namespace H3.Algorithms {
 
     internal sealed class PositiveLonFilter : ICoordinateSequenceFilter {
+
         public bool Done => false;
 
         public bool GeometryChanged => true;
@@ -20,9 +21,11 @@ namespace H3.Algorithms {
             double x = seq.GetX(i);
             seq.SetOrdinate(i, Ordinate.X, x < 0 ? x + 360.0 : x);
         }
+
     }
 
     internal sealed class NegativeLonFilter : ICoordinateSequenceFilter {
+
         public bool Done => false;
 
         public bool GeometryChanged => true;
@@ -31,6 +34,7 @@ namespace H3.Algorithms {
             double x = seq.GetX(i);
             seq.SetOrdinate(i, Ordinate.X, x > 0 ? x - 360.0 : x);
         }
+
     }
 
     /// <summary>
@@ -55,13 +59,14 @@ namespace H3.Algorithms {
 
             HashSet<ulong> searched = new();
 
-            Stack<H3Index> toSearch = new(GetIndicies(testPoly.Coordinates, resolution));
+            Stack<H3Index> toSearch = new(TraceCoordinates(testPoly.Coordinates, resolution));
             if (toSearch.Count == 0 && !testPoly.IsEmpty) {
-                toSearch.Push(H3Index.FromCoordinate(testPoly.InteriorPoint.Coordinate, resolution));
+                toSearch.Push(testPoly.InteriorPoint.Coordinate.ToH3Index(resolution));
             }
 
             IndexedPointInAreaLocator locator = new(testPoly);
             var coordinate = new Coordinate();
+            var faceIjk = new FaceIJK();
 
             while (toSearch.Count != 0) {
                 var index = toSearch.Pop();
@@ -69,11 +74,8 @@ namespace H3.Algorithms {
                 foreach (var neighbour in index.GetNeighbours()) {
                     if (searched.Contains(neighbour)) continue;
                     searched.Add(neighbour);
-                    var geoCoord = neighbour.ToGeoCoord();
-                    coordinate.X = geoCoord.LongitudeDegrees;
-                    coordinate.Y = geoCoord.LatitudeDegrees;
-                    var location = locator.Locate(coordinate);
 
+                    var location = locator.Locate(neighbour.ToCoordinate(coordinate, faceIjk));
                     if (location != Location.Interior)
                         continue;
 
@@ -91,34 +93,40 @@ namespace H3.Algorithms {
         /// <param name="resolution"></param>
         /// <returns></returns>
         public static IEnumerable<H3Index> Fill(this LineString polyline, int resolution) =>
-            polyline.Coordinates.GetIndicies(resolution);
+            polyline.Coordinates.TraceCoordinates(resolution);
 
         /// <summary>
-        /// Gets all of the H3 indices that define the provided set of Coordinates.
+        /// Gets all of the H3 indices that define the provided set of <see cref="Coordinate"/>s.
         /// </summary>
         /// <param name="coordinates"></param>
         /// <param name="resolution"></param>
         /// <returns></returns>
-        public static IEnumerable<H3Index> GetIndicies(this Coordinate[] coordinates, int resolution) {
+        public static IEnumerable<H3Index> TraceCoordinates(this Coordinate[] coordinates, int resolution) {
             HashSet<H3Index> indicies = new();
 
             // trace the coordinates
-            int coordLen = coordinates.Length - 1;
-            for (int c = 0; c < coordLen; c += 1) {
+            var coordLen = coordinates.Length - 1;
+            FaceIJK faceIjk = new();
+            GeoCoord v1 = new();
+            GeoCoord v2 = new();
+            Vec3d v3d = new();
+            for (var c = 0; c < coordLen; c += 1) {
                 // from this coordinate to next/first
-                var vertA = coordinates[c];
-                var vertB = coordinates[c + 1];
+                var vA = coordinates[c];
+                var vB = coordinates[c + 1];
+                v1.Longitude = vA.X * M_PI_180;
+                v1.Latitude = vA.Y * M_PI_180;
+                v2.Longitude = vB.X * M_PI_180;
+                v2.Latitude = vB.Y * M_PI_180;
 
                 // estimate number of indicies between points, use that as a
                 // number of segments to chop the line into
-                var count = GeoCoord.FromCoordinate(vertA)
-                    .LineHexEstimate(GeoCoord.FromCoordinate(vertB), resolution);
+                var count = v1.LineHexEstimate(v2, resolution);
 
                 for (int j = 1; j < count; j += 1) {
                     // interpolate line
-                    var interpolated = LinearLocation.PointAlongSegmentByFraction(vertA, vertB, (double)j / count);
-                    var index = H3Index.FromCoordinate(interpolated, resolution);
-                    indicies.Add(index);
+                    var interpolated = LinearLocation.PointAlongSegmentByFraction(vA, vB, (double)j / count);
+                    indicies.Add(interpolated.ToH3Index(resolution, faceIjk, v3d));
                 }
             }
 

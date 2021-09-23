@@ -1,12 +1,11 @@
 ﻿using System;
-using static H3.Constants;
-using static H3.Utils;
 
 #nullable enable
 
 namespace H3.Model {
 
-    public class Vec2d {
+    public sealed class Vec2d {
+
         public double X { get; set; }
         public double Y { get; set; }
         public double Magitude => Math.Sqrt(X * X + Y * Y);
@@ -40,36 +39,7 @@ namespace H3.Model {
             return s2;
         }
 
-        public static GeoCoord ToFaceGeoCoord(double x, double y, int face, int resolution, bool isSubstrate) {
-            double r = Math.Sqrt(x * x + y * y);
-            if (r < EPSILON) {
-                return new GeoCoord(LookupTables.GeoFaceCenters[face]);
-            }
-
-            double theta = Math.Atan2(y, x);
-
-            for (var i = 0; i < resolution; i += 1) r /= M_SQRT7;
-            if (isSubstrate) {
-                r /= 3.0;
-                if (IsResolutionClass3(resolution)) r /= M_SQRT7;
-            }
-
-            r = Math.Atan(r * RES0_U_GNOMONIC);
-            if (!isSubstrate && IsResolutionClass3(resolution)) {
-                theta = NormalizeAngle(theta + M_AP7_ROT_RADS);
-            }
-
-            theta = NormalizeAngle(LookupTables.AxisAzimuths[face, 0] - theta);
-            return GeoCoord.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
-        }
-
-        public static GeoCoord ToFaceGeoCoord(FaceIJK faceIjk, int resolution, bool isSubstrate) {
-            var (x, y) = faceIjk.Coord.GetVec2dComponents();
-            return ToFaceGeoCoord(x, y, faceIjk.Face, resolution, isSubstrate);
-        }
-
-        public GeoCoord ToFaceGeoCoord(int face, int resolution, bool isSubstrate) =>
-            ToFaceGeoCoord(X, Y, face, resolution, isSubstrate);
+        public GeoCoord ToFaceGeoCoord(int face, int resolution, bool isSubstrate) => FaceIJK.ToFaceGeoCoord(X, Y, face, resolution, isSubstrate);
 
         public static bool operator ==(Vec2d a, Vec2d b) => a.X == b.X && a.Y == b.Y;
 

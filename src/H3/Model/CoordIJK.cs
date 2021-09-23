@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using static H3.Constants;
 
 #nullable enable
 
 namespace H3.Model {
 
-    public class CoordIJK {
+    public sealed class CoordIJK {
 
         public int I { get; set; }
         public int J { get; set; }
@@ -29,13 +30,12 @@ namespace H3.Model {
             K = source.K;
         }
 
-        public static CoordIJK FromVec2d(Vec2d v) {
-            CoordIJK h = new();
-            int m2;
+        public static CoordIJK FromVec2d(double x, double y, CoordIJK? destination = default) {
+            var h = destination ?? new CoordIJK();
 
             // quantize into the ij system and then normalize
-            var a1 = Math.Abs(v.X);
-            var a2 = Math.Abs(v.Y);
+            var a1 = Math.Abs(x);
+            var a2 = Math.Abs(y);
 
             // first do a reverse conversion
             var x2 = a2 / M_SIN60;
@@ -43,7 +43,7 @@ namespace H3.Model {
 
             // check if we have the center of a hex
             var m1 = (int)x1;
-            m2 = (int)x2;
+            var m2 = (int)x2;
 
             // otherwise round correctly
             var r1 = x1 - m1;
@@ -108,9 +108,9 @@ namespace H3.Model {
             }
 
             // now fold across the axes if necessary
-            if (v.X < 0.0) {
-                if (h.J % 2 == 0) // even
-                {
+            if (x < 0.0) {
+                if (h.J % 2 == 0) {
+                    // even
                     long axisi = h.J / 2;
                     long diff = h.I - axisi;
                     h.I = (int)(h.I - 2.0 * diff);
@@ -121,7 +121,7 @@ namespace H3.Model {
                 }
             }
 
-            if (!(v.Y < 0.0))
+            if (!(y < 0.0))
                 return h.Normalize();
 
             h.I -= (2 * h.J + 1) / 2;
@@ -135,6 +135,7 @@ namespace H3.Model {
         /// values.  Works in place.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK Normalize() {
             // remove any negative values
             if (I < 0) {
@@ -156,7 +157,7 @@ namespace H3.Model {
             }
 
             // remove the min value if needed
-            int min = I;
+            var min = I;
 
             if (J < min)
                 min = J;
@@ -219,7 +220,7 @@ namespace H3.Model {
         /// counter-clockwise aperture 7 grid.  Works in place.
         /// </summary>
         /// <returns></returns>
-        public CoordIJK UpAperature7CounterClockwise() {
+        public CoordIJK UpAperture7CounterClockwise() {
             int i = I - K;
             int j = J - K;
 
@@ -235,7 +236,7 @@ namespace H3.Model {
         /// clockwise aperture 7 grid.  Works in place.
         /// </summary>
         /// <returns></returns>
-        public CoordIJK UpAperature7Clockwise() {
+        public CoordIJK UpAperture7Clockwise() {
             int i = I - K;
             int j = J - K;
 
@@ -252,7 +253,7 @@ namespace H3.Model {
         /// place.
         /// </summary>
         /// <returns></returns>
-        public CoordIJK DownAperature7CounterClockwise() {
+        public CoordIJK DownAperture7CounterClockwise() {
             int i = 3 * I + J;
             int j = 3 * J + K;
             int k = I + 3 * K;
@@ -269,7 +270,7 @@ namespace H3.Model {
         /// hex at the next finer aperture 7 clockwise resolution.  Works in place.
         /// </summary>
         /// <returns></returns>
-        public CoordIJK DownAperature7Clockwise() {
+        public CoordIJK DownAperture7Clockwise() {
             int i = 3 * I + K;
             int j = I + 3 * J;
             int k = J + 3 * K;
@@ -287,7 +288,7 @@ namespace H3.Model {
         /// place.
         /// </summary>
         /// <returns></returns>
-        public CoordIJK DownAperature3CounterClockwise() {
+        public CoordIJK DownAperture3CounterClockwise() {
             int i = 2 * I + J;
             int j = 2 * J + K;
             int k = I + 2 * K;
@@ -304,7 +305,7 @@ namespace H3.Model {
         /// hex at the next finer aperture 3 clockwise resolution.  Works in place.
         /// </summary>
         /// <returns></returns>
-        public CoordIJK DownAperature3Clockwise() {
+        public CoordIJK DownAperture3Clockwise() {
             int i = 2 * I + K;
             int j = I + 2 * J;
             int k = J + 2 * K;
@@ -366,10 +367,10 @@ namespace H3.Model {
         }
 
         public Vec2d ToVec2d() {
-            return new Vec2d(GetVec2dComponents());
+            return new Vec2d(GetVec2dOrdinates());
         }
 
-        public (double, double) GetVec2dComponents() {
+        public (double, double) GetVec2dOrdinates() {
             int i = I - K;
             int j = J - K;
 
@@ -396,23 +397,23 @@ namespace H3.Model {
         public static CoordIJK RotateClockwise(CoordIJK source) =>
             new CoordIJK(source).RotateClockwise();
 
-        public static CoordIJK UpAperature7CounterClockwise(CoordIJK source) =>
-            new CoordIJK(source).UpAperature7CounterClockwise();
+        public static CoordIJK UpAperture7CounterClockwise(CoordIJK source) =>
+            new CoordIJK(source).UpAperture7CounterClockwise();
 
-        public static CoordIJK UpAperatureClockwise(CoordIJK source) =>
-            new CoordIJK(source).UpAperature7Clockwise();
+        public static CoordIJK UpApertureClockwise(CoordIJK source) =>
+            new CoordIJK(source).UpAperture7Clockwise();
 
-        public static CoordIJK DownAperature7CounterClockwise(CoordIJK source) =>
-            new CoordIJK(source).DownAperature7CounterClockwise();
+        public static CoordIJK DownAperture7CounterClockwise(CoordIJK source) =>
+            new CoordIJK(source).DownAperture7CounterClockwise();
 
-        public static CoordIJK DownAperatureClockwise(CoordIJK source) =>
-            new CoordIJK(source).DownAperature7Clockwise();
+        public static CoordIJK DownApertureClockwise(CoordIJK source) =>
+            new CoordIJK(source).DownAperture7Clockwise();
 
-        public static CoordIJK DownAperature3CounterClockwise(CoordIJK source) =>
-            new CoordIJK(source).DownAperature3CounterClockwise();
+        public static CoordIJK DownAperture3CounterClockwise(CoordIJK source) =>
+            new CoordIJK(source).DownAperture3CounterClockwise();
 
-        public static CoordIJK DownAperature3Clockwise(CoordIJK source) =>
-            new CoordIJK(source).DownAperature3Clockwise();
+        public static CoordIJK DownAperture3Clockwise(CoordIJK source) =>
+            new CoordIJK(source).DownAperture3Clockwise();
 
         /// <summary>
         /// Given cube coords as doubles, round to valid integer coordinates. Algorithm
@@ -421,17 +422,19 @@ namespace H3.Model {
         /// <param name="i"></param>
         /// <param name="j"></param>
         /// <param name="k"></param>
+        /// <param name="toUpdate">optional instance to update, returns a new
+        /// <see cref="CoordIJK"/> instance if not provided.</param>
         /// <returns></returns>
-        public static CoordIJK CubeRound(double i, double j, double k) {
-            CoordIJK coord = new(
-                (int)Math.Round(i, MidpointRounding.AwayFromZero),
-                (int)Math.Round(j, MidpointRounding.AwayFromZero),
-                (int)Math.Round(k, MidpointRounding.AwayFromZero)
-            );
+        public static CoordIJK CubeRound(double i, double j, double k, CoordIJK? toUpdate = default) {
+            var coord = toUpdate ?? new CoordIJK();
 
-            double iDiff = Math.Abs(coord.I - i);
-            double jDiff = Math.Abs(coord.J - j);
-            double kDiff = Math.Abs(coord.K - k);
+            coord.I = (int)Math.Round(i, MidpointRounding.AwayFromZero);
+            coord.J = (int)Math.Round(j, MidpointRounding.AwayFromZero);
+            coord.K = (int)Math.Round(k, MidpointRounding.AwayFromZero);
+
+            var iDiff = Math.Abs(coord.I - i);
+            var jDiff = Math.Abs(coord.J - j);
+            var kDiff = Math.Abs(coord.K - k);
 
             // Round, maintaining valid cube coords
             if (iDiff > jDiff && iDiff > kDiff) {

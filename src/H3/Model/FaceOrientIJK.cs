@@ -3,22 +3,17 @@
 #nullable enable
 
 namespace H3.Model {
-    public class FaceOrientIJK {
-        public int Face { get; set; }
-        public CoordIJK Translate { get; set; } = new();
-        public int CounterClockwiseRotations { get; set; }
 
-        public FaceOrientIJK() { }
+    public sealed class FaceOrientIJK {
+        public int Face { get; init; }
+        public CoordIJK Translate { get; init; } = new();
+        public int CounterClockwiseRotations { get; init; }
+
+        private FaceOrientIJK() { }
 
         public FaceOrientIJK(int face, CoordIJK translate, int rotation) {
             Face = face;
             Translate = translate;
-            CounterClockwiseRotations = rotation;
-        }
-
-        public FaceOrientIJK(int face, int i, int j, int k, int rotation) {
-            Face = face;
-            Translate = new CoordIJK(i, j, k);
             CounterClockwiseRotations = rotation;
         }
 
@@ -40,4 +35,5 @@ namespace H3.Model {
             return HashCode.Combine(Face, Translate, CounterClockwiseRotations);
         }
     }
+
 }

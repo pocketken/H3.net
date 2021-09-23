@@ -175,7 +175,8 @@ namespace H3.Extensions {
                 }
             }
 
-            var (indexFijk, _) = index.ToFaceWithInitializedFijk(new FaceIJK());
+            var indexFijk = new FaceIJK();
+            index.ToFaceWithInitializedFijk(indexFijk);
             if (dir != Direction.Center) {
                 if (originBaseCell == baseCell) throw new Exception("assertion failed; origin should not equal index cell");
                 if (originOnPent && indexOnPent) throw new Exception("assertion failed; origin and index cannot both be on a pentagon");
@@ -215,9 +216,9 @@ namespace H3.Extensions {
                 // scale offset based upon resolution
                 for (int r = resolution - 1; r >= 0; r -= 1) {
                     if (IsResolutionClass3(r + 1)) {
-                        offset.DownAperature7CounterClockwise();
+                        offset.DownAperture7CounterClockwise();
                     } else {
-                        offset.DownAperature7Clockwise();
+                        offset.DownAperture7Clockwise();
                     }
                 }
 
@@ -291,7 +292,6 @@ namespace H3.Extensions {
             // digits
             CoordIJK lastIJK = new();
             CoordIJK lastCenter = new();
-            CoordIJK diff = new();
             for (int r = resolution - 1; r >= 0; r -= 1) {
                 lastIJK.I = ijkCopy.I;
                 lastIJK.J = ijkCopy.J;
@@ -299,24 +299,24 @@ namespace H3.Extensions {
 
                 if (IsResolutionClass3(r + 1)) {
                     // rotate ccw
-                    ijkCopy.UpAperature7CounterClockwise();
+                    ijkCopy.UpAperture7CounterClockwise();
                     lastCenter.I = ijkCopy.I;
                     lastCenter.J = ijkCopy.J;
                     lastCenter.K = ijkCopy.K;
-                    lastCenter.DownAperature7CounterClockwise();
+                    lastCenter.DownAperture7CounterClockwise();
                 } else {
                     // rotate cw
-                    ijkCopy.UpAperature7Clockwise();
+                    ijkCopy.UpAperture7Clockwise();
                     lastCenter.I = ijkCopy.I;
                     lastCenter.J = ijkCopy.J;
                     lastCenter.K = ijkCopy.K;
-                    lastCenter.DownAperature7Clockwise();
+                    lastCenter.DownAperture7Clockwise();
                 }
 
-                diff.I = lastIJK.I - lastCenter.I;
-                diff.J = lastIJK.J - lastCenter.J;
-                diff.K = lastIJK.K - lastCenter.K;
-                index.SetDirectionForResolution(r + 1, diff);
+                lastIJK.I -= lastCenter.I;
+                lastIJK.J -= lastCenter.J;
+                lastIJK.K -= lastCenter.K;
+                index.SetDirectionForResolution(r + 1, lastIJK);
             }
 
             // ijkCopy should now hold the IJK of the base cell in the
