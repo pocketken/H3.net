@@ -18,7 +18,7 @@ namespace H3.Model {
             new() {
                 Cell = tuple.Item1,
                 CounterClockwiseRotations = tuple.Item2,
-                BaseCell =  LookupTables.BaseCells[tuple.Item1]
+                BaseCell =  BaseCells.Cells[tuple.Item1]
             };
 
         public static int GetCounterClockwiseRotationsForBaseCell(int cell, int face) {

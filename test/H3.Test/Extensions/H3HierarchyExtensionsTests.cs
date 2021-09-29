@@ -65,12 +65,12 @@ namespace H3.Test.Extensions {
             // Assert
             Assert.AreEqual(7, children.Length, "should return 7 children");
             Assert.IsNotEmpty(children.Where(child => child == TestHelpers.SfIndex), "should contain sf @ 9");
-            for (int i = 0; i < verts.Length; i += 1) {
+            for (var i = 0; i < verts.Length; i += 1) {
                 GeoCoord avg = (
                     (verts[i].Latitude + center.Latitude) / 2,
                     (verts[i].Longitude + center.Longitude) / 2
                 );
-                H3Index avgIndex = H3Index.FromGeoCoord(avg, 9);
+                var avgIndex = H3Index.FromGeoCoord(avg, 9);
                 Assert.IsNotEmpty(children.Where(child => child == avgIndex), $"unable to find expected child {avgIndex:x}");
             }
         }
@@ -127,7 +127,7 @@ namespace H3.Test.Extensions {
             H3Index h3 = new(TestHelpers.TestIndexValue);
 
             // Act
-            H3Index[] children = h3.GetChildrenForResolution(15).ToArray();
+            var children = h3.GetChildrenForResolution(15).ToArray();
 
             // Assert
             TestHelpers.AssertAll(TestHelpers.TestIndexChildrenAtRes15, children);
@@ -193,7 +193,7 @@ namespace H3.Test.Extensions {
         [TestCase(Direction.IJ, 8, 1)]
         public void Test_GetDirectNeighbour_BaseCells(Direction direction, int expectedBaseCell, int baseRotations) {
             // Arrange
-            int expectedRotations = LookupTables.BaseCells[expectedBaseCell].IsPentagon ? baseRotations + 1 : baseRotations;
+            var expectedRotations = BaseCells.Cells[expectedBaseCell].IsPentagon ? baseRotations + 1 : baseRotations;
 
             // Act
             var (actual, rotations) = BaseCell0.GetDirectNeighbour(direction);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using H3.Extensions;
 using H3.Model;
 using static H3.Constants;
@@ -9,6 +10,7 @@ using NetTopologySuite.LinearReferencing;
 
 #nullable enable
 
+[assembly: InternalsVisibleTo("H3.Benchmarks")]
 namespace H3.Algorithms {
 
     internal sealed class PositiveLonFilter : ICoordinateSequenceFilter {
@@ -18,7 +20,7 @@ namespace H3.Algorithms {
         public bool GeometryChanged => true;
 
         public void Filter(CoordinateSequence seq, int i) {
-            double x = seq.GetX(i);
+            var x = seq.GetX(i);
             seq.SetOrdinate(i, Ordinate.X, x < 0 ? x + 360.0 : x);
         }
 
@@ -31,7 +33,7 @@ namespace H3.Algorithms {
         public bool GeometryChanged => true;
 
         public void Filter(CoordinateSequence seq, int i) {
-            double x = seq.GetX(i);
+            var x = seq.GetX(i);
             seq.SetOrdinate(i, Ordinate.X, x > 0 ? x - 360.0 : x);
         }
 
@@ -123,7 +125,7 @@ namespace H3.Algorithms {
                 // number of segments to chop the line into
                 var count = v1.LineHexEstimate(v2, resolution);
 
-                for (int j = 1; j < count; j += 1) {
+                for (var j = 1; j < count; j += 1) {
                     // interpolate line
                     var interpolated = LinearLocation.PointAlongSegmentByFraction(vA, vB, (double)j / count);
                     indicies.Add(interpolated.ToH3Index(resolution, faceIjk, v3d));
@@ -152,7 +154,7 @@ namespace H3.Algorithms {
         /// </summary>
         /// <param name="originalGeometry"></param>
         /// <returns></returns>
-        private static Geometry SplitGeometry(Geometry originalGeometry) {
+        internal static Geometry SplitGeometry(Geometry originalGeometry) {
             var left = originalGeometry.Copy();
             left.Apply(_negativeLonFilter);
             var right = originalGeometry.Copy();

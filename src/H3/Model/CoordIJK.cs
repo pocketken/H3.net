@@ -112,11 +112,11 @@ namespace H3.Model {
                 if (h.J % 2 == 0) {
                     // even
                     long axisi = h.J / 2;
-                    long diff = h.I - axisi;
+                    var diff = h.I - axisi;
                     h.I = (int)(h.I - 2.0 * diff);
                 } else {
                     long axisi = (h.J + 1) / 2;
-                    long diff = h.I - axisi;
+                    var diff = h.I - axisi;
                     h.I = (int)(h.I - (2.0 * diff + 1));
                 }
             }
@@ -184,9 +184,9 @@ namespace H3.Model {
             var uVecJ = LookupTables.DirectionToUnitVector[Direction.JK];
             var uVecK = LookupTables.DirectionToUnitVector[Direction.IK];
 
-            int i = I * uVecI.I + J * uVecJ.I + K * uVecK.I;
-            int j = I * uVecI.J + J * uVecJ.J + K * uVecK.J;
-            int k = I * uVecI.K + J * uVecJ.K + K * uVecK.K;
+            var i = I * uVecI.I + J * uVecJ.I + K * uVecK.I;
+            var j = I * uVecI.J + J * uVecJ.J + K * uVecK.J;
+            var k = I * uVecI.K + J * uVecJ.K + K * uVecK.K;
 
             I = i;
             J = j;
@@ -204,9 +204,9 @@ namespace H3.Model {
             var uVecJ = LookupTables.DirectionToUnitVector[Direction.IJ];
             var uVecK = LookupTables.DirectionToUnitVector[Direction.JK];
 
-            int i = I * uVecI.I + J * uVecJ.I + K * uVecK.I;
-            int j = I * uVecI.J + J * uVecJ.J + K * uVecK.J;
-            int k = I * uVecI.K + J * uVecJ.K + K * uVecK.K;
+            var i = I * uVecI.I + J * uVecJ.I + K * uVecK.I;
+            var j = I * uVecI.J + J * uVecJ.J + K * uVecK.J;
+            var k = I * uVecI.K + J * uVecJ.K + K * uVecK.K;
 
             I = i;
             J = j;
@@ -221,8 +221,8 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK UpAperture7CounterClockwise() {
-            int i = I - K;
-            int j = J - K;
+            var i = I - K;
+            var j = J - K;
 
             I = (int)Math.Round((3 * i - j) / 7.0, MidpointRounding.AwayFromZero);
             J = (int)Math.Round((i + 2 * j) / 7.0, MidpointRounding.AwayFromZero);
@@ -237,8 +237,8 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK UpAperture7Clockwise() {
-            int i = I - K;
-            int j = J - K;
+            var i = I - K;
+            var j = J - K;
 
             I = (int)Math.Round((2 * i + j) / 7.0, MidpointRounding.AwayFromZero);
             J = (int)Math.Round((3 * j - i) / 7.0, MidpointRounding.AwayFromZero);
@@ -254,9 +254,9 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperture7CounterClockwise() {
-            int i = 3 * I + J;
-            int j = 3 * J + K;
-            int k = I + 3 * K;
+            var i = 3 * I + J;
+            var j = 3 * J + K;
+            var k = I + 3 * K;
 
             I = i;
             J = j;
@@ -271,9 +271,9 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperture7Clockwise() {
-            int i = 3 * I + K;
-            int j = I + 3 * J;
-            int k = J + 3 * K;
+            var i = 3 * I + K;
+            var j = I + 3 * J;
+            var k = J + 3 * K;
 
             I = i;
             J = j;
@@ -289,9 +289,9 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperture3CounterClockwise() {
-            int i = 2 * I + J;
-            int j = 2 * J + K;
-            int k = I + 2 * K;
+            var i = 2 * I + J;
+            var j = 2 * J + K;
+            var k = I + 2 * K;
 
             I = i;
             J = j;
@@ -306,9 +306,9 @@ namespace H3.Model {
         /// </summary>
         /// <returns></returns>
         public CoordIJK DownAperture3Clockwise() {
-            int i = 2 * I + K;
-            int j = I + 2 * J;
-            int k = J + 2 * K;
+            var i = 2 * I + K;
+            var j = I + 2 * J;
+            var k = J + 2 * K;
 
             I = i;
             J = j;
@@ -370,9 +370,17 @@ namespace H3.Model {
             return new Vec2d(GetVec2dOrdinates());
         }
 
+        public Vec2d ToVec2d(Vec2d toUpdate) {
+            var (x, y) = GetVec2dOrdinates();
+            toUpdate.X = x;
+            toUpdate.Y = y;
+            return toUpdate;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (double, double) GetVec2dOrdinates() {
-            int i = I - K;
-            int j = J - K;
+            var i = I - K;
+            var j = J - K;
 
             return (i - 0.5 * j, j * M_SQRT3_2);
         }

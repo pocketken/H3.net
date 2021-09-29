@@ -32,7 +32,7 @@ namespace H3.Test.Extensions {
                 Mode = Mode.UniEdge,
                 ReservedBits = (int)Direction.IJ
             };
-            H3Index destination = origin.GetDirectNeighbour(Direction.IJ).Item1;
+            var destination = origin.GetDirectNeighbour(Direction.IJ).Item1;
 
             // Act
             var actual = origin.GetUnidirectionalEdge(destination);
@@ -144,7 +144,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_Upstream_GetOriginFromUnidirectionalEdge() {
             // Arrange
-            H3Index sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1;
+            var sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1;
             var edge = TestHelpers.SfIndex.GetUnidirectionalEdge(sf2);
 
             // Act
@@ -175,7 +175,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_Upstream_GetDestinationFromUnidirectionalEdge() {
             // Arrange
-            H3Index sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1;
+            var sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1;
             var edge = TestHelpers.SfIndex.GetUnidirectionalEdge(sf2);
 
             // Act
@@ -206,7 +206,7 @@ namespace H3.Test.Extensions {
         [Test]
         public void Test_Upstream_GetIndexesFromUnidirectionalEdge() {
             // Arrange
-            H3Index sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1;
+            var sf2 = TestHelpers.SfIndex.GetDirectNeighbour(Direction.IJ).Item1;
             var edge = TestHelpers.SfIndex.GetUnidirectionalEdge(sf2);
 
             // Act
@@ -281,7 +281,7 @@ namespace H3.Test.Extensions {
         public void Test_Upstream_GetUnidirectionalEdgeBoundaryVertices_PentagonClass3() {
             // Arrange
             var indexes = new List<H3Index>();
-            for (int r = 1; r < MAX_H3_RES; r += 2) {
+            for (var r = 1; r < MAX_H3_RES; r += 2) {
                 indexes.Add(H3Index.Create(r, 24, 0));
             }
             var edgesPerIndex = indexes.Select(index => index.GetUnidirectionalEdges());
@@ -301,7 +301,7 @@ namespace H3.Test.Extensions {
         public void Test_Upstream_GetUnidirectionalEdgeBoundaryVertices_PentagonClass2() {
             // Arrange
             var indexes = new List<H3Index>();
-            for (int r = 0; r < MAX_H3_RES; r += 2) {
+            for (var r = 0; r < MAX_H3_RES; r += 2) {
                 indexes.Add(H3Index.Create(r, 24, 0));
             }
             var edgesPerIndex = indexes.Select(index => index.GetUnidirectionalEdges());
@@ -336,7 +336,7 @@ namespace H3.Test.Extensions {
         }
 
         private static void AssertAllEdges(H3Index[] origins, IEnumerable<H3Index>[] rings, IEnumerable<H3Index>[] actualEdges) {
-            for (int i = 0; i < rings.Length; i += 1) {
+            for (var i = 0; i < rings.Length; i += 1) {
                 var origin = origins[i];
                 var neighbours = rings[i];
                 var edges = actualEdges[i];
@@ -351,12 +351,12 @@ namespace H3.Test.Extensions {
         }
 
         private static void AssertAllVertices(GeoCoord[][] expectedVertices, GeoCoord[][][] actualVertices, int[,] vertexMap, int expectedVertexCount, int maxEmpty) {
-            for (int e = 0; e < actualVertices.Length; e += 1) {
-                int empty = 0;
+            for (var e = 0; e < actualVertices.Length; e += 1) {
+                var empty = 0;
                 var edgeVerts = actualVertices[e];
                 var expectedVerts = expectedVertices[e];
 
-                for (int i = 0; i < 6; i += 1) {
+                for (var i = 0; i < 6; i += 1) {
                     var edgeVert = edgeVerts[i];
                     if (edgeVert.Length == 0) {
                         empty += 1;
@@ -368,7 +368,7 @@ namespace H3.Test.Extensions {
 
                     Assert.AreEqual(expectedVertexCount, edgeVert.Length, $"should have {expectedVertexCount} vertices");
 
-                    for (int j = 0; j < expectedVertexCount; j += 1) {
+                    for (var j = 0; j < expectedVertexCount; j += 1) {
                         var expectedVert = expectedVerts[vertexMap[i, j]];
                         Assert.IsTrue(
                             expectedVert.AlmostEquals(edgeVert[j]),

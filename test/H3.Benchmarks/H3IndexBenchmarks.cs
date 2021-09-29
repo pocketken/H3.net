@@ -20,10 +20,19 @@ namespace H3.Benchmarks {
         public void PocketkenRotateHexCounterClockwise() => TestIndex.RotateCounterClockwise();
 
         [Benchmark(Description = "pocketken.H3.H3Index.RotateClockwise(pent)")]
-        public void PocketkenRotatePentagonClockwise() => PentagonIndex.RotateClockwise();
+        public void PocketkenRotatePentagonClockwise() => PentagonIndex.RotatePentagonClockwise();
 
         [Benchmark(Description = "pocketken.H3.H3Index.RotateCounterClockwise(pent)")]
-        public void PocketkenRotatePentagonCounterClockwise() => PentagonIndex.RotateCounterClockwise();
+        public void PocketkenRotatePentagonCounterClockwise() => PentagonIndex.RotatePentagonCounterClockwise();
+
+        [Benchmark(Description = "pocketken.H3.H3Index.RotateClockwise(hex, 4)")]
+        public void PocketkenRotateHexClockwise4() => TestIndex.RotateClockwise(4);
+
+        [Benchmark(Description = "pocketken.H3.H3Index.RotateCounterClockwise(hex, 4)")]
+        public void PocketkenRotateHexCounterClockwise4() => TestIndex.RotateCounterClockwise(4);
+
+        [Benchmark(Description = "pocketken.H3.H3Index.LeadingNonZeroDirection")]
+        public Direction LeadingNonZeroDirection() => TestIndex.LeadingNonZeroDirection;
 
     }
 }

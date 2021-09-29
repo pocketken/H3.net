@@ -64,8 +64,8 @@ namespace H3.Algorithms {
             H3Index index = origin;
 
             // break out to the requested ring
-            int rotations = 0;
-            for (int ring = 0; ring < k; ring +=1 ) {
+            var rotations = 0;
+            for (var ring = 0; ring < k; ring +=1 ) {
                 (index, rotations) = index.GetDirectNeighbour(LookupTables.NextRingDirection, rotations);
                 if (index == H3Index.Invalid) throw new HexRingKSequenceException();
                 if (index.IsPentagon) throw new HexRingPentagonException();
@@ -74,8 +74,8 @@ namespace H3.Algorithms {
             H3Index lastIndex = new(index);
             yield return index;
 
-            for (int direction = 0; direction < 6; direction += 1) {
-                for (int pos = 0; pos < k; pos += 1) {
+            for (var direction = 0; direction < 6; direction += 1) {
+                for (var pos = 0; pos < k; pos += 1) {
                     (index, rotations) = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], rotations);
                     if (index == H3Index.Invalid) throw new HexRingKSequenceException();
 
@@ -141,7 +141,7 @@ namespace H3.Algorithms {
                     continue;
 
                 foreach (var neighbour in cell.Index.GetNeighbours()) {
-                    if (neighbour == origin || searched.TryGetValue(neighbour, out int previousK) && previousK <= nextK) {
+                    if (neighbour == origin || searched.TryGetValue(neighbour, out var previousK) && previousK <= nextK) {
                         continue;
                     }
                     searched[neighbour] = nextK;
@@ -177,17 +177,17 @@ namespace H3.Algorithms {
             if (k == 0) yield break;
 
             // 0 < ring <= k, current ring
-            int ring = 1;
+            var ring = 1;
 
             // 0 <= direction < 6, current side of the ring
-            int direction = 0;
+            var direction = 0;
 
             // 0 <= i < ring, current position on the side of the ring
-            int i = 0;
+            var i = 0;
 
             // Number of 60 degree ccw rotations to perform on the direction (based on
             // which faces have been crossed.)
-            int rotations = 0;
+            var rotations = 0;
 
             while (ring <= k) {
                 if (direction == 0 && i == 0) {

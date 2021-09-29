@@ -62,15 +62,43 @@ Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) to get all childre
 | pocketken.H3.GetChildrenForResolution | 9.128 ms | 0.1809 ms | 0.2415 ms |  796.8750 |  781.2500 | 484.3750 |   4.69 MB |
 |                      H3Lib.ToChildren | 9.671 ms | 0.1904 ms | 0.2266 ms | 3453.1250 | 1671.8750 | 984.3750 |  23.55 MB |
 
-### Lines
+### Algorithms
+
+#### Fill (Polyfill)
+Filling world and [Uber SF Test](https://github.com/uber/h3/blob/master/src/apps/testapps/testPolygonToCells.c#L27) polygons at varied resolutions:
+
+* world, res 4: 288,122 cells
+* world, res 5: 2,016,842 cells
+* SF test, res 10: 8,794 cells
+* SF test, res 11: 61,569 cells
+* SF test, res 12: 430,832 cells
+* SF test, res 13: 3,015,836 cells
+* SF test, res 14: 21,111,191 cells
+* SF test, res 15: 147,778,335 cells
+
+|                               Method |           Mean |       Error |      StdDev |        Gen 0 |       Gen 1 |      Gen 2 | Allocated |
+|------------------------------------- |---------------:|------------:|------------:|-------------:|------------:|-----------:|----------:|
+| 'pocketken.H3.Fill(worldPolygon, 4)' |     203.042 ms |   1.2783 ms |   1.1331 ms |   10000.0000 |   2000.0000 |  1000.0000 |     90 MB |
+| 'pocketken.H3.Fill(worldPolygon, 5)' |     1,461.0 ms |    12.00 ms |    10.02 ms |   71000.0000 |  13000.0000 |  4000.0000 |    648 MB |
+|   'pocketken.H3.Fill(sfPolygon, 10)' |       7.603 ms |   0.0165 ms |   0.0146 ms |     367.1875 |    226.5625 |   117.1875 |      3 MB |
+|      'H3Lib.Polyfill(sfPolygon, 10)' |     494.078 ms |   1.2105 ms |   0.9450 ms |    3000.0000 |           - |          - |     27 MB |
+|   'pocketken.H3.Fill(sfPolygon, 11)' |      51.196 ms |   0.8691 ms |   0.8129 ms |    2800.0000 |   1200.0000 |   700.0000 |     20 MB |
+|      'H3Lib.Polyfill(sfPolygon, 11)' |   3,319.726 ms |   3.1163 ms |   2.9150 ms |   21000.0000 |   3000.0000 |  1000.0000 |    168 MB |
+|   'pocketken.H3.Fill(sfPolygon, 12)' |     375.414 ms |   5.0360 ms |   4.7107 ms |   16000.0000 |   3000.0000 |  2000.0000 |    145 MB |
+|      'H3Lib.Polyfill(sfPolygon, 12)' |  20,111.706 ms | 269.9403 ms | 239.2950 ms |  137000.0000 |  19000.0000 |  2000.0000 |  1,119 MB |
+|   'pocketken.H3.Fill(sfPolygon, 13)' |     2,788.0 ms |    10.82 ms |     9.03 ms |  109000.0000 |  30000.0000 |  9000.0000 |  1,046 MB |
+|   'pocketken.H3.Fill(sfPolygon, 14)' |  20,150.948 ms | 104.1208 ms |  92.3004 ms |  719000.0000 | 119000.0000 | 10000.0000 |  6,702 MB |
+|   'pocketken.H3.Fill(sfPolygon, 15)' | 136,125.551 ms | 505.5441 ms | 472.8863 ms | 5008000.0000 | 801000.0000 | 62000.0000 | 47,576 MB |
+
+#### Lines
 Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells).
 
-|              Method |       Mean |    Error |  StdDev |        Gen 0 |      Gen 1 |     Gen 2 |  Allocated |
-|-------------------- |-----------:|---------:|--------:|-------------:|-----------:|----------:|-----------:|
-| pocketken.H3.LineTo |   972.3 ms |  8.73 ms | 7.29 ms |   45000.0000 | 11000.0000 | 1000.0000 |  355.44 MB |
-|        H3Lib.LineTo | 4,422.1 ms | 10.23 ms | 9.57 ms | 1057000.0000 |  3000.0000 | 1000.0000 | 8449.31 MB |
+|              Method |       Mean |    Error |   StdDev |        Gen 0 |      Gen 1 |     Gen 2 | Allocated |
+|-------------------- |-----------:|---------:|---------:|-------------:|-----------:|----------:|----------:|
+| pocketken.H3.LineTo |   739.2 ms | 10.19 ms |  9.53 ms |   40000.0000 | 12000.0000 | 1000.0000 |    333 MB |
+|        H3Lib.LineTo | 4,709.9 ms | 11.84 ms | 11.07 ms | 1057000.0000 |  3000.0000 | 1000.0000 |  8,449 MB |
 
-### Rings
+#### Rings
 `hex` is a hexagon index (`8f48e1d7038d520`).
 
 |                                   Method |       Mean |    Error |   StdDev |    Gen 0 |   Gen 1 |   Gen 2 |  Allocated |

@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 namespace H3 {
 
     [JsonConverter(typeof(H3IndexJsonConverter))]
-    public sealed class H3Index : IComparable<H3Index> {
+    public sealed partial class H3Index : IComparable<H3Index> {
 
         #region constants
 
@@ -59,7 +59,7 @@ namespace H3 {
 
         public BaseCell BaseCell {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => LookupTables.BaseCells[BaseCellNumber];
+            get => BaseCells.Cells[BaseCellNumber];
         }
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace H3 {
                 // The first nonzero digit can't be a 1 (i.e., "deleted subsequence",
                 // PENTAGON_SKIPPED_DIGIT, or K_AXES_DIGIT).
                 // Test for pentagon base cell first to avoid this loop if possible.
-                if (LookupTables.BaseCells[bc].IsPentagon) {
+                if (BaseCells.Cells[bc].IsPentagon) {
                     while (r <= res) {
                         var d = value.GetTopBits(N_BITS_DIGIT);
                         if (d == (ulong)Direction.Center) {
@@ -181,7 +181,7 @@ namespace H3 {
 
                 // Now check that all the unused digits after `res` are
                 // set to 7 (INVALID_DIGIT).
-                int shift = (int)(15 - res) * 3;
+                var shift = (int)(15 - res) * 3;
                 ulong mask = 0;
                 mask = ~mask;
                 mask >>= shift;
@@ -196,8 +196,8 @@ namespace H3 {
         public Direction LeadingNonZeroDirection {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get {
-                int resolution = Resolution;
-                for (int r = 1; r <= resolution; r += 1) {
+                var resolution = Resolution;
+                for (var r = 1; r <= resolution; r += 1) {
                     var idx = GetDirectionForResolution(r);
                     if (idx != Direction.Center) {
                         return idx;
@@ -233,7 +233,7 @@ namespace H3 {
         }
 
         public H3Index(string value) {
-            if (ulong.TryParse(value, NumberStyles.HexNumber, null, out ulong parsed)) Value = parsed;
+            if (ulong.TryParse(value, NumberStyles.HexNumber, null, out var parsed)) Value = parsed;
         }
 
         public static H3Index Create(int resolution, int baseCell, Direction direction) {
@@ -244,7 +244,7 @@ namespace H3 {
                 BaseCellNumber = baseCell
             };
 
-            for (int r = 1; r <= resolution; r += 1) index.SetDirectionForResolution(r, direction);
+            for (var r = 1; r <= resolution; r += 1) index.SetDirectionForResolution(r, direction);
 
             return index;
         }
@@ -270,7 +270,7 @@ namespace H3 {
         /// <param name="direction"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetDirectionForResolution(int resolution, Direction direction) {
-            int offset = (MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET;
+            var offset = (MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET;
             Value = (Value & ~(H3_DIGIT_MASK << offset)) |
                 ((ulong)direction << offset);
         }
@@ -281,7 +281,7 @@ namespace H3 {
         /// <param name="resolution"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void IncrementDirectionForResolution(int resolution) {
-            ulong val = 1UL;
+            var val = 1UL;
             val <<= H3_PER_DIGIT_OFFSET * (15 - resolution);
             Value += val;
         }
@@ -296,7 +296,7 @@ namespace H3 {
         internal void ZeroDirectionsForResolutionRange(int startResolution, int endResolution) {
             if (startResolution > endResolution) return;
 
-            ulong m = ~0UL;
+            var m = ~0UL;
             m <<= H3_PER_DIGIT_OFFSET * (endResolution - startResolution + 1);
             m = ~m;
             m <<= H3_PER_DIGIT_OFFSET * (15 - endResolution);
@@ -315,7 +315,7 @@ namespace H3 {
         internal void InvalidateDirectionsForResolutionRange(int startResolution, int endResolution) {
             if (startResolution > endResolution) return;
 
-            ulong m = ~0UL;
+            var m = ~0UL;
             m <<= H3_PER_DIGIT_OFFSET * (endResolution - startResolution + 1);
             m = ~m;
             m <<= H3_PER_DIGIT_OFFSET * (15 - endResolution);
@@ -324,13 +324,26 @@ namespace H3 {
         }
 
         /// <summary>
+        /// Performs an in-place 60 degree clockwise rotation of the index.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void RotateClockwise() => RotateClockwise(1);
+
+        /// <summary>
+        /// Performs an in-place 60 degree clockwise rotation of the index.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void RotateCounterClockwise() => RotateCounterClockwise(1);
+
+        /// <summary>
         /// Performs an in-place 60 degree counter-clockwise pentagonal rotation of the index.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RotatePentagonCounterClockwise() {
-            int resolution = Resolution;
-            bool foundFirstNonZeroDigit = false;
+            var resolution = Resolution;
+            var foundFirstNonZeroDigit = false;
 
-            for (int r = 1; r <= resolution; r += 1) {
+            for (var r = 1; r <= resolution; r += 1) {
                 // rotate digit
                 SetDirectionForResolution(r, GetDirectionForResolution(r).RotateCounterClockwise());
 
@@ -352,11 +365,12 @@ namespace H3 {
         /// <summary>
         /// Performs an in-place 60 degree clockwise pentagonal rotation of the index.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RotatePentagonClockwise() {
-            int resolution = Resolution;
-            bool foundFirstNonZeroDigit = false;
+            var resolution = Resolution;
+            var foundFirstNonZeroDigit = false;
 
-            for (int r = 1; r <= resolution; r += 1) {
+            for (var r = 1; r <= resolution; r += 1) {
                 // rotate digit
                 SetDirectionForResolution(r, GetDirectionForResolution(r).RotateClockwise());
 
@@ -375,26 +389,6 @@ namespace H3 {
             }
         }
 
-        /// <summary>
-        /// Performs an in-place 60 degree counter-clockwise rotation of the index.
-        /// </summary>
-        public void RotateCounterClockwise() {
-            // rotate in place
-            int resolution = Resolution;
-            for (int r = 1; r <= resolution; r += 1)
-                SetDirectionForResolution(r, GetDirectionForResolution(r).RotateCounterClockwise());
-        }
-
-        /// <summary>
-        /// Performs an in-place 60 degree clockwise rotation of the index.
-        /// </summary>
-        public void RotateClockwise() {
-            // rotate in place
-            int resolution = Resolution;
-            for (int r = 1; r <= resolution; r += 1)
-                SetDirectionForResolution(r, GetDirectionForResolution(r).RotateClockwise());
-        }
-
         #endregion manipulations
 
         #region conversions
@@ -406,12 +400,12 @@ namespace H3 {
         /// <param name="index"></param>
         /// <returns></returns>
         public bool ToFaceWithInitializedFijk(FaceIJK faceIjk) {
-            int resolution = Resolution;
+            var resolution = Resolution;
 
             // center base cell hierarchy is entirely on this face
-            bool possibleOverage = !(!BaseCell.IsPentagon && (resolution == 0 || faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0));
+            var possibleOverage = !(!BaseCell.IsPentagon && (resolution == 0 || faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0));
 
-            for (int r = 1; r <= resolution; r += 1) {
+            for (var r = 1; r <= resolution; r += 1) {
                 if (IsResolutionClass3(r)) {
                     faceIjk.Coord.DownAperture7CounterClockwise();
                 } else {

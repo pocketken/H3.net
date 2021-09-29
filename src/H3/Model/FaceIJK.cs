@@ -16,10 +16,8 @@ namespace H3.Model {
         public const int KI = 2;
         public const int JK = 3;
 
-        public BaseCellRotation? BaseCellRotation
-        {
-            get
-            {
+        public BaseCellRotation? BaseCellRotation {
+            get {
                 if (Coord.I > MAX_FACE_COORD || Coord.J > MAX_FACE_COORD || Coord.K > MAX_FACE_COORD) return null;
                 return LookupTables.FaceIjkBaseCells[Face, Coord.I, Coord.J, Coord.K];
             }
@@ -46,9 +44,9 @@ namespace H3.Model {
             result.Coord.J = 0;
             result.Coord.K = 0;
 
-            double sqd = v3d.PointSquareDistance(LookupTables.FaceCenters[0]);
+            var sqd = v3d.PointSquareDistance(LookupTables.FaceCenters[0]);
             for (var f = 1; f < NUM_ICOSA_FACES; f += 1) {
-                double sqdT = v3d.PointSquareDistance(LookupTables.FaceCenters[f]);
+                var sqdT = v3d.PointSquareDistance(LookupTables.FaceCenters[f]);
                 if (!(sqdT < sqd))
                     continue;
 
@@ -62,8 +60,8 @@ namespace H3.Model {
 
             if (r >= EPSILON) {
                 var center = LookupTables.GeoFaceCenters[result.Face];
-                double az = NormalizeAngle(AzimuthInRadians(center.Longitude, center.Latitude, longitudeRadians, latitudeRadians));
-                double theta = NormalizeAngle(LookupTables.AxisAzimuths[result.Face] - az);
+                var az = NormalizeAngle(AzimuthInRadians(center.Longitude, center.Latitude, longitudeRadians, latitudeRadians));
+                var theta = NormalizeAngle(LookupTables.AxisAzimuths[result.Face] - az);
 
                 if (IsResolutionClass3(resolution)) theta = NormalizeAngle(theta - M_AP7_ROT_RADS);
 
@@ -78,6 +76,7 @@ namespace H3.Model {
             return result;
         }
 
+        // TODO provide version that reuses result array
         private FaceIJK[] GetVertices(CoordIJK[] class3Verts, CoordIJK[] class2Verts, ref int resolution) {
             var verts = IsResolutionClass3(resolution) ? class3Verts : class2Verts;
             Coord.DownAperture3CounterClockwise();
@@ -128,12 +127,12 @@ namespace H3.Model {
         /// <param name="isSubstrate">Whether or not the cell is on a substrate grid</param>
         /// <returns></returns>
         public Overage AdjustOverageClass2(int resolution, bool pentagonLeading4, bool isSubstrate) {
-            Overage overage = Overage.None;
+            var overage = Overage.None;
 
-            int maxDist = LookupTables.MaxDistanceByClass2Res[resolution];
+            var maxDist = LookupTables.MaxDistanceByClass2Res[resolution];
             if (isSubstrate) maxDist *= 3;
 
-            int sum = Coord.I + Coord.J + Coord.K;
+            var sum = Coord.I + Coord.J + Coord.K;
             if (isSubstrate && sum == maxDist) {
                 overage = Overage.FaceEdge;
             } else if (sum > maxDist) {
@@ -162,11 +161,11 @@ namespace H3.Model {
                 Face = orientedFace.Face;
 
                 // rotate and translate for adjacent face
-                for (int i = 0; i < orientedFace.CounterClockwiseRotations; i += 1) {
+                for (var i = 0; i < orientedFace.CounterClockwiseRotations; i += 1) {
                     Coord.RotateCounterClockwise();
                 }
 
-                int unitScale = LookupTables.UnitScaleByClass2Res[resolution];
+                var unitScale = LookupTables.UnitScaleByClass2Res[resolution];
                 if (isSubstrate) unitScale *= 3;
                 Coord.I += orientedFace.Translate.I * unitScale;
                 Coord.J += orientedFace.Translate.J * unitScale;
@@ -208,23 +207,33 @@ namespace H3.Model {
         /// <param name="length">The number of topological vertexes to return</param>
         /// <returns>The spherical coordinates of the cell boundary</returns>
         public IEnumerable<GeoCoord> GetPentagonBoundary(int resolution, int start, int length) {
-            int adjustedResolution = resolution;
+            var adjustedResolution = resolution;
             FaceIJK centerIJK = new(this);
             FaceIJK[] verts = centerIJK.GetPentagonVertices(ref adjustedResolution);
 
             // If we're returning the entire loop, we need one more iteration in case
             // of a distortion vertex on the last edge
-            int additionalIteration = length == NUM_PENT_VERTS ? 1 : 0;
+            var additionalIteration = length == NUM_PENT_VERTS ? 1 : 0;
 
             // convert each vertex to lat/lon
             // adjust the face of each vertex as appropriate and introduce
             // edge-crossing vertices as needed
+            Vec2d v0 = new();
+            Vec2d v1 = new();
+            Vec2d v2 = new();
+            Vec2d orig2d0 = new();
+            Vec2d orig2d1 = new();
+
+            var fijk = new FaceIJK();
             FaceIJK lastFijk = new();
 
-            for (int vert = start; vert < start + length + additionalIteration; vert += 1) {
-                int v = vert % NUM_PENT_VERTS;
+            for (var vert = start; vert < start + length + additionalIteration; vert += 1) {
+                var v = vert % NUM_PENT_VERTS;
 
-                FaceIJK fijk = new(verts[v]);
+                fijk.Face = verts[v].Face;
+                fijk.Coord.I = verts[v].Coord.I;
+                fijk.Coord.J = verts[v].Coord.J;
+                fijk.Coord.K = verts[v].Coord.K;
                 fijk.AdjustPentagonVertexOverage(adjustedResolution);
 
                 // all Class III pentagon edges cross icosa edges
@@ -233,16 +242,16 @@ namespace H3.Model {
                 if (IsResolutionClass3(resolution) && vert > start) {
                     // find hex2d of the two vertexes on the last face
                     FaceIJK tmpFijk = new(fijk);
-                    Vec2d orig2d0 = lastFijk.Coord.ToVec2d();
+                    lastFijk.Coord.ToVec2d(orig2d0);
 
-                    int currentToLastDir = LookupTables.AdjacentFaceDirections[tmpFijk.Face, lastFijk.Face];
+                    var currentToLastDir = LookupTables.AdjacentFaceDirections[tmpFijk.Face, lastFijk.Face];
 
                     FaceOrientIJK fijkOrient = LookupTables.OrientedFaceNeighbours[tmpFijk.Face, currentToLastDir];
                     tmpFijk.Face = fijkOrient.Face;
                     CoordIJK ijk = new(tmpFijk.Coord);
 
                     // rotate and translate for adjacent face
-                    for (int i = 0; i < fijkOrient.CounterClockwiseRotations; i += 1) ijk.RotateCounterClockwise();
+                    for (var i = 0; i < fijkOrient.CounterClockwiseRotations; i += 1) ijk.RotateCounterClockwise();
 
                     var scale = LookupTables.UnitScaleByClass2Res[adjustedResolution] * 3;
                     ijk.I += fijkOrient.Translate.I * scale;
@@ -250,32 +259,39 @@ namespace H3.Model {
                     ijk.K += fijkOrient.Translate.K * scale;
                     ijk.Normalize();
 
-                    Vec2d orig2d1 = ijk.ToVec2d();
+                    ijk.ToVec2d(orig2d1);
 
                     // find the appropriate icosa face edge vertexes
-                    int maxDim = LookupTables.MaxDistanceByClass2Res[adjustedResolution];
-                    Vec2d v0 = new(3.0 * maxDim, 0.0);
-                    Vec2d v1 = new(-1.5 * maxDim, 3.0 * M_SQRT3_2 * maxDim);
-                    Vec2d v2 = new(-1.5 * maxDim, -3.0 * M_SQRT3_2 * maxDim);
+                    var maxDist = LookupTables.MaxDistanceByClass2Res[adjustedResolution];
+                    v0.X = 3 * maxDist;
+                    v0.Y = 0;
+                    v1.X = -1.5 * maxDist;
+                    v1.Y = 3.0 * M_SQRT3_2 * maxDist;
+                    v2.X = v1.X;
+                    v2.Y = -3.0 * M_SQRT3_2 * maxDist;
 
+                    Vec2d intersection;
                     Vec2d edge0;
                     Vec2d edge1;
 
-                    int adjacentFace = LookupTables.AdjacentFaceDirections[tmpFijk.Face, fijk.Face];
+                    var adjacentFace = LookupTables.AdjacentFaceDirections[tmpFijk.Face, fijk.Face];
                     switch (adjacentFace) {
                         case IJ:
                             edge0 = v0;
                             edge1 = v1;
+                            intersection = v2;
                             break;
 
                         case JK:
                             edge0 = v1;
                             edge1 = v2;
+                            intersection = v0;
                             break;
 
                         case KI:
                             edge0 = v2;
                             edge1 = v0;
+                            intersection = v1;
                             break;
 
                         default:
@@ -283,7 +299,7 @@ namespace H3.Model {
                     }
 
                     // find the intersection and add the lat/lon point to the result
-                    Vec2d intersection = Vec2d.Intersect(orig2d0, orig2d1, edge0, edge1);
+                    Vec2d.Intersect(orig2d0, orig2d1, edge0, edge1, intersection);
                     yield return intersection.ToFaceGeoCoord(tmpFijk.Face, adjustedResolution, true);
                 }
 
@@ -291,7 +307,10 @@ namespace H3.Model {
                     yield return fijk.ToFaceGeoCoord(adjustedResolution, true);
                 }
 
-                lastFijk = fijk;
+                lastFijk.Face = fijk.Face;
+                lastFijk.Coord.I = fijk.Coord.I;
+                lastFijk.Coord.J = fijk.Coord.J;
+                lastFijk.Coord.K = fijk.Coord.K;
             }
         }
 
@@ -304,20 +323,32 @@ namespace H3.Model {
         /// <param name="length">The number of topological vertexes to return</param>
         /// <returns>The spherical coordinates of the cell boundary</returns>
         public IEnumerable<GeoCoord> GetHexagonBoundary(int resolution, int start, int length) {
-            int adjustedResolution = resolution;
+            var adjustedResolution = resolution;
             FaceIJK centerIJK = new(this);
             FaceIJK[] verts = centerIJK.GetHexVertices(ref adjustedResolution);
 
-            int additionalIteration = length == NUM_HEX_VERTS ? 1 : 0;
+            var additionalIteration = length == NUM_HEX_VERTS ? 1 : 0;
 
-            int lastFace = -1;
-            Overage lastOverage = Overage.None;
+            var lastFace = -1;
+            var lastOverage = Overage.None;
 
-            for (int vert = start; vert < start + length + additionalIteration; vert += 1) {
-                int v = vert % NUM_HEX_VERTS;
+            Vec2d v0 = new();
+            Vec2d v1 = new();
+            Vec2d v2 = new();
+            Vec2d orig2d0 = new();
+            Vec2d orig2d1 = new();
 
-                FaceIJK fijk = new(verts[v]);
-                Overage overage = fijk.AdjustOverageClass2(adjustedResolution, false, true);
+            var fijk = new FaceIJK();
+
+            for (var vert = start; vert < start + length + additionalIteration; vert += 1) {
+                var v = vert % NUM_HEX_VERTS;
+
+                fijk.Face = verts[v].Face;
+                fijk.Coord.I = verts[v].Coord.I;
+                fijk.Coord.J = verts[v].Coord.J;
+                fijk.Coord.K = verts[v].Coord.K;
+
+                var overage = fijk.AdjustOverageClass2(adjustedResolution, false, true);
 
                 /*
                     Check for edge-crossing. Each face of the underlying icosahedron is a
@@ -330,43 +361,50 @@ namespace H3.Model {
                 */
                 if (IsResolutionClass3(resolution) && vert > start && fijk.Face != lastFace && lastOverage != Overage.FaceEdge) {
                     // find hex2d of the two vertexes on original face
-                    int lastV = (v + 5) % NUM_HEX_VERTS;
-                    Vec2d orig2d0 = verts[lastV].Coord.ToVec2d();
-                    Vec2d orig2d1 = verts[v].Coord.ToVec2d();
+                    var lastV = (v + 5) % NUM_HEX_VERTS;
+                    verts[lastV].Coord.ToVec2d(orig2d0);
+                    verts[v].Coord.ToVec2d(orig2d1);
 
                     // find the appropriate icosa face edge vertexes
-                    int maxDist = LookupTables.MaxDistanceByClass2Res[adjustedResolution];
-                    Vec2d v0 = new(3 * maxDist, 0);
-                    Vec2d v1 = new(-1.5 * maxDist, 3.0 * M_SQRT3_2 * maxDist);
-                    Vec2d v2 = new(-1.5 * maxDist, -3.0 * M_SQRT3_2 * maxDist);
+                    var maxDist = LookupTables.MaxDistanceByClass2Res[adjustedResolution];
+                    v0.X = 3 * maxDist;
+                    v0.Y = 0;
+                    v1.X = -1.5 * maxDist;
+                    v1.Y = 3.0 * M_SQRT3_2 * maxDist;
+                    v2.X = v1.X;
+                    v2.Y = -3.0 * M_SQRT3_2 * maxDist;
 
+                    var face2 = lastFace == centerIJK.Face ? fijk.Face : lastFace;
+
+                    Vec2d intersection;
                     Vec2d edge0;
                     Vec2d edge1;
-
-                    int face2 = lastFace == centerIJK.Face ? fijk.Face : lastFace;
 
                     switch (LookupTables.AdjacentFaceDirections[centerIJK.Face, face2]) {
                         case IJ:
                             edge0 = v0;
                             edge1 = v1;
+                            intersection = v2;
                             break;
 
                         case JK:
                             edge0 = v1;
                             edge1 = v2;
+                            intersection = v0;
                             break;
 
                         case KI:
                             edge0 = v2;
                             edge1 = v0;
+                            intersection = v1;
                             break;
 
                         default:
                             throw new Exception("Unsupported direction");
                     }
 
-                    Vec2d intersection = Vec2d.Intersect(orig2d0, orig2d1, edge0, edge1);
-                    bool atVertex = orig2d0 == intersection || orig2d1 == intersection;
+                    Vec2d.Intersect(orig2d0, orig2d1, edge0, edge1, intersection);
+                    var atVertex = orig2d0 == intersection || orig2d1 == intersection;
                     if (!atVertex) {
                         yield return intersection.ToFaceGeoCoord(centerIJK.Face, adjustedResolution, true);
                     }

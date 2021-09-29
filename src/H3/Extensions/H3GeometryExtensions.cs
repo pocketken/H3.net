@@ -127,7 +127,7 @@ namespace H3.Extensions {
         /// </summary>
         /// <returns>Faces intersected by the index</returns>
         public static int[] GetFaces(this H3Index index) {
-            int resolution = index.Resolution;
+            var resolution = index.Resolution;
 
             // We can't use the vertex-based approach here for class II pentagons,
             // because all their vertices are on the icosahedron edges. Their
@@ -160,7 +160,7 @@ namespace H3.Extensions {
             Array.Fill(result, -1);
 
             // add each vertex face, using the output array as a hash set
-            for (int i = 0; i < vertexCount; i += 1) {
+            for (var i = 0; i < vertexCount; i += 1) {
                 FaceIJK vert = vertices[i];
 
                 // Adjust overage, determining whether this vertex is
@@ -172,8 +172,8 @@ namespace H3.Extensions {
                 }
 
                 // Save the face to the output array
-                int face = vert.Face;
-                int pos = 0;
+                var face = vert.Face;
+                var pos = 0;
 
                 // Find the first empty output position, or the first position
                 // matching the current face
@@ -196,10 +196,10 @@ namespace H3.Extensions {
         public static double CellAreaInRadiansSquared(this H3Index index) {
             GeoCoord c = index.ToGeoCoord();
             var boundary = index.GetCellBoundaryVertices().ToArray();
-            double area = 0.0;
+            var area = 0.0;
 
-            for (int i = 0; i < boundary.Length; i += 1) {
-                int j = (i + 1) % boundary.Length;
+            for (var i = 0; i < boundary.Length; i += 1) {
+                var j = (i + 1) % boundary.Length;
                 area += GeoCoord.GetTriangleArea(boundary[i], boundary[j], c);
             }
 
@@ -241,7 +241,7 @@ namespace H3.Extensions {
         /// <returns>boundary coordinates</returns>
         public static IEnumerable<GeoCoord> GetCellBoundaryVertices(this H3Index index) {
             FaceIJK face = index.ToFaceIJK();
-            int resolution = index.Resolution;
+            var resolution = index.Resolution;
             return index.IsPentagon
                 ? face.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS)
                 : face.GetHexagonBoundary(resolution, 0, NUM_HEX_VERTS);

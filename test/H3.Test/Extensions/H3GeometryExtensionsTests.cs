@@ -155,7 +155,7 @@ namespace H3.Test.Extensions {
                     Assert.Fail($"{testDataFn}: {e.First.Item1} vertex count mismatch: expected {expectedVerts.Length} got {actualVerts.Length}");
                     return false;
                 }
-                for (int i = 0; i < expectedVerts.Length; i += 1) {
+                for (var i = 0; i < expectedVerts.Length; i += 1) {
                     var ev = expectedVerts[i];
                     var av = actualVerts[i];
                     if (Math.Abs(ev.Latitude - av.Latitude) > 0.000001 ||
@@ -177,7 +177,7 @@ namespace H3.Test.Extensions {
             var areas = indexes.Select(index => index.CellAreaInKmSquared()).ToArray();
 
             // Assert
-            for (int i = 0; i < CellAreasInKm2.Length; i += 1) {
+            for (var i = 0; i < CellAreasInKm2.Length; i += 1) {
                 Assert.IsTrue(Math.Abs(areas[i] - CellAreasInKm2[i]) < 1e-8, $"{indexes[i]} should be {CellAreasInKm2[i]} not {areas[i]}");
             }
         }
@@ -229,7 +229,7 @@ namespace H3.Test.Extensions {
 
         private static void AssertCellBoundaryVertices(Point[] expected, GeoCoord[] actual) {
             Assert.AreEqual(expected.Length, actual.Length, "should be same length");
-            for (int i = 0; i < expected.Length; i += 1) {
+            for (var i = 0; i < expected.Length; i += 1) {
                 var p = expected[i];
                 Assert.IsTrue(Math.Abs(p.X - actual[i].LongitudeDegrees) < EPSILON_DEG, $"longitude {i} should be {p.X} not {actual[i].LongitudeDegrees}");
                 Assert.IsTrue(Math.Abs(p.Y - actual[i].LatitudeDegrees) < EPSILON_DEG, $"latitude {i} should be {p.X} not {actual[i].LongitudeDegrees}");

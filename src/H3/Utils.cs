@@ -33,7 +33,7 @@ namespace H3 {
         /// <returns>azimuth, ...in radians!</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double AzimuthInRadians(double p1Lon, double p1Lat, double p2Lon, double p2Lat) {
-            double cosP2Lat = Math.Cos(p2Lat);
+            var cosP2Lat = Math.Cos(p2Lat);
             return Math.Atan2(
                 cosP2Lat * Math.Sin(p2Lon - p1Lon),
                 Math.Cos(p1Lat) * Math.Sin(p2Lat) -
@@ -54,15 +54,15 @@ namespace H3 {
         /// and the destination coordinate.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double PointDistanceInRadians(double p1Lon, double p1Lat, double p2Lon, double p2Lat) {
-            double sinLat = Math.Sin((p2Lat - p1Lat) / 2.0);
-            double sinLon = Math.Sin((p2Lon - p1Lon) / 2.0);
-            double a = sinLat * sinLat + Math.Cos(p1Lat) * Math.Cos(p2Lat) * sinLon * sinLon;
+            var sinLat = Math.Sin((p2Lat - p1Lat) / 2.0);
+            var sinLon = Math.Sin((p2Lon - p1Lon) / 2.0);
+            var a = sinLat * sinLat + Math.Cos(p1Lat) * Math.Cos(p2Lat) * sinLon * sinLon;
             return 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double NormalizeAngle(double radians) {
-            double tmp = radians < 0 ? radians + M_2PI : radians;
+            var tmp = radians < 0 ? radians + M_2PI : radians;
             if (radians >= M_2PI) tmp -= M_2PI;
             return tmp;
         }
@@ -76,7 +76,7 @@ namespace H3 {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double TriangleEdgeLengthsToArea(double a, double b, double c) {
-            double s = (a + b + c) / 2;
+            var s = (a + b + c) / 2;
 
             a = (s - a) / 2;
             b = (s - b) / 2;

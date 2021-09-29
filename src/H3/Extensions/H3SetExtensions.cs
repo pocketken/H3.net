@@ -25,8 +25,8 @@ namespace H3.Extensions {
         /// <returns>set of compacted cells</returns>
         public static List<H3Index> Compact(this IEnumerable<H3Index> indexEnumerable) {
             Dictionary<int, HashSet<H3Index>> indexes = new();
-            int maxResolution = -1;
-            int count = 0;
+            var maxResolution = -1;
+            var count = 0;
 
             // first group by resolution
             foreach (var index in indexEnumerable) {
@@ -34,7 +34,7 @@ namespace H3.Extensions {
                     continue;
                 }
 
-                int indexResolution = index.Resolution;
+                var indexResolution = index.Resolution;
                 maxResolution = Math.Max(maxResolution, indexResolution);
 
                 if (!indexes.ContainsKey(indexResolution)) {
@@ -51,9 +51,9 @@ namespace H3.Extensions {
 
             // loop backward through each resolution, throwing any compacted parents into
             // the resolution below us
-            for (int resolution = maxResolution; resolution > 0; resolution -= 1) {
+            for (var resolution = maxResolution; resolution > 0; resolution -= 1) {
                 if (indexes.TryGetValue(resolution, out var toCompact)) {
-                    int parentResolution = resolution - 1;
+                    var parentResolution = resolution - 1;
 
                     foreach (var index in toCompact) {
                         var parent = index.GetParentForResolution(parentResolution);
@@ -106,7 +106,7 @@ namespace H3.Extensions {
             indexes.Where(index => index != H3Index.Invalid)
                 .Distinct()
                 .SelectMany(index => {
-                    int currentResolution = index.Resolution;
+                    var currentResolution = index.Resolution;
                     if (!IsValidChildResolution(currentResolution, resolution)) {
                         throw new ArgumentException("set contains cell smaller than target resolution");
                     }
@@ -132,7 +132,7 @@ namespace H3.Extensions {
         /// not.
         /// </returns>
         public static bool AreOfSameResolution(this IEnumerable<H3Index> indexes) {
-            int resolution = -1;
+            var resolution = -1;
             foreach (var index in indexes) {
                 if (resolution == -1) {
                     resolution = index.Resolution;

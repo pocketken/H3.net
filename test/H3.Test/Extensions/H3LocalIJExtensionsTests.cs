@@ -40,7 +40,7 @@ namespace H3.Test.Extensions {
         [TestCase(0, 15, Direction.Center)]
         public void Test_H3IndexToLocalIJK_BaseCell(int resolution, int baseCell, Direction direction) {
             // Arrange
-            H3Index index = H3Index.Create(resolution, baseCell, direction);
+            var index = H3Index.Create(resolution, baseCell, direction);
 
             // Act
             var ijk = LocalCoordIJK.ToLocalIJK(PentagonIndex, index);
@@ -263,7 +263,7 @@ namespace H3.Test.Extensions {
                     Enumerable.Range((int)Direction.K, 6)
                         .Where(dir => !(index.IsPentagon && dir == (int)Direction.K))
                         .Select(dir => {
-                            H3Index offset = index.GetDirectNeighbour((Direction)dir).Item1;
+                            var offset = index.GetDirectNeighbour((Direction)dir).Item1;
                             return (
                                 Origin: index,
                                 OriginIJK: index.ToLocalIJK(index),
@@ -276,11 +276,11 @@ namespace H3.Test.Extensions {
             // Assert
             foreach(var (Origin, OriginIJK, Index, LocalCoordIJ, Direction) in coords) {
                 Assert.NotNull(LocalCoordIJ, "should not be null");
-                CoordIJK invertedIjk = new CoordIJK(0, 0, 0).ToNeighbour(Direction);
-                for (int i = 0; i < 3; i += 1) {
+                var invertedIjk = new CoordIJK(0, 0, 0).ToNeighbour(Direction);
+                for (var i = 0; i < 3; i += 1) {
                     invertedIjk = invertedIjk.RotateCounterClockwise();
                 }
-                CoordIJK ijk = (LocalCoordIJ.ToCoordIJK() + invertedIjk).Normalize();
+                var ijk = (LocalCoordIJ.ToCoordIJK() + invertedIjk).Normalize();
                 Assert.AreEqual(OriginIJK, ijk, $"should be {OriginIJK} not {ijk}");
             }
         }

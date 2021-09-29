@@ -126,7 +126,7 @@ namespace H3.Test.Algorithms {
 
             // Assert
             Assert.AreEqual(expectedRing.Length, actual.Count, "should have same count");
-            for (int i = 0; i < expectedRing.Length; i += 1) {
+            for (var i = 0; i < expectedRing.Length; i += 1) {
                 var expectedIndex = expectedRing[i];
                 var actualIndex = actual[i];
                 Assert.AreEqual(expectedIndex, actualIndex, "should be equal");
@@ -147,7 +147,7 @@ namespace H3.Test.Algorithms {
         [Test]
         public void Test_Upstream_GetHexRing_OnPentagon() {
             // Arrange
-            H3Index onPentagon = H3Index.Create(0, 4, 0);
+            var onPentagon = H3Index.Create(0, 4, 0);
 
             // Act
             var exception = Assert.Throws<HexRingPentagonException>(() => onPentagon.GetHexRing(2).ToList(), "should throw pentagon exception");
@@ -170,7 +170,7 @@ namespace H3.Test.Algorithms {
 
         private static void AssertRing((H3Index, int)[] expectedRing, RingCell[] actualRing) {
             Assert.AreEqual(expectedRing.Length, actualRing.Length, "should be same length");
-            for (int i = 0; i < expectedRing.Length; i += 1) {
+            for (var i = 0; i < expectedRing.Length; i += 1) {
                 var expected = expectedRing[i];
 
                 Assert.IsNotNull(actualRing.FirstOrDefault(cell => cell.Index == expected.Item1 && cell.Distance == expected.Item2), $"can't find {expected.Item1:x} at k {expected.Item2}");

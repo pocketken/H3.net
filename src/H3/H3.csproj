@@ -21,20 +21,40 @@
     <DocumentationFile>C:\Dev\H3.net\src\H3\pocketken.H3.3.7.2.0.xml</DocumentationFile>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="NetTopologySuite" Version="2.3.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <Folder Include="Model\" />
-    <Folder Include="Algorithms\" />
-    <Folder Include="Extensions\" />
+    <ProjectReference Include="..\H3.Data\H3.Data.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <OutputItemType>Analyzer</OutputItemType>
+    </ProjectReference>
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Don't include the output from a previous source generator execution into future runs; the */** trick here ensures that there's
+    at least one subdirectory, which is our key that it's coming from a source generator as opposed to something that is coming from
+    some other tool. -->
+    <Compile Remove="$(CompilerGeneratedFilesOutputPath)/*/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Algorithms\" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="..\..\LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
   </ItemGroup>
+
   <ProjectExtensions>
     <MonoDevelop>
       <Properties>

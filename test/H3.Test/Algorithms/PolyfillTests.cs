@@ -108,7 +108,7 @@ namespace H3.Test.Algorithms {
 
             // Assert
             Assert.AreEqual(KnownValuePolyfillAtRes15.Length, filled.Length, "should be same length");
-            for (int i = 0; i < KnownValuePolyfillAtRes15.Length; i += 1) {
+            for (var i = 0; i < KnownValuePolyfillAtRes15.Length; i += 1) {
                 Assert.Contains(KnownValuePolyfillAtRes15[i], filled, $"missing {KnownValuePolyfillAtRes15[i]}");
             }
         }
@@ -179,7 +179,7 @@ namespace H3.Test.Algorithms {
         public void Test_Polyfill_Pentagon() {
             // Arrange
             var index = H3Index.Create(9, 24, 0);
-            GeoCoord coord = index.ToGeoCoord();
+            var coord = index.ToGeoCoord();
             GeoCoord topRight = new() {
                 Latitude = coord.Latitude + EdgeLength2,
                 Longitude = coord.Longitude + EdgeLength2
@@ -226,10 +226,10 @@ namespace H3.Test.Algorithms {
         [Test]
         public void Test_Upstream_H3jsIssue67_One() {
             // Arrange
-            double east = -56.25 * M_PI_180;
-            double north = -33.13755119234615 * M_PI_180;
-            double south = -34.30714385628804 * M_PI_180;
-            double west = -57.65625 * M_PI_180;
+            var east = -56.25 * M_PI_180;
+            var north = -33.13755119234615 * M_PI_180;
+            var south = -34.30714385628804 * M_PI_180;
+            var west = -57.65625 * M_PI_180;
 
             var polygon = CreatePolygon(new GeoCoord[] {
                 (north, east),
@@ -249,10 +249,10 @@ namespace H3.Test.Algorithms {
         [Test]
         public void Test_Upstream_H3jsIssue67_Two() {
             // Arrange
-            double east = -57.65625 * M_PI_180;
-            double north = -34.30714385628804 * M_PI_180;
-            double south = -35.4606699514953 * M_PI_180;
-            double west = -59.0625 * M_PI_180;
+            var east = -57.65625 * M_PI_180;
+            var north = -34.30714385628804 * M_PI_180;
+            var south = -35.4606699514953 * M_PI_180;
+            var west = -59.0625 * M_PI_180;
 
             var polygon = CreatePolygon(new GeoCoord[] {
                 (north, east),

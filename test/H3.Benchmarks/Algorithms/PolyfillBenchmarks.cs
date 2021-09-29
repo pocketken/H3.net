@@ -4,7 +4,6 @@ using System;
 using System.Linq;
 using H3.Algorithms;
 using H3Lib;
-using H3Lib.Extensions;
 using NetTopologySuite.Geometries;
 using static H3.Constants;
 using static H3.Utils;
@@ -53,18 +52,98 @@ namespace H3.Benchmarks.Algorithms {
             }
         };
 
+        private bool c4 = false;
+        private bool c5 = false;
+        private bool c10 = false;
+        private bool c11 = false;
+        private bool c12 = false;
+        private bool c13 = false;
+        private bool c14 = false;
+        private bool c15 = false;
+
         [Benchmark(Description = "pocketken.H3.Fill(worldPolygon, 4)")]
-        public int PolyfillWorld() => EntireWorldGeometry.Fill(4).Count();
+        public int PolyfillWorld4() {
+            var count = EntireWorldGeometry.Fill(4).Count();
+            if (c4) return count;
+            c4 = true;
+            Console.WriteLine($"{count} cells");
+            return count;
+        }
+
+        [Benchmark(Description = "pocketken.H3.Fill(worldPolygon, 5)")]
+        public int PolyfillWorld5() {
+            var count = EntireWorldGeometry.Fill(5).Count();
+            if (c5) return count;
+            c5 = true;
+            Console.WriteLine($"{count} cells");
+            return count;
+        }
+
+        //[Benchmark(Description = "H3Lib.Polyfill(worldPolygon, 4)")]
+        //public int H3LibPolyfillWorld() => EntireWorldGeoPolygon.Polyfill(4).Count;
 
         [Benchmark(Description = "pocketken.H3.Fill(sfPolygon, 10)")]
-        public int PolyfillSf() => SfGeometry.Fill(10).Count();
+        public int PolyfillSf10() {
+            var count = SfGeometry.Fill(10).Count();
+            if (c10) return count;
+            c10 = true;
+            Console.WriteLine($"{count} cells");
+            return count;
+        }
 
-        [Benchmark(Description = "H3Lib.Polyfill(sfPolygon, 10)")]
-        public int H3LibPolyfillSf() => SfGeoPolygon.Polyfill(10).Count;
+        //[Benchmark(Description = "H3Lib.Polyfill(sfPolygon, 10)")]
+        //public int H3LibPolyfillSf() => SfGeoPolygon.Polyfill(10).Count;
+
+        [Benchmark(Description = "pocketken.H3.Fill(sfPolygon, 11)")]
+        public int PolyfillSf11() {
+            var count = SfGeometry.Fill(11).Count();
+            if (c11) return count;
+            c11 = true;
+            Console.WriteLine($"{count} cells");
+            return count;
+        }
+
+        //[Benchmark(Description = "H3Lib.Polyfill(sfPolygon, 11)")]
+        //public int H3LibPolyfillSf11() => SfGeoPolygon.Polyfill(11).Count;
+
+        [Benchmark(Description = "pocketken.H3.Fill(sfPolygon, 12)")]
+        public int PolyfillSf12() {
+            var count = SfGeometry.Fill(12).Count();
+            if (c12) return count;
+            c12 = true;
+            Console.WriteLine($"{count} cells");
+            return count;
+        }
+
+        //[Benchmark(Description = "H3Lib.Polyfill(sfPolygon, 12)")]
+        //public int H3LibPolyfillSf12() => SfGeoPolygon.Polyfill(12).Count;
+
+        [Benchmark(Description = "pocketken.H3.Fill(sfPolygon, 13)")]
+        public int PolyfillSf13() {
+            var count = SfGeometry.Fill(13).Count();
+            if (c13) return count;
+            c13 = true;
+            Console.WriteLine($"{count} cells");
+            return count;
+        }
 
         [Benchmark(Description = "pocketken.H3.Fill(sfPolygon, 14)")]
-        public int PolyfillSf14() => SfGeometry.Fill(14).Count();
+        public int PolyfillSf14() {
+            var count = SfGeometry.Fill(14).Count();
+            if (c14) return count;
+            c14 = true;
+            Console.WriteLine($"{count} cells");
+            return count;
+        }
 
+        //[Benchmark(Description = "pocketken.H3.Fill(sfPolygon, 15)")]
+        //public int PolyfillSf15() {
+        //    var count = SfGeometry.Fill(15).Count();
+        //    if (c15) return count;
+        //    c15 = true;
+        //    Console.WriteLine($"{count} cells");
+        //    return count;
+        //}
 
     }
 

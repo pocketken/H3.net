@@ -79,11 +79,11 @@ namespace H3.Model {
                 }
             } else {
                 // not due north or south
-                double sinP1Lat = Math.Sin(p1.Latitude);
-                double cosP1Lat = Math.Cos(p1.Latitude);
-                double cosDist = Math.Cos(distance);
-                double sinDist = Math.Sin(distance);
-                double sinLat = Math.Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(az), -1.0, 1.0);
+                var sinP1Lat = Math.Sin(p1.Latitude);
+                var cosP1Lat = Math.Cos(p1.Latitude);
+                var cosDist = Math.Cos(distance);
+                var sinDist = Math.Sin(distance);
+                var sinLat = Math.Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(az), -1.0, 1.0);
                 p2.Latitude = Math.Asin(sinLat);
 
                 if (Math.Abs(p2.Latitude - M_PI_2) < EPSILON) {
@@ -95,9 +95,9 @@ namespace H3.Model {
                     p2.Latitude = -M_PI_2;
                     p2.Longitude = 0;
                 } else {
-                    double cosP2Lat = Math.Cos(p2.Latitude);
-                    double sinLon = Math.Clamp(Math.Sin(az) * sinDist / cosP2Lat, -1.0, 1.0);
-                    double cosLon = Math.Clamp((cosDist - sinP1Lat * Math.Sin(p2.Latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    var cosP2Lat = Math.Cos(p2.Latitude);
+                    var sinLon = Math.Clamp(Math.Sin(az) * sinDist / cosP2Lat, -1.0, 1.0);
+                    var cosLon = Math.Clamp((cosDist - sinP1Lat * Math.Sin(p2.Latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
                     p2.Longitude = ConstrainLongitude(p1.Longitude + Math.Atan2(sinLon, cosLon));
                 }
             }
@@ -188,9 +188,9 @@ namespace H3.Model {
         public int LineHexEstimate(GeoCoord other, int resolution) {
             // Get the area of the pentagon as the maximally-distorted area possible
             H3Index firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution][0];
-            double pentagonRadiusKm = firstPentagon.GetRadiusInKm();
-            double dist = GetPointDistanceInKm(other);
-            int estimate = (int)Math.Ceiling(dist / (2 * pentagonRadiusKm));
+            var pentagonRadiusKm = firstPentagon.GetRadiusInKm();
+            var dist = GetPointDistanceInKm(other);
+            var estimate = (int)Math.Ceiling(dist / (2 * pentagonRadiusKm));
             return estimate == 0 ? 1 : estimate;
         }
 

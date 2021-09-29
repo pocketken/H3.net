@@ -133,7 +133,7 @@ namespace H3.Extensions {
         /// <returns>local IJ coordinates</returns>
         public static CoordIJK ToLocalIJK(H3Index origin, H3Index destination) {
             H3Index index = new(destination);
-            int resolution = origin.Resolution;
+            var resolution = origin.Resolution;
             if (resolution != index.Resolution) {
                 throw new ArgumentOutOfRangeException(nameof(index), "must be same resolution as origin");
             }
@@ -142,8 +142,8 @@ namespace H3.Extensions {
             BaseCell baseCell = index.BaseCell;
 
             // Direction from origin base cell to index base cell
-            Direction dir = Direction.Center;
-            Direction revDir = Direction.Center;
+            var dir = Direction.Center;
+            var revDir = Direction.Center;
 
             if (originBaseCell != baseCell) {
                 dir = BaseCell.GetNeighbourDirection(originBaseCell.Cell, baseCell.Cell);
@@ -154,38 +154,37 @@ namespace H3.Extensions {
                 revDir = BaseCell.GetNeighbourDirection(baseCell.Cell, originBaseCell.Cell);
             }
 
-            bool originOnPent = originBaseCell.IsPentagon;
-            bool indexOnPent = baseCell.IsPentagon;
+            var originOnPent = originBaseCell.IsPentagon;
+            var indexOnPent = baseCell.IsPentagon;
 
             if (dir != Direction.Center) {
                 // Rotate index into the orientation of the origin base cell.
                 // cw because we are undoing the rotation into that base cell.
-                int baseCellRotations = LookupTables.NeighbourCounterClockwiseRotations[originBaseCell.Cell, (int)dir];
+                var baseCellRotations = originBaseCell.NeighbourRotations[(int)dir];
                 if (indexOnPent) {
-                    for (int i = 0; i < baseCellRotations; i += 1) {
+                    for (var i = 0; i < baseCellRotations; i += 1) {
                         index.RotatePentagonClockwise();
                         revDir = revDir.RotateClockwise();
                         if (revDir == Direction.K) revDir = revDir.RotateClockwise();
                     }
-                } else {
-                    for (int i = 0; i < baseCellRotations; i += 1) {
-                        index.RotateClockwise();
-                        revDir = revDir.RotateClockwise();
-                    }
+                } else if (baseCellRotations > 0) {
+                    index.RotateClockwise(baseCellRotations);
+                    revDir = revDir.RotateClockwise(baseCellRotations);
                 }
             }
 
             var indexFijk = new FaceIJK();
             index.ToFaceWithInitializedFijk(indexFijk);
+
             if (dir != Direction.Center) {
                 if (originBaseCell == baseCell) throw new Exception("assertion failed; origin should not equal index cell");
                 if (originOnPent && indexOnPent) throw new Exception("assertion failed; origin and index cannot both be on a pentagon");
 
-                int pentagonRotations = 0;
-                int directionRotations = 0;
+                var pentagonRotations = 0;
+                var directionRotations = 0;
 
                 if (originOnPent) {
-                    Direction originLeadingDigit = origin.LeadingNonZeroDirection;
+                    var originLeadingDigit = origin.LeadingNonZeroDirection;
                     if (LookupTables.UnfoldableDirections[(int)originLeadingDigit, (int)dir]) {
                         // TODO: We may be unfolding the pentagon incorrectly in this
                         // case; return an error code until this is guaranteed to be
@@ -196,7 +195,7 @@ namespace H3.Extensions {
                     directionRotations = LookupTables.PentagonRotations[(int)originLeadingDigit, (int)dir];
                     pentagonRotations = directionRotations;
                 } else if (indexOnPent) {
-                    Direction indexLeadingDigit = index.LeadingNonZeroDirection;
+                    var indexLeadingDigit = index.LeadingNonZeroDirection;
                     if (LookupTables.UnfoldableDirections[(int)indexLeadingDigit, (int)revDir]) {
                         // TODO: We may be unfolding the pentagon incorrectly in this
                         // case; return an error code until this is guaranteed to be
@@ -210,11 +209,11 @@ namespace H3.Extensions {
                 if (pentagonRotations < 0) throw new Exception("no pentagon rotations");
                 if (directionRotations < 0) throw new Exception("no direction rotations");
 
-                for (int i = 0; i < pentagonRotations; i += 1) indexFijk.Coord.RotateClockwise();
+                for (var i = 0; i < pentagonRotations; i += 1) indexFijk.Coord.RotateClockwise();
 
                 CoordIJK offset = new CoordIJK(0, 0, 0).ToNeighbour(dir);
                 // scale offset based upon resolution
-                for (int r = resolution - 1; r >= 0; r -= 1) {
+                for (var r = resolution - 1; r >= 0; r -= 1) {
                     if (IsResolutionClass3(r + 1)) {
                         offset.DownAperture7CounterClockwise();
                     } else {
@@ -222,7 +221,7 @@ namespace H3.Extensions {
                     }
                 }
 
-                for (int i = 0; i < directionRotations; i += 1) offset.RotateClockwise();
+                for (var i = 0; i < directionRotations; i += 1) offset.RotateClockwise();
 
                 // perform necesary translation
                 indexFijk.Coord.I += offset.I;
@@ -235,8 +234,8 @@ namespace H3.Extensions {
                 // cell.
                 if (originBaseCell != baseCell) throw new Exception("origin and index base cells must equal");
 
-                Direction originLeadingDigit = origin.LeadingNonZeroDirection;
-                Direction indexLeadingDigit = index.LeadingNonZeroDirection;
+                var originLeadingDigit = origin.LeadingNonZeroDirection;
+                var indexLeadingDigit = index.LeadingNonZeroDirection;
 
                 if (LookupTables.UnfoldableDirections[(int)originLeadingDigit, (int)indexLeadingDigit]) {
                     // TODO: We may be unfolding the pentagon incorrectly in this case;
@@ -244,9 +243,9 @@ namespace H3.Extensions {
                     throw new Exception("origin -> index results in unfoldable pentagon");
                 }
 
-                int withinPentagonRotations = LookupTables.PentagonRotations[(int)originLeadingDigit, (int)indexLeadingDigit];
+                var withinPentagonRotations = LookupTables.PentagonRotations[(int)originLeadingDigit, (int)indexLeadingDigit];
 
-                for (int i = 0; i < withinPentagonRotations; i += 1) indexFijk.Coord.RotateClockwise();
+                for (var i = 0; i < withinPentagonRotations; i += 1) indexFijk.Coord.RotateClockwise();
             }
 
             return indexFijk.Coord;
@@ -261,11 +260,11 @@ namespace H3.Extensions {
         /// <param name="origin"></param>
         /// <param name="ijk"></param>
         /// <returns></returns>
-        public static H3Index ToH3Index(H3Index origin, CoordIJK ijk) {
-            int resolution = origin.Resolution;
-            BaseCell? originBaseCell = origin.BaseCell;
+        public static H3Index ToH3Index(H3Index origin, CoordIJK ijk, CoordIJK? workIjk1 = default, CoordIJK? workIjk2 = default, CoordIJK? workIjk3 = default) {
+            var resolution = origin.Resolution;
+            var originBaseCell = origin.BaseCell;
             if (originBaseCell == null) throw new Exception("origin is not a valid base cell");
-            bool originOnPent = originBaseCell.IsPentagon;
+            var originOnPent = originBaseCell.IsPentagon;
 
             H3Index index = new() {
                 Mode = Mode.Cell,
@@ -275,7 +274,7 @@ namespace H3.Extensions {
             if (resolution == 0) {
                 if (ijk.I > 1 || ijk.J > 1 || ijk.K > 1) throw new Exception("input coordinates out of range");
 
-                int newBaseCell = LookupTables.Neighbours[originBaseCell.Cell, (int)(Direction)ijk];
+                var newBaseCell = originBaseCell.NeighbouringCells[(sbyte)(Direction)ijk];
                 if (newBaseCell == LookupTables.INVALID_BASE_CELL) throw new Exception("moved in invalid direction off pentagon");
 
                 index.BaseCellNumber = newBaseCell;
@@ -285,14 +284,17 @@ namespace H3.Extensions {
             // we need to find the correct base cell offset (if any) for this H3 index;
             // start with the passed in base cell and resolution res ijk coordinates
             // in that base cell's coordinate system
-            CoordIJK ijkCopy = new(ijk);
+            var ijkCopy = workIjk1 ?? new CoordIJK();
+            ijkCopy.I = ijk.I;
+            ijkCopy.J = ijk.J;
+            ijkCopy.K = ijk.K;
 
             // build the H3Index from finest res up
             // adjust r for the fact that the res 0 base cell offsets the indexing
             // digits
-            CoordIJK lastIJK = new();
-            CoordIJK lastCenter = new();
-            for (int r = resolution - 1; r >= 0; r -= 1) {
+            var lastIJK = workIjk2 ?? new CoordIJK();
+            var lastCenter = workIjk3 ?? new CoordIJK();
+            for (var r = resolution - 1; r >= 0; r -= 1) {
                 lastIJK.I = ijkCopy.I;
                 lastIJK.J = ijkCopy.J;
                 lastIJK.K = ijkCopy.K;
@@ -325,23 +327,23 @@ namespace H3.Extensions {
 
             // lookup correct base cell
             Direction dir = ijkCopy;
-            BaseCell? baseCell = originBaseCell.Neighbour(dir);
+            var baseCell = originBaseCell.Neighbour(dir);
 
             // If baseCell is invalid, it must be because the origin base cell is a
             // pentagon, and because pentagon base cells do not border each other,
             // baseCell must not be a pentagon.
-            bool indexOnPent = baseCell != null && baseCell.IsPentagon;
+            var indexOnPent = baseCell != null && baseCell.IsPentagon;
 
             if (dir != Direction.Center) {
                 // If the index is in a warped direction, we need to unwarp the base
                 // cell direction. There may be further need to rotate the index digits.
-                int pentagonRotations = 0;
+                var pentagonRotations = 0;
 
                 if (originOnPent) {
-                    Direction originLeadingDigit = origin.LeadingNonZeroDirection;
+                    var originLeadingDigit = origin.LeadingNonZeroDirection;
                     pentagonRotations = LookupTables.PentagonRotationsInReverse[(int)originLeadingDigit, (int)dir];
 
-                    for (int i = 0; i < pentagonRotations; i += 1) dir = dir.RotateCounterClockwise();
+                    dir = dir.RotateCounterClockwise(pentagonRotations);
 
                     // The pentagon rotations are being chosen so that dir is not the
                     // deleted direction. If it still happens, it means we're moving
@@ -362,7 +364,7 @@ namespace H3.Extensions {
 
                 // Now we can determine the relation between the origin and target base
                 // cell.
-                int baseCellRotations = LookupTables.NeighbourCounterClockwiseRotations[originBaseCell.Cell, (int)dir];
+                var baseCellRotations = originBaseCell.NeighbourRotations[(sbyte)dir];
                 if (baseCellRotations < 0) throw new Exception("invalid number of base cell rotations");
 
                 // Adjust for pentagon warping within the base cell. The base cell
@@ -370,15 +372,15 @@ namespace H3.Extensions {
                 // back. We might not need to check for errors since we would just be
                 // double mapping.
                 if (indexOnPent) {
-                    Direction revDir = BaseCell.GetNeighbourDirection(baseCell.Cell, originBaseCell.Cell);
+                    var revDir = BaseCell.GetNeighbourDirection(baseCell.Cell, originBaseCell.Cell);
                     if (revDir == Direction.Invalid) throw new Exception("invalid rotation direction");
 
                     // Adjust for the different coordinate space in the two base cells.
                     // This is done first because we need to do the pentagon rotations
                     // based on the leading digit in the pentagon's coordinate system.
-                    for (int i = 0; i < baseCellRotations; i += 1) index.RotateCounterClockwise();
+                    if (baseCellRotations > 0) index.RotateCounterClockwise(baseCellRotations);
 
-                    Direction indexLeadingDigit = index.LeadingNonZeroDirection;
+                    var indexLeadingDigit = index.LeadingNonZeroDirection;
                     var table = baseCell.IsPolarPentagon
                         ? LookupTables.PolarPentagonRotationsInReverse
                         : LookupTables.NonPolarPentagonRotationsInReverse;
@@ -386,23 +388,31 @@ namespace H3.Extensions {
                     pentagonRotations = table[(int)revDir, (int)indexLeadingDigit];
                     if (pentagonRotations < 0) throw new Exception("invalid number of pentagon rotations");
 
-                    for (int i = 0; i < pentagonRotations; i += 1) index.RotatePentagonCounterClockwise();
+                    for (var i = 0; i < pentagonRotations; i += 1) index.RotatePentagonCounterClockwise();
                 } else {
-                    if (pentagonRotations < 0) throw new Exception("invalid number of pentagon rotations");
-
-                    for (int i = 0; i < pentagonRotations; i += 1) index.RotateCounterClockwise();
+                    switch (pentagonRotations) {
+                        case < 0:
+                            throw new Exception("invalid number of pentagon rotations");
+                        case > 0:
+                            index.RotateCounterClockwise(pentagonRotations);
+                            break;
+                    }
 
                     // Adjust for the different coordinate space in the two base cells.
-                    for (int i = 0; i < baseCellRotations; i += 1) index.RotateCounterClockwise();
+                    if (baseCellRotations > 0) index.RotateCounterClockwise(baseCellRotations);
                 }
             } else if (originOnPent && indexOnPent) {
-                Direction originLeadingDigit = origin.LeadingNonZeroDirection;
-                Direction indexLeadingDigit = index.LeadingNonZeroDirection;
+                var originLeadingDigit = origin.LeadingNonZeroDirection;
+                var indexLeadingDigit = index.LeadingNonZeroDirection;
 
-                int withinPentagonRotations = LookupTables.PentagonRotationsInReverse[(int)originLeadingDigit, (int)indexLeadingDigit];
-                if (withinPentagonRotations < 0) throw new Exception("invalid number of within pentagon rotations");
-
-                for (int i = 0; i < withinPentagonRotations; i += 1) index.RotateCounterClockwise();
+                var withinPentagonRotations = LookupTables.PentagonRotationsInReverse[(int)originLeadingDigit, (int)indexLeadingDigit];
+                switch (withinPentagonRotations) {
+                    case < 0:
+                        throw new Exception("invalid number of within pentagon rotations");
+                    case > 0:
+                        index.RotateCounterClockwise(withinPentagonRotations);
+                        break;
+                }
             }
 
             if (indexOnPent) {
