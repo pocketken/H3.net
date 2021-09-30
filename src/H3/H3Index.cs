@@ -577,9 +577,7 @@ namespace H3 {
                     index.RotatePentagonCounterClockwise();
                 }
             } else {
-                for (var i = 0; i < numRotations; i += 1) {
-                    index.RotateCounterClockwise();
-                }
+                index.RotateCounterClockwise(numRotations);
             }
 
             return index;

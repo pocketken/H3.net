@@ -1,7 +1,7 @@
 <img align="right" src="https://uber.github.io/img/h3Logo-color.svg" alt="H3 Logo" width="200">
 
 # H3.net: A port of Uber's Hexagonal Hierarchical Geospatial Indexing System to C#
-This is a port of [Uber's H3 library](https://github.com/uber/h3) to C#, with additional functionality to support [NetTopologySuite](http://nettopologysuite.github.io/NetTopologySuite/index.html) geometries.  It is based on release 3.7.2 of the library.
+This is a port of [Uber's H3 library](https://github.com/uber/h3) to C# (`net5.0` and `netstandard2.1`), with additional functionality to support [NetTopologySuite](http://nettopologysuite.github.io/NetTopologySuite/index.html) geometries.  It is based on release 3.7.2 of the library.
 
 H3 is a geospatial indexing system using a hexagonal grid that can be (approximately) subdivided into finer and finer hexagonal grids, combining the benefits of a hexagonal grid with [S2](https://code.google.com/archive/p/s2-geometry-library/)'s hierarchical subdivisions.
 
@@ -18,7 +18,7 @@ PRs to improve code, tests and documentation are definitely welcome, although pl
 Available on [nuget.org](https://nuget.org) as [pocketken.H3](https://www.nuget.org/packages/pocketken.H3/).
 
 ```
-PM> Install-Package pocketken.H3 -Version 3.7.2
+PM> Install-Package pocketken.H3 -Version 3.7.2.1
 ```
 
 See [CHANGES.md](CHANGES.md) for a list of changes between releases.
@@ -62,6 +62,20 @@ Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) to get all childre
 | pocketken.H3.GetChildrenForResolution | 9.128 ms | 0.1809 ms | 0.2415 ms |  796.8750 |  781.2500 | 484.3750 |   4.69 MB |
 |                      H3Lib.ToChildren | 9.671 ms | 0.1904 ms | 0.2266 ms | 3453.1250 | 1671.8750 | 984.3750 |  23.55 MB |
 
+### GetDirectNeighbour
+Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) and `8e0800000000007` (first pentagon @ resolution 14) to get neighbours at `Direction.I` and `Direction.IJ` (another silly microbenchmark):
+
+|                                      Method |     Mean |    Error |   StdDev |  Gen 0 | Allocated |
+|-------------------------------------------- |---------:|---------:|---------:|-------:|----------:|
+|   'pocketken.H3.GetDirectNeighbour(hex, I)' | 16.68 ns | 0.140 ns | 0.124 ns | 0.0029 |      24 B |
+|  'pocketken.H3.GetDirectNeighbour(hex, IJ)' | 24.47 ns | 0.223 ns | 0.198 ns | 0.0029 |      24 B |
+|           'H3Lib.NeighborRotations(hex, I)' | 16.70 ns | 0.187 ns | 0.166 ns |      - |         - |
+|          'H3Lib.NeighborRotations(hex, IJ)' | 27.64 ns | 0.226 ns | 0.189 ns |      - |         - |
+|  'pocketken.H3.GetDirectNeighbour(pent, I)' | 27.50 ns | 0.307 ns | 0.287 ns | 0.0029 |      24 B |
+| 'pocketken.H3.GetDirectNeighbour(pent, IJ)' | 27.34 ns | 0.367 ns | 0.343 ns | 0.0029 |      24 B |
+|          'H3Lib.NeighborRotations(pent, I)' | 33.15 ns | 0.415 ns | 0.388 ns |      - |         - |
+|         'H3Lib.NeighborRotations(pent, IJ)' | 32.86 ns | 0.250 ns | 0.234 ns |      - |         - |
+
 ### Algorithms
 
 #### Fill (Polyfill)
@@ -95,8 +109,8 @@ Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells)
 
 |              Method |       Mean |    Error |   StdDev |        Gen 0 |      Gen 1 |     Gen 2 | Allocated |
 |-------------------- |-----------:|---------:|---------:|-------------:|-----------:|----------:|----------:|
-| pocketken.H3.LineTo |   739.2 ms | 10.19 ms |  9.53 ms |   40000.0000 | 12000.0000 | 1000.0000 |    333 MB |
-|        H3Lib.LineTo | 4,709.9 ms | 11.84 ms | 11.07 ms | 1057000.0000 |  3000.0000 | 1000.0000 |  8,449 MB |
+| pocketken.H3.LineTo |   725.4 ms |  9.40 ms |  8.79 ms |   34000.0000 | 10000.0000 | 1000.0000 |    283 MB |
+|        H3Lib.LineTo | 4,683.3 ms | 14.94 ms | 13.25 ms | 1057000.0000 |  3000.0000 | 1000.0000 |  8,449 MB |
 
 #### Rings
 `hex` is a hexagon index (`8f48e1d7038d520`).

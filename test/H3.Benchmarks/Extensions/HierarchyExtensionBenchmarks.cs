@@ -21,7 +21,8 @@ namespace H3.Benchmarks.Extensions {
 
         [GlobalSetup]
         public void Setup() {
-            Console.WriteLine($"SfIndex = {TestHelpers.SfIndex}");
+            Console.WriteLine($"Hex = {TestHelpers.SfIndex}");
+            Console.WriteLine($"Pent = {PentIndex}");
         }
 
         [Benchmark(Description = "pocketken.H3.GetDirectNeighbour(hex, I)")]
