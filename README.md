@@ -46,24 +46,24 @@ While there are some comparisons here against [H3Lib](https://github.com/Richard
 
 ### Hierarchy Ops
 
-### GetParentForResolution
+#### GetParentForResolution
 Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) to get parent at resolution 0 (a silly microbenchmark):
 
-|                              Method |      Mean |     Error |    StdDev |  Gen 0 | Gen 1 | Gen 2 | Allocated |
-|------------------------------------ |----------:|----------:|----------:|-------:|------:|------:|----------:|
-| pocketken.H3.GetParentForResolution |  4.458 ns | 0.0474 ns | 0.0443 ns | 0.0029 |     - |     - |      24 B |
-|                      H3Lib.ToParent | 20.817 ns | 0.1196 ns | 0.1118 ns |      - |     - |     - |         - |
+|                              Method |      Mean |     Error |    StdDev |  Gen 0 | Allocated |
+|------------------------------------ |----------:|----------:|----------:|-------:|----------:|
+| pocketken.H3.GetParentForResolution |  4.918 ns | 0.0838 ns | 0.0784 ns | 0.0029 |      24 B |
+|                      H3Lib.ToParent | 21.087 ns | 0.1255 ns | 0.1174 ns |      - |         - |
 
 #### GetChildrenForResolution
 Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) to get all children at resolution 15.
 
-|                                Method |     Mean |     Error |    StdDev |     Gen 0 |     Gen 1 |    Gen 2 | Allocated |
-|-------------------------------------- |---------:|----------:|----------:|----------:|----------:|---------:|----------:|
-| pocketken.H3.GetChildrenForResolution | 9.128 ms | 0.1809 ms | 0.2415 ms |  796.8750 |  781.2500 | 484.3750 |   4.69 MB |
-|                      H3Lib.ToChildren | 9.671 ms | 0.1904 ms | 0.2266 ms | 3453.1250 | 1671.8750 | 984.3750 |  23.55 MB |
+|                                Method |      Mean |     Error |    StdDev |     Gen 0 |     Gen 1 |    Gen 2 | Allocated |
+|-------------------------------------- |----------:|----------:|----------:|----------:|----------:|---------:|----------:|
+| pocketken.H3.GetChildrenForResolution |  9.639 ms | 0.1317 ms | 0.1099 ms |  796.8750 |  781.2500 | 484.3750 |      5 MB |
+|                      H3Lib.ToChildren | 10.660 ms | 0.2096 ms | 0.3072 ms | 3453.1250 | 1671.8750 | 984.3750 |     24 MB |
 
-### GetDirectNeighbour
-Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) and `8e0800000000007` (first pentagon @ resolution 14) to get neighbours at `Direction.I` and `Direction.IJ` (another silly microbenchmark):
+#### GetDirectNeighbour
+Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) and `8e0800000000007` (first pentagon @ resolution 14) to get neighbours at `Direction.I` and `Direction.IJ`:
 
 |                                      Method |     Mean |    Error |   StdDev |  Gen 0 | Allocated |
 |-------------------------------------------- |---------:|---------:|---------:|-------:|----------:|
