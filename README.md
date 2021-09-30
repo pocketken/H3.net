@@ -68,12 +68,12 @@ Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) and `8e08000000000
 |                                      Method |     Mean |    Error |   StdDev |  Gen 0 | Allocated |
 |-------------------------------------------- |---------:|---------:|---------:|-------:|----------:|
 |   'pocketken.H3.GetDirectNeighbour(hex, I)' | 16.68 ns | 0.140 ns | 0.124 ns | 0.0029 |      24 B |
-|  'pocketken.H3.GetDirectNeighbour(hex, IJ)' | 24.47 ns | 0.223 ns | 0.198 ns | 0.0029 |      24 B |
 |           'H3Lib.NeighborRotations(hex, I)' | 16.70 ns | 0.187 ns | 0.166 ns |      - |         - |
+|  'pocketken.H3.GetDirectNeighbour(hex, IJ)' | 24.47 ns | 0.223 ns | 0.198 ns | 0.0029 |      24 B |
 |          'H3Lib.NeighborRotations(hex, IJ)' | 27.64 ns | 0.226 ns | 0.189 ns |      - |         - |
 |  'pocketken.H3.GetDirectNeighbour(pent, I)' | 27.50 ns | 0.307 ns | 0.287 ns | 0.0029 |      24 B |
-| 'pocketken.H3.GetDirectNeighbour(pent, IJ)' | 27.34 ns | 0.367 ns | 0.343 ns | 0.0029 |      24 B |
 |          'H3Lib.NeighborRotations(pent, I)' | 33.15 ns | 0.415 ns | 0.388 ns |      - |         - |
+| 'pocketken.H3.GetDirectNeighbour(pent, IJ)' | 27.34 ns | 0.367 ns | 0.343 ns | 0.0029 |      24 B |
 |         'H3Lib.NeighborRotations(pent, IJ)' | 32.86 ns | 0.250 ns | 0.234 ns |      - |         - |
 
 ### Algorithms
