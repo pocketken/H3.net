@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>pocketken.H3.3.7.2.0</AssemblyName>
-    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>pocketken.H3.3.7.2.1</AssemblyName>
+    <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
+    <LangVersion>9.0</LangVersion>
     <PackOnBuild>true</PackOnBuild>
     <PackageId>pocketken.H3</PackageId>
-    <PackageVersion>3.7.2.0</PackageVersion>
+    <PackageVersion>3.7.2.1</PackageVersion>
     <Authors>pocketken</Authors>
     <Description>Port of Uber's H3 to .NET</Description>
     <PackageProjectUrl>https://github.com/pocketken/H3.net</PackageProjectUrl>
@@ -14,11 +15,11 @@
     <Company />
     <IsPackable>true</IsPackable>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>3.7.2.0</Version>
+    <Version>3.7.2.1</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>C:\Dev\H3.net\src\H3\pocketken.H3.3.7.2.0.xml</DocumentationFile>
+    <DocumentationFile>pocketken.H3.3.7.2.1.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -28,6 +29,14 @@
 
   <ItemGroup>
     <PackageReference Include="NetTopologySuite" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <PackageReference Include="System.Text.Json" Version="5.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="IsExternalInit.cs" Condition="'$(TargetFramework)' == 'net5.0'" />
   </ItemGroup>
 
   <ItemGroup>

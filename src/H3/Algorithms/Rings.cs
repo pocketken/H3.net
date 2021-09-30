@@ -11,16 +11,18 @@ namespace H3.Algorithms {
     /// <summary>
     /// Holder for indexes produced from the k ring functions.
     /// </summary>
-    public record RingCell {
+    public readonly struct RingCell {
+
         /// <summary>
         /// H3 index
         /// </summary>
-        public H3Index Index { get; init; } = H3Index.Invalid;
+        public H3Index Index { get; init; }
 
         /// <summary>
         /// k cell distance from the origin (ring level)
         /// </summary>
         public int Distance { get; init; }
+
     }
 
     /// <summary>
@@ -82,10 +84,11 @@ namespace H3.Algorithms {
                     // Skip the very last index, it was already added. We do
                     // however need to traverse to it because of the pentagonal
                     // distortion check, below.
-                    if (pos != k - 1 || direction != 5) {
-                        yield return index;
-                        if (index.IsPentagon) throw new HexRingPentagonException();
-                    }
+                    if (pos == k - 1 && direction == 5)
+                        continue;
+
+                    yield return index;
+                    if (index.IsPentagon) throw new HexRingPentagonException();
                 }
             }
 

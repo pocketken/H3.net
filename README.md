@@ -78,17 +78,17 @@ Filling world and [Uber SF Test](https://github.com/uber/h3/blob/master/src/apps
 
 |                               Method |           Mean |       Error |      StdDev |        Gen 0 |       Gen 1 |      Gen 2 | Allocated |
 |------------------------------------- |---------------:|------------:|------------:|-------------:|------------:|-----------:|----------:|
-| 'pocketken.H3.Fill(worldPolygon, 4)' |     203.042 ms |   1.2783 ms |   1.1331 ms |   10000.0000 |   2000.0000 |  1000.0000 |     90 MB |
-| 'pocketken.H3.Fill(worldPolygon, 5)' |     1,461.0 ms |    12.00 ms |    10.02 ms |   71000.0000 |  13000.0000 |  4000.0000 |    648 MB |
-|   'pocketken.H3.Fill(sfPolygon, 10)' |       7.603 ms |   0.0165 ms |   0.0146 ms |     367.1875 |    226.5625 |   117.1875 |      3 MB |
+| 'pocketken.H3.Fill(worldPolygon, 4)' |     196.743 ms |   1.8058 ms |   1.6008 ms |   10000.0000 |   2000.0000 |  1000.0000 |     90 MB |
+| 'pocketken.H3.Fill(worldPolygon, 5)' |   1,413.311 ms |  11.3172 ms |  10.5861 ms |   71000.0000 |  13000.0000 |  4000.0000 |    648 MB |
+|   'pocketken.H3.Fill(sfPolygon, 10)' |       7.319 ms |   0.0241 ms |   0.0202 ms |     367.1875 |    226.5625 |   117.1875 |      3 MB |
 |      'H3Lib.Polyfill(sfPolygon, 10)' |     494.078 ms |   1.2105 ms |   0.9450 ms |    3000.0000 |           - |          - |     27 MB |
-|   'pocketken.H3.Fill(sfPolygon, 11)' |      51.196 ms |   0.8691 ms |   0.8129 ms |    2800.0000 |   1200.0000 |   700.0000 |     20 MB |
+|   'pocketken.H3.Fill(sfPolygon, 11)' |      48.994 ms |   0.8197 ms |   0.7667 ms |    2727.2727 |   1090.9091 |   636.3636 |     20 MB |
 |      'H3Lib.Polyfill(sfPolygon, 11)' |   3,319.726 ms |   3.1163 ms |   2.9150 ms |   21000.0000 |   3000.0000 |  1000.0000 |    168 MB |
-|   'pocketken.H3.Fill(sfPolygon, 12)' |     375.414 ms |   5.0360 ms |   4.7107 ms |   16000.0000 |   3000.0000 |  2000.0000 |    145 MB |
+|   'pocketken.H3.Fill(sfPolygon, 12)' |     361.273 ms |   6.7138 ms |   6.2801 ms |   16000.0000 |   3000.0000 |  2000.0000 |    145 MB |
 |      'H3Lib.Polyfill(sfPolygon, 12)' |  20,111.706 ms | 269.9403 ms | 239.2950 ms |  137000.0000 |  19000.0000 |  2000.0000 |  1,119 MB |
-|   'pocketken.H3.Fill(sfPolygon, 13)' |     2,788.0 ms |    10.82 ms |     9.03 ms |  109000.0000 |  30000.0000 |  9000.0000 |  1,046 MB |
-|   'pocketken.H3.Fill(sfPolygon, 14)' |  20,150.948 ms | 104.1208 ms |  92.3004 ms |  719000.0000 | 119000.0000 | 10000.0000 |  6,702 MB |
-|   'pocketken.H3.Fill(sfPolygon, 15)' | 136,125.551 ms | 505.5441 ms | 472.8863 ms | 5008000.0000 | 801000.0000 | 62000.0000 | 47,576 MB |
+|   'pocketken.H3.Fill(sfPolygon, 13)' |   2,692.485 ms |  14.1803 ms |  13.2643 ms |  109000.0000 |  30000.0000 |  9000.0000 |  1,046 MB |
+|   'pocketken.H3.Fill(sfPolygon, 14)' |  18,216.525 ms |  22.5448 ms |  18.8259 ms |  719000.0000 | 119000.0000 | 10000.0000 |  6,702 MB |
+|   'pocketken.H3.Fill(sfPolygon, 15)' | 128,363.156 ms | 501.3173 ms | 444.4047 ms | 4991000.0000 | 791000.0000 | 46000.0000 | 47,576 MB |
 
 #### Lines
 Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells).
@@ -101,20 +101,20 @@ Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells)
 #### Rings
 `hex` is a hexagon index (`8f48e1d7038d520`).
 
-|                                   Method |       Mean |    Error |   StdDev |    Gen 0 |   Gen 1 |   Gen 2 |  Allocated |
-|----------------------------------------- |-----------:|---------:|---------:|---------:|--------:|--------:|-----------:|
-|     'pocketken.H3.GetKRing(hex, k = 50)' |   460.1 us |  1.99 us |  1.86 us |  73.7305 | 36.6211 |       - |  607.75 KB |
-| 'pocketken.H3.GetKRingFast(hex, k = 50)' |   471.4 us |  2.48 us |  2.32 us |  66.4063 | 33.2031 |       - |  547.92 KB |
-| 'pocketken.H3.GetKRingSlow(hex, k = 50)' | 4,852.8 us | 38.70 us | 36.20 us | 179.6875 | 85.9375 | 85.9375 | 1634.09 KB |
-|      'H3Lib.KRingDistances(hex, k = 50)' |   381.6 us |  0.87 us |  0.68 us |  99.6094 | 99.6094 | 99.6094 |  486.59 KB |
+|                                    Method |            Mean |         Error |        StdDev |        Gen 0 |        Gen 1 |        Gen 2 |     Allocated |
+|------------------------------------------ |----------------:|--------------:|--------------:|-------------:|-------------:|-------------:|--------------:|
+|      'pocketken.H3.GetKRing(hex, k = 50)' |        419.5 us |       1.79 us |       1.59 us |      73.7305 |      36.6211 |            - |        608 KB |
+|  'pocketken.H3.GetKRingFast(hex, k = 50)' |        422.6 us |       1.40 us |       1.09 us |      66.4063 |      33.2031 |            - |        548 KB |
+|  'pocketken.H3.GetKRingSlow(hex, k = 50)' |      3,080.5 us |       7.55 us |       6.31 us |     269.5313 |     179.6875 |      89.8438 |      2,113 KB |
+|       'H3Lib.KRingDistances(hex, k = 50)' |        463.7 us |       3.11 us |       2.76 us |      99.6094 |      99.6094 |      99.6094 |        487 KB |
 
 `pent` is a pentagon index (`8e0800000000007`) which forces the use of the iterative (recursive in the case of H3Lib) method of generating the ring due to the fast method's inability to handle pentagons.
 
-|                                    Method |          Mean |       Error |      StdDev |        Gen 0 |        Gen 1 |        Gen 2 |   Allocated |
-|------------------------------------------ |--------------:|------------:|------------:|-------------:|-------------:|-------------:|------------:|
-|     'pocketken.H3.GetKRing(pent, k = 50)' |      4.088 ms |   0.0263 ms |   0.0246 ms |     179.6875 |      85.9375 |      85.9375 |      1.6 MB |
-| 'pocketken.H3.GetKRingSlow(pent, k = 50)' |      3.985 ms |   0.0138 ms |   0.0115 ms |     179.6875 |      85.9375 |      85.9375 |      1.6 MB |
-|      'H3Lib.KRingDistances(pent, k = 50)' | 59,216.102 ms | 960.4448 ms | 898.4006 ms | 7692000.0000 | 6112000.0000 | 5064000.0000 | 71358.66 MB |
+|                                    Method |            Mean |         Error |        StdDev |        Gen 0 |        Gen 1 |        Gen 2 |     Allocated |
+|------------------------------------------ |----------------:|--------------:|--------------:|-------------:|-------------:|-------------:|--------------:|
+|     'pocketken.H3.GetKRing(pent, k = 50)' |      3,295.9 us |      24.51 us |      21.73 us |     269.5313 |     179.6875 |      89.8438 |      2,113 KB |
+| 'pocketken.H3.GetKRingSlow(pent, k = 50)' |      3,097.6 us |      23.57 us |      22.05 us |     269.5313 |     179.6875 |      89.8438 |      2,113 KB |
+|      'H3Lib.KRingDistances(pent, k = 50)' | 79,416,403.4 us | 594,028.76 us | 555,654.87 us | 7644000.0000 | 6050000.0000 | 5015000.0000 | 73,068,645 KB |
 
 ### Sets
 * Compact: Result of compacting all cells at resolution 5.

@@ -179,10 +179,11 @@ namespace H3.Model {
         /// Rotates ijk coordinates 60 degrees counter-clockwise.  Works in place.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK RotateCounterClockwise() {
-            var uVecI = LookupTables.DirectionToUnitVector[Direction.IJ];
-            var uVecJ = LookupTables.DirectionToUnitVector[Direction.JK];
-            var uVecK = LookupTables.DirectionToUnitVector[Direction.IK];
+            var uVecI = LookupTables.UnitVectors[(int)Direction.IJ];
+            var uVecJ = LookupTables.UnitVectors[(int)Direction.JK];
+            var uVecK = LookupTables.UnitVectors[(int)Direction.IK];
 
             var i = I * uVecI.I + J * uVecJ.I + K * uVecK.I;
             var j = I * uVecI.J + J * uVecJ.J + K * uVecK.J;
@@ -199,10 +200,11 @@ namespace H3.Model {
         /// Rotates ijk coordinates 60 degrees clockwise.  Works in place.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK RotateClockwise() {
-            var uVecI = LookupTables.DirectionToUnitVector[Direction.IK];
-            var uVecJ = LookupTables.DirectionToUnitVector[Direction.IJ];
-            var uVecK = LookupTables.DirectionToUnitVector[Direction.JK];
+            var uVecI = LookupTables.UnitVectors[(int)Direction.IK];
+            var uVecJ = LookupTables.UnitVectors[(int)Direction.IJ];
+            var uVecK = LookupTables.UnitVectors[(int)Direction.JK];
 
             var i = I * uVecI.I + J * uVecJ.I + K * uVecK.I;
             var j = I * uVecI.J + J * uVecJ.J + K * uVecK.J;
@@ -220,6 +222,7 @@ namespace H3.Model {
         /// counter-clockwise aperture 7 grid.  Works in place.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK UpAperture7CounterClockwise() {
             var i = I - K;
             var j = J - K;
@@ -236,6 +239,7 @@ namespace H3.Model {
         /// clockwise aperture 7 grid.  Works in place.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK UpAperture7Clockwise() {
             var i = I - K;
             var j = J - K;
@@ -253,6 +257,7 @@ namespace H3.Model {
         /// place.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK DownAperture7CounterClockwise() {
             var i = 3 * I + J;
             var j = 3 * J + K;
@@ -270,6 +275,7 @@ namespace H3.Model {
         /// hex at the next finer aperture 7 clockwise resolution.  Works in place.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK DownAperture7Clockwise() {
             var i = 3 * I + K;
             var j = I + 3 * J;
@@ -288,6 +294,7 @@ namespace H3.Model {
         /// place.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK DownAperture3CounterClockwise() {
             var i = 2 * I + J;
             var j = 2 * J + K;
@@ -305,6 +312,7 @@ namespace H3.Model {
         /// hex at the next finer aperture 3 clockwise resolution.  Works in place.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK DownAperture3Clockwise() {
             var i = 2 * I + K;
             var j = I + 2 * J;
@@ -321,6 +329,7 @@ namespace H3.Model {
         /// Convert IJK coordinates to cube coordinates, in place.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK Cube() {
             I = -I + K;
             J -= K;
@@ -332,6 +341,7 @@ namespace H3.Model {
         /// Convert cube coordinates to IJK coordinates, in place
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK Uncube() {
             I = -I;
             K = 0;
@@ -348,7 +358,7 @@ namespace H3.Model {
             if (direction is <= Direction.Center or >= Direction.Invalid)
                 return this;
 
-            var unitVector = LookupTables.DirectionToUnitVector[direction];
+            var unitVector = LookupTables.UnitVectors[(int)direction];
             I += unitVector.I;
             J += unitVector.J;
             K += unitVector.K;

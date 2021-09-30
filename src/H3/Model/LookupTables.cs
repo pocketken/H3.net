@@ -516,7 +516,7 @@ namespace H3.Model {
         };
 
         public static readonly Dictionary<Direction, CoordIJK> DirectionToUnitVector =
-            Enum.GetValues<Direction>().ToDictionary(e => e, e => e switch {
+            Enum.GetValues(typeof(Direction)).Cast<Direction>().ToDictionary(e => e, e => e switch {
                 Direction.Invalid => CoordIJK.InvalidIJKCoordinate,
                 _ => UnitVectors[(int)e]
             });
