@@ -1,5 +1,18 @@
 # pocketken.H3 Change Log
 
+### 3.7.2.1 - Unreleased
+
+##### Breaking Changes :mega:
+
+- Visibility on several classes + methods changed from `public` to `internal` in an effort to clean up the public-facing API.  Let me know if I've changed anything you're using
+- `sealed` added to all classes
+
+##### Enhancements :tada:
+
+- Added multi-target support for `net5.0` and `netstandard2.1`
+- Reduced allocations / increased performance in `H3.Algorithms.Polyfill.Fill` and `H3.Algorithms.Lines.LineTo` [#42](https://github.com/pocketken/H3.net/issues/42)
+- Other minor performance improvements and tweaks
+
 ### 3.7.2 - 2021-07-19
 
 ##### Breaking Changes :mega:

@@ -27,7 +27,7 @@ See [CHANGES.md](CHANGES.md) for a list of changes between releases.
 There is an extremely basic set of benchmarks using [BenchmarkDotNet](https://benchmarkdotnet.org/index.html) that I have begun to use in order to track performance and perform optimizations as things progress.  You can check the code out to run the benchmarks locally if you want, e.g.:
 
 ```sh
-$ dotnet run --configuration Release --project .\test\H3.Benchmarks\H3.Benchmarks.csproj --filter *Uncompact* --join
+$ dotnet run --configuration Release --project .\test\H3.Benchmarks\H3.Benchmarks.csproj --filter *Uncompact* --join --framework net5.0
 ```
 
 All numbers here are from my primary Windows development VM:
