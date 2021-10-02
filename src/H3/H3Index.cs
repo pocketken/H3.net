@@ -163,8 +163,6 @@ namespace H3 {
                         } else if (d == (ulong)Direction.K) {
                             return false;
                         } else {
-                            // But don't increment `r`, since we still need to
-                            // check that it isn't INVALID_DIGIT.
                             break;
                         }
                         r++;

@@ -12,6 +12,7 @@ using H3Lib.Extensions;
 namespace H3.Benchmarks.Algorithms {
 
     [SimpleJob(RuntimeMoniker.Net50)]
+    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     [MemoryDiagnoser]
     public class RingBenchmarks {
 

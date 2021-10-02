@@ -41,7 +41,6 @@ namespace H3.Extensions {
             // Adjust the indexing digits and, if needed, the base cell.
             var resolution = outIndex.Resolution - 1;
             while (true) {
-                var nextResolution = resolution + 1;
                 if (resolution == -1) {
                     var newBaseCellNumber = oldBaseCell.NeighbouringCells[(sbyte)dir];
                     neighbourRotations = oldBaseCell.NeighbourRotations[(sbyte)dir];
@@ -63,6 +62,7 @@ namespace H3.Extensions {
                     break;
                 }
 
+                var nextResolution = resolution + 1;
                 var oldDir = outIndex.GetDirectionForResolution(nextResolution);
                 Direction nextDir;
 
