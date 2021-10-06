@@ -48,7 +48,7 @@ namespace H3.Model {{
                     var n = (sbyte)LookupTables.Neighbours[c, d];
                     neighbouringCells.Add(n);
                     neighbourRotations.Add(LookupTables.NeighbourCounterClockwiseRotations[c, d]);
-                    neighbourDirections[n] = (Direction)d;
+                    if (n != LookupTables.INVALID_BASE_CELL) neighbourDirections[n] = (Direction)d;
                 }
 
                 cells.Append($@"

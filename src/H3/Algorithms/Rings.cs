@@ -13,15 +13,20 @@ namespace H3.Algorithms {
     /// </summary>
     public readonly struct RingCell {
 
+        public RingCell(H3Index index, int distance) {
+            Index = index;
+            Distance = distance;
+        }
+
         /// <summary>
         /// H3 index
         /// </summary>
-        public H3Index Index { get; init; }
+        public H3Index Index { get; }
 
         /// <summary>
         /// k cell distance from the origin (ring level)
         /// </summary>
-        public int Distance { get; init; }
+        public int Distance { get; }
 
     }
 
@@ -133,7 +138,7 @@ namespace H3.Algorithms {
             // since k >= 0, start with origin
             Queue<RingCell> queue = new();
             Dictionary<ulong, int> searched = new();
-            queue.Enqueue(new RingCell { Index = origin, Distance = 0 });
+            queue.Enqueue(new RingCell(origin, 0));
 
             while (queue.Count != 0) {
                 var cell = queue.Dequeue();
@@ -148,7 +153,7 @@ namespace H3.Algorithms {
                         continue;
                     }
                     searched[neighbour] = nextK;
-                    queue.Enqueue(new RingCell { Index = neighbour, Distance = nextK });
+                    queue.Enqueue(new RingCell(neighbour, nextK));
                 }
             }
         }
@@ -171,7 +176,7 @@ namespace H3.Algorithms {
             H3Index index = origin;
 
             // k must be >= 0, so origin is always needed
-            yield return new RingCell { Index = index, Distance = 0 };
+            yield return new RingCell(index, 0);
 
             // Pentagon was encountered; bail out as user doesn't want this.
             if (index.IsPentagon) throw new HexRingPentagonException();
@@ -214,7 +219,7 @@ namespace H3.Algorithms {
                     throw new HexRingKSequenceException();
                 }
 
-                yield return new RingCell { Index = index, Distance = ring };
+                yield return new RingCell(index, ring);
                 i += 1;
 
                 // Check if end of this side of the k-ring
