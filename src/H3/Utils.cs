@@ -4,7 +4,9 @@ using NetTopologySuite.Geometries;
 using static H3.Constants;
 
 namespace H3 {
+
     public static class Utils {
+
         public static readonly GeometryFactory DefaultGeometryFactory =
             new(new PrecisionModel(1 / EPSILON), 4326);
 
@@ -105,5 +107,24 @@ namespace H3 {
         public static bool IsValidChildResolution(int parentResolution, int childResolution) =>
             childResolution >= parentResolution && childResolution <= MAX_H3_RES;
 
+        #if NETSTANDARD2_0
+        /// <summary>
+        /// Clamps the specified value between <paramref name="min">min</paramref>
+        /// and <paramref name="max">max</paramref>
+        /// </summary>
+        /// <param name="value">value to clamp</param>
+        /// <param name="min">minimum value</param>
+        /// <param name="max">maximum value</param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T Clamp<T>(T value, T min, T max) where T : IComparable<T> {
+            T result = value;
+            if (value.CompareTo(min) < 0) result = min;
+            if (value.CompareTo(max) > 0) result = max;
+            return result;
+        }
+        #endif
+
     }
+
 }

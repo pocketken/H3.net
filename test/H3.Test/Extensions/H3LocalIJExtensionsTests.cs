@@ -160,12 +160,17 @@ namespace H3.Test.Extensions {
         public void Test_Upstream_ToLocalIJ_Invalid_ResolutionMismatch() {
             // Arrange
             H3Index invalid = 0x7fffffffffffffff;
+            #if NET48
+            const string expectedMessage = "must be same resolution as origin\r\nParameter name: index";
+            #else
+            const string expectedMessage = "must be same resolution as origin (Parameter 'index')";
+            #endif
 
             // Act
             var actual = Assert.Throws<ArgumentOutOfRangeException>(() => invalid.ToLocalIJ(BaseCell15));
 
             // Assert
-            Assert.AreEqual("must be same resolution as origin (Parameter 'index')", actual.Message, "same message");
+            Assert.AreEqual(expectedMessage, actual.Message, "same message");
         }
 
         [Test]

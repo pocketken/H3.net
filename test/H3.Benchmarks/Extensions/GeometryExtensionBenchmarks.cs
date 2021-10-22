@@ -1,10 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using H3.Extensions;
 using H3.Model;
 using H3.Test;
@@ -13,9 +10,10 @@ using H3Lib.Extensions;
 using NetTopologySuite.Geometries;
 
 namespace H3.Benchmarks.Extensions {
-    
+
     [SimpleJob(RuntimeMoniker.Net50)]
     [SimpleJob(RuntimeMoniker.NetCoreApp31)]
+    [SimpleJob(RuntimeMoniker.Net48)]
     [MemoryDiagnoser]
     public class GeometryExtensionBenchmarks {
 

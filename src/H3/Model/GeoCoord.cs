@@ -83,7 +83,11 @@ namespace H3.Model {
                 var cosP1Lat = Math.Cos(p1.Latitude);
                 var cosDist = Math.Cos(distance);
                 var sinDist = Math.Sin(distance);
+                #if NETSTANDARD2_0
+                var sinLat = Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(az), -1.0, 1.0);
+                #else
                 var sinLat = Math.Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(az), -1.0, 1.0);
+                #endif
                 p2.Latitude = Math.Asin(sinLat);
 
                 if (Math.Abs(p2.Latitude - M_PI_2) < EPSILON) {
@@ -96,8 +100,13 @@ namespace H3.Model {
                     p2.Longitude = 0;
                 } else {
                     var cosP2Lat = Math.Cos(p2.Latitude);
+                    #if NETSTANDARD2_0
+                    var sinLon = Clamp(Math.Sin(az) * sinDist / cosP2Lat, -1.0, 1.0);
+                    var cosLon = Clamp((cosDist - sinP1Lat * Math.Sin(p2.Latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    #else
                     var sinLon = Math.Clamp(Math.Sin(az) * sinDist / cosP2Lat, -1.0, 1.0);
                     var cosLon = Math.Clamp((cosDist - sinP1Lat * Math.Sin(p2.Latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    #endif
                     p2.Longitude = ConstrainLongitude(p1.Longitude + Math.Atan2(sinLon, cosLon));
                 }
             }

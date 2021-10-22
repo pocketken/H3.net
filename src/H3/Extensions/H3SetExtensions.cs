@@ -68,7 +68,13 @@ namespace H3.Extensions {
                     // any parent that has enough children should be added
                     // back in to be tested at the next lowest resolution.
                     // anything else is uncompactable.
+                    #if NETSTANDARD2_0
+                    foreach (var item in parents) {
+                        var parent = item.Key;
+                        var children = item.Value;
+                    #else
                     foreach (var (parent, children) in parents) {
+                    #endif
                         if (children.Count >= (parent.IsPentagon ? 6 : 7)) {
                             if (!indexes.ContainsKey(parentResolution)) {
                                 indexes[parentResolution] = new HashSet<H3Index>();

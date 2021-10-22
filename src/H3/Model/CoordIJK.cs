@@ -477,8 +477,16 @@ namespace H3.Model {
         /// Determines the H3 digit corresponding to a unit vector in ijk coordinates.
         /// </summary>
         /// <param name="h"></param>
+        #if NETSTANDARD2_0
+        public static implicit operator Direction(CoordIJK h) {
+            var unitVector = Normalize(h);
+            if (!LookupTables.UnitVectorToDirection.ContainsKey(unitVector)) return Direction.Invalid;
+            return LookupTables.UnitVectorToDirection[unitVector];
+        }
+        #else
         public static implicit operator Direction(CoordIJK h) =>
             LookupTables.UnitVectorToDirection.GetValueOrDefault(Normalize(h), Direction.Invalid);
+        #endif
 
         /// <summary>
         /// Returns a new ijk coordinate containing the sum of two ijk

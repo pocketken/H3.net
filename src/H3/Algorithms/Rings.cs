@@ -68,7 +68,7 @@ namespace H3.Algorithms {
                 yield break;
             }
 
-            H3Index index = origin;
+            var index = origin;
 
             // break out to the requested ring
             var rotations = 0;

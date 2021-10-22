@@ -11,6 +11,9 @@ namespace H3.Model {
 
         public const int INVALID_BASE_CELL = 127;
 
+        // TODO build BaseFace or something; anyway, it should have rotations etc
+        // TODO link basecell to its BaseFace
+
         /// <summary>
         /// Resolution 0 base cell lookup table for each face.
         ///

@@ -12,6 +12,7 @@ namespace H3.Benchmarks.Algorithms {
 
     [SimpleJob(RuntimeMoniker.Net50)]
     [SimpleJob(RuntimeMoniker.NetCoreApp31)]
+    [SimpleJob(RuntimeMoniker.Net48)]
     [MemoryDiagnoser]
     public class LineBenchmarks {
 

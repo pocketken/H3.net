@@ -9,6 +9,7 @@ namespace H3.Benchmarks {
 
     [SimpleJob(RuntimeMoniker.Net50)]
     [SimpleJob(RuntimeMoniker.NetCoreApp31)]
+    [SimpleJob(RuntimeMoniker.Net48)]
     [MemoryDiagnoser]
     public class H3IndexBenchmarks {
 

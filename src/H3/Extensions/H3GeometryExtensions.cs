@@ -71,7 +71,11 @@ namespace H3.Extensions {
                 var cosP1Lat = Math.Cos(center.Latitude);
                 var sinDist = Math.Sin(distance);
                 var cosDist = Math.Cos(distance);
+                #if NETSTANDARD2_0
+                var sinLat = Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(azimuth), -1.0, 1.0);
+                #else
                 var sinLat = Math.Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(azimuth), -1.0, 1.0);
+                #endif
                 latitude = Math.Asin(sinLat);
 
                 if (Math.Abs(latitude - M_PI_2) < EPSILON) {
@@ -84,8 +88,13 @@ namespace H3.Extensions {
                     longitude = 0;
                 } else {
                     var cosP2Lat = Math.Cos(latitude);
+                    #if NETSTANDARD2_0
+                    var sinLon = Clamp(Math.Sin(azimuth) * sinDist / cosP2Lat, -1.0, 1.0);
+                    var cosLon = Clamp((cosDist - sinP1Lat * Math.Sin(latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    #else
                     var sinLon = Math.Clamp(Math.Sin(azimuth) * sinDist / cosP2Lat, -1.0, 1.0);
                     var cosLon = Math.Clamp((cosDist - sinP1Lat * Math.Sin(latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    #endif
                     longitude = ConstrainLongitude(center.Longitude + Math.Atan2(sinLon, cosLon));
                 }
             }
@@ -156,12 +165,18 @@ namespace H3.Extensions {
 
             // We may not use all of the slots in the output array,
             // so fill with invalid values to indicate unused slots
-            int[] result = new int[index.MaximumFaceCount];
+            var result = new int[index.MaximumFaceCount];
+            #if NETSTANDARD2_0
+            for (var i = 0; i < index.MaximumFaceCount; i += 1) {
+                result[i] = -1;
+            }
+            #else
             Array.Fill(result, -1);
+            #endif
 
             // add each vertex face, using the output array as a hash set
             for (var i = 0; i < vertexCount; i += 1) {
-                FaceIJK vert = vertices[i];
+                var vert = vertices[i];
 
                 // Adjust overage, determining whether this vertex is
                 // on another face

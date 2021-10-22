@@ -144,17 +144,21 @@ namespace H3.Test.Extensions {
         [Test]
         [TestCaseSource(typeof(H3GeometryExtensionsTests), "GetCellBoundaryVerticesTestCases")]
         public bool Test_Upstream_GetCellBoundaryVertices(string testDataFn, List<(H3Index, GeoCoord[])> expectedData) {
+            // Arrange
+
             // Act
-            var vertices = expectedData.Select(t => t.Item1.GetCellBoundaryVertices().ToArray());
+            var vertices = expectedData.Select(t => t.Item1.GetCellBoundaryVertices().ToList()).ToList();
 
             // Assert
-            return expectedData.Zip(vertices).All(e => {
-                var expectedVerts = e.First.Item2;
-                var actualVerts = e.Second;
-                if (expectedVerts.Length != actualVerts.Length) {
-                    Assert.Fail($"{testDataFn}: {e.First.Item1} vertex count mismatch: expected {expectedVerts.Length} got {actualVerts.Length}");
+            for (var v = 0; v < expectedData.Count; v += 1) {
+                var expectedVerts = expectedData[v].Item2;
+                var actualVerts = vertices[v];
+
+                if (expectedVerts.Length != actualVerts.Count) {
+                    Assert.Fail($"{testDataFn}: {expectedData[v].Item1} vertex count mismatch: expected {expectedVerts.Length} got {actualVerts.Count}");
                     return false;
                 }
+
                 for (var i = 0; i < expectedVerts.Length; i += 1) {
                     var ev = expectedVerts[i];
                     var av = actualVerts[i];
@@ -163,8 +167,10 @@ namespace H3.Test.Extensions {
                         return false;
                     }
                 }
-                return true;
-            });
+
+            }
+
+            return true;
         }
 
         [Test]

@@ -33,7 +33,7 @@ namespace H3.Test {
                     return new TestCaseData(TestHelpers.ReadLines(reader)
                         .Where(s => !string.IsNullOrWhiteSpace(s))
                         .Select(s => {
-                            var segs = s.Split(" ");
+                            var segs = s.Split(' ');
                             return (
                                 new H3Index(segs[0]),
                                 Convert.ToDouble(segs[1]) * M_PI_180,
@@ -61,7 +61,7 @@ namespace H3.Test {
                     return new TestCaseData(TestHelpers.ReadLines(reader)
                         .Where(s => !string.IsNullOrWhiteSpace(s))
                         .Select(s => {
-                            var segs = s.Split(" ");
+                            var segs = s.Split(' ');
                             return (
                                 Convert.ToDouble(segs[1]) * M_PI_180,
                                 Convert.ToDouble(segs[2]) * M_PI_180,
@@ -196,8 +196,13 @@ namespace H3.Test {
         [TestCase("15")]
         public void Test_Upstream_IsValid_InvalidMode(string modeValue) {
             // Arrange
+            #if NET48
+            var mode = (Mode)Enum.Parse(typeof(Mode), modeValue, true);
+            #else
+            var mode = Enum.Parse<Mode>(modeValue);
+            #endif
             var index = new H3Index {
-                Mode = Enum.Parse<Mode>(modeValue)
+                Mode = mode
             };
 
             // Act

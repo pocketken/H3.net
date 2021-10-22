@@ -243,7 +243,7 @@ namespace H3.Test.Algorithms {
             var filled = polygon.Fill(7).Count();
 
             // Arrange
-            Assert.AreEqual(4499, filled, $"should have filled 4499");
+            Assert.AreEqual(4499, filled, "should have filled 4499");
         }
 
         [Test]
@@ -266,7 +266,7 @@ namespace H3.Test.Algorithms {
             var filled = polygon.Fill(7).Count();
 
             // Arrange
-            Assert.AreEqual(4609, filled, $"should have filled 4499");
+            Assert.AreEqual(4609, filled, "should have filled 4499");
         }
 
         [Test]
@@ -285,7 +285,7 @@ namespace H3.Test.Algorithms {
             var filled = polygon.Fill(13).Count();
 
             // Arrange
-            Assert.AreEqual(4353, filled, $"should have filled 4353");
+            Assert.AreEqual(4353, filled, "should have filled 4353");
         }
 
         /// <summary>
