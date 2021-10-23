@@ -24,11 +24,6 @@
         /// </summary>
         public int[] ClockwiseOffsetPent { get; private set; }
 
-        /// <summary>
-        /// Whether or not the cell is a polar pentagon.
-        /// </summary>
-        public bool IsPolarPentagon => Cell == 4 || Cell == 117;
-
         private BaseCellData() { }
 
         /// <summary>
@@ -43,7 +38,7 @@
                     Face = tuple.Item2.Item1,
                     I = tuple.Item2.Item2.Item1,
                     J = tuple.Item2.Item2.Item2,
-                    K = tuple.Item2.Item2.Item3 
+                    K = tuple.Item2.Item2.Item3
                 },
                 IsPentagon = tuple.Item3 == 1,
                 ClockwiseOffsetPent = new[] { tuple.Item4.Item1, tuple.Item4.Item2 }
