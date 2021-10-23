@@ -40,19 +40,19 @@ namespace H3.Benchmarks.Algorithms {
 
         private static readonly Polygon SfGeometry = DefaultGeometryFactory.CreatePolygon(UberSfTestPoly.Select(g => g.ToCoordinate()).Reverse().ToArray());
 
-        private static readonly GeoPolygon EntireWorldGeoPolygon = new() {
-            GeoFence = new GeoFence {
-                NumVerts = EntireWorld.Length - 1,
-                Verts = EntireWorld.SkipLast(1).Select(g => new H3Lib.GeoCoord(Convert.ToDecimal(g.Latitude), Convert.ToDecimal(g.Longitude))).ToArray()
-            }
-        };
+        //private static readonly GeoPolygon EntireWorldGeoPolygon = new() {
+        //    GeoFence = new GeoFence {
+        //        NumVerts = EntireWorld.Length - 1,
+        //        Verts = EntireWorld.SkipLast(1).Select(g => new H3Lib.GeoCoord(Convert.ToDecimal(g.Latitude), Convert.ToDecimal(g.Longitude))).ToArray()
+        //    }
+        //};
 
-        private static readonly GeoPolygon SfGeoPolygon = new() {
-            GeoFence = new GeoFence {
-                NumVerts = UberSfTestPoly.Length - 1,
-                Verts = UberSfTestPoly.SkipLast(1).Select(g => new H3Lib.GeoCoord(Convert.ToDecimal(g.Latitude), Convert.ToDecimal(g.Longitude))).ToArray()
-            }
-        };
+        //private static readonly GeoPolygon SfGeoPolygon = new() {
+        //    GeoFence = new GeoFence {
+        //        NumVerts = UberSfTestPoly.Length - 1,
+        //        Verts = UberSfTestPoly.SkipLast(1).Select(g => new H3Lib.GeoCoord(Convert.ToDecimal(g.Latitude), Convert.ToDecimal(g.Longitude))).ToArray()
+        //    }
+        //};
 
         [Benchmark(Description = "pocketken.H3.Fill(worldPolygon, 4)")]
         public int PolyfillWorld4() => EntireWorldGeometry.Fill(4).Count();
