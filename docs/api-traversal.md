@@ -8,7 +8,7 @@ var ring = index.GetKRing(5);
 // iterate, use .ToList() etc..
 ```
 
-> **Implementation Notes**: This is implemented similarly to the upstream `kRingDistances` function in that it tries to use `GetKRingFast(k).ToList()` (`hexRangeDistances`) first, and if that throws an exception due to pentagonal distortion it falls back to calling `GetKRingSlow(k)` (the non-recursive equivalent to the upstream library's internal `_kRingInternal` method).  Depending on your input index, resolution, value of `k` and so on, you may find calling `GetKRingSlow` directly ends up performing better and/or requires less memory due to not having to try and materialize the `List`.  You may want to experiment and see what works best for your use case.
+> **Implementation Notes**: This is implemented similarly to the upstream `kRingDistances` function in that it tries to use `GetKRingFast(k).ToList()` (`hexRangeDistances`) first, and if that throws an exception due to pentagonal distortion it falls back to calling `GetKRingSlow(k)` (the non-recursive equivalent to the upstream library's internal `_kRingInternal` method).  Depending on your input index, resolution, value of `k` and so on, you may find calling `GetKRingFast` or `GetKRingSlow` directly ends up performing better and/or requires less memory than calling `GetKRing` due to not having to try and materialize the `List`.  You may want to experiment and see what works best for your use case.
 
 ## `GetKRingSlow` (`_kRingInternal`)
 Produces indices within `k` distance of the origin index.  Output may be returned in no particular order, and is an `IEnumerable<RingCell>` (simple holding struct that contains an `Index` and `Distance` from the origin).
