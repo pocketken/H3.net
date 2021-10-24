@@ -33,8 +33,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
+    # note: we disable parallel builds to prevent spurious
+    # build failures w/code generator
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore /m:1
 
     - name: Test
       run: dotnet test --no-build --verbosity normal

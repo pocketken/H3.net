@@ -22,4 +22,4 @@ The [H3.Test project](../test/H3.Test) contains examples of using various parts 
 ## Other Examples
 If you have any examples you'd like to share here, feel free to submit a PR!
 
-* [Server-Side Geospatial Clustering using H3](https://shawinnes.com/server-side-spatial-clustering/) by [Shawn Innes](https://github.com/ShawInnes/learn-geospatial)
+* [Server-Side Geospatial Clustering using H3](https://shawinnes.com/server-side-spatial-clustering/) by [Shaw Innes](https://github.com/ShawInnes/learn-geospatial)
