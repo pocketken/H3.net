@@ -9,7 +9,7 @@
 
 ##### Enhancements :tada:
 
-- Added multi-target support for `net5.0` and `netstandard2.1`
+- Added multi-target support for `net5.0`, `netstandard2.0` [#49](https://github.com/pocketken/H3.net/issues/49) and `netstandard2.1` [#46](https://github.com/pocketken/H3.net/issues/46)
 - Reduced allocations / increased performance in `H3.Algorithms.Polyfill.Fill` and `H3.Algorithms.Lines.LineTo` [#42](https://github.com/pocketken/H3.net/issues/42)
 - Other minor performance improvements and tweaks
 
