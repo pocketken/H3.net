@@ -7,7 +7,7 @@ using H3.Algorithms;
 using H3.Extensions;
 ```
 
-Ustream C function names are also provided for reference.
+Upstream C function names are also provided for reference.
 
 * [Indexing functions](api-indexing.md) - from/to `string` and `ulong`; creating an index from a geospatial coordinate; getting the centroid of an index
 * [Index inspection functions](api-inspection.md) - get an indexes resolution, base cell, validity, whether it's a pentagon
