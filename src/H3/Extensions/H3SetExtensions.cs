@@ -101,11 +101,11 @@ namespace H3.Extensions {
 
         /// <summary>
         /// Takes a compacted set of cells and expands back to the original
-        /// set of cells at a specific resoution.
+        /// set of cells at a specific resolution.
         /// </summary>
         /// <param name="indexes">set of cells</param>
         /// <param name="resolution">resolution to expand to</param>
-        /// <returns>original set of cells. Thows ArgumentException if any
+        /// <returns>original set of cells. Throws ArgumentException if any
         /// cell in the set is smaller than the output resolution or invalid
         /// resolution is requested.</returns>
         public static IEnumerable<H3Index> UncompactToResolution(this IEnumerable<H3Index> indexes, int resolution) =>

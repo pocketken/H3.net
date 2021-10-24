@@ -484,7 +484,7 @@ namespace H3 {
 
         /// <summary>
         /// Determines the spherical coordinates of the center point of a H3
-        /// index, and returns it as a NTS Point.
+        /// index, and returns it as a NTS <see cref="Point"/>.
         /// </summary>
         /// <param name="geometryFactory">GeometryFactory to be used to create
         /// point; defaults to DefaultGeometryFactory.  Note that coordinates
