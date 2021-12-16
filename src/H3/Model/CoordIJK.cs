@@ -354,6 +354,7 @@ namespace H3.Model {
         /// </summary>
         /// <param name="direction">The digit direction from the original ijk coordinates.</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CoordIJK ToNeighbour(Direction direction) {
             if (direction is <= Direction.Center or >= Direction.Invalid)
                 return this;
