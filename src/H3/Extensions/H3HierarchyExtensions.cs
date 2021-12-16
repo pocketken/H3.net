@@ -94,7 +94,7 @@ namespace H3.Extensions {
                 }
             }
 
-            BaseCell newBaseCell = outIndex.BaseCell;
+            var newBaseCell = outIndex.BaseCell;
 
             if (newBaseCell.IsPentagon) {
                 var alreadyAdjustedKSubsequence = false;

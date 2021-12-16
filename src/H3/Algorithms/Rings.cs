@@ -173,7 +173,7 @@ namespace H3.Algorithms {
         /// <returns>Enumerable set of RingCell, or an exception if a traversal error is
         /// encountered (eg pentagon)</returns>
         public static IEnumerable<RingCell> GetKRingFast(this H3Index origin, int k) {
-            H3Index index = origin;
+            var index = origin;
 
             // k must be >= 0, so origin is always needed
             yield return new RingCell(index, 0);

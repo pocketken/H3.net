@@ -118,7 +118,7 @@ namespace H3 {
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T Clamp<T>(T value, T min, T max) where T : IComparable<T> {
-            T result = value;
+            var result = value;
             if (value.CompareTo(min) < 0) result = min;
             if (value.CompareTo(max) > 0) result = max;
             return result;

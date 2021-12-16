@@ -138,8 +138,8 @@ namespace H3.Extensions {
                 throw new ArgumentOutOfRangeException(nameof(index), "must be same resolution as origin");
             }
 
-            BaseCell originBaseCell = origin.BaseCell;
-            BaseCell baseCell = index.BaseCell;
+            var originBaseCell = origin.BaseCell;
+            var baseCell = index.BaseCell;
 
             // Direction from origin base cell to index base cell
             var dir = Direction.Center;
@@ -211,7 +211,7 @@ namespace H3.Extensions {
 
                 for (var i = 0; i < pentagonRotations; i += 1) indexFijk.Coord.RotateClockwise();
 
-                CoordIJK offset = new CoordIJK(0, 0, 0).ToNeighbour(dir);
+                var offset = new CoordIJK(0, 0, 0).ToNeighbour(dir);
                 // scale offset based upon resolution
                 for (var r = resolution - 1; r >= 0; r -= 1) {
                     if (IsResolutionClass3(r + 1)) {

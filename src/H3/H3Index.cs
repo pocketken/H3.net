@@ -421,7 +421,7 @@ namespace H3 {
         /// </summary>
         /// <returns></returns>
         public FaceIJK ToFaceIJK(FaceIJK? toUpdateFijk = default) {
-            H3Index index = this;
+            var index = this;
 
             if (BaseCell.IsPentagon && LeadingNonZeroDirection == Direction.IK) {
                 index = new(this);

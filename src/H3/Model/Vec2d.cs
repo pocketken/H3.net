@@ -35,7 +35,7 @@ namespace H3.Model {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vec2d Intersect(Vec2d p0, Vec2d p1, Vec2d p2, Vec2d p3, Vec2d? toUpdate = null) {
             Vec2d s1 = new(p1.X - p0.X, p1.Y - p0.Y);
-            Vec2d s2 = toUpdate ?? new Vec2d();
+            var s2 = toUpdate ?? new Vec2d();
             s2.X = p3.X - p2.X;
             s2.Y = p3.Y - p2.Y;
             var t = (float)(s2.X * (p0.Y - p2.Y) - s2.Y * (p0.X - p2.X)) /

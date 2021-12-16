@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using H3.Extensions;
 using H3.Model;
@@ -44,9 +45,9 @@ namespace H3.Algorithms {
     /// </summary>
     public static class Polyfill {
 
-        private static readonly ICoordinateSequenceFilter _negativeLonFilter = new NegativeLonFilter();
+        private static readonly ICoordinateSequenceFilter NegativeLonFilter = new NegativeLonFilter();
 
-        private static readonly ICoordinateSequenceFilter _positiveLonFilter = new PositiveLonFilter();
+        private static readonly ICoordinateSequenceFilter PositiveLonFilter = new PositiveLonFilter();
 
         /// <summary>
         /// Returns all of the H3 indexes that are contained within the provided
@@ -54,17 +55,17 @@ namespace H3.Algorithms {
         /// </summary>
         /// <param name="polygon">Containment polygon</param>
         /// <param name="resolution">H3 resolution</param>
+        /// <param name="testLocation"></param>
         /// <returns>Indicies where center point is contained within polygon</returns>
-        public static IEnumerable<H3Index> Fill(this Geometry polygon, int resolution) {
-            bool isTransMeridian = polygon.IsTransMeridian();
+        public static IEnumerable<H3Index> Fill(this Geometry polygon, int resolution, Location testLocation = Location.Interior) {
+            if (polygon.IsEmpty) yield break;
+            var isTransMeridian = polygon.IsTransMeridian();
             var testPoly = isTransMeridian ? SplitGeometry(polygon) : polygon;
 
             HashSet<ulong> searched = new();
 
-            Stack<H3Index> toSearch = new(TraceCoordinates(testPoly.Coordinates, resolution));
-            if (toSearch.Count == 0 && !testPoly.IsEmpty) {
-                toSearch.Push(testPoly.InteriorPoint.Coordinate.ToH3Index(resolution));
-            }
+            Stack<H3Index> toSearch = new();
+            toSearch.Push(testPoly.InteriorPoint.Coordinate.ToH3Index(resolution));
 
             IndexedPointInAreaLocator locator = new(testPoly);
             var coordinate = new Coordinate();
@@ -78,7 +79,7 @@ namespace H3.Algorithms {
                     searched.Add(neighbour);
 
                     var location = locator.Locate(neighbour.ToCoordinate(coordinate, faceIjk));
-                    if (location != Location.Interior)
+                    if (location != testLocation)
                         continue;
 
                     yield return neighbour;
@@ -156,9 +157,9 @@ namespace H3.Algorithms {
         /// <returns></returns>
         internal static Geometry SplitGeometry(Geometry originalGeometry) {
             var left = originalGeometry.Copy();
-            left.Apply(_negativeLonFilter);
+            left.Apply(NegativeLonFilter);
             var right = originalGeometry.Copy();
-            right.Apply(_positiveLonFilter);
+            right.Apply(PositiveLonFilter);
 
             var geometry = left.Union(right);
             return geometry.IsEmpty ? originalGeometry : geometry;

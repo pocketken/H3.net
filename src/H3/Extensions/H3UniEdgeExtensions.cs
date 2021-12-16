@@ -106,7 +106,7 @@ namespace H3.Extensions {
                 return Enumerable.Empty<GeoCoord>();
             }
             var direction = (Direction)edge.ReservedBits;
-            H3Index origin = edge.GetOriginFromUnidirectionalEdge();
+            var origin = edge.GetOriginFromUnidirectionalEdge();
 
             // get the start vertex for the edge
             var startVertex = origin.GetVertexNumberForDirection(direction);
@@ -114,7 +114,7 @@ namespace H3.Extensions {
                 return Enumerable.Empty<GeoCoord>();
             }
 
-            FaceIJK face = origin.ToFaceIJK();
+            var face = origin.ToFaceIJK();
             var resolution = origin.Resolution;
 
             return origin.IsPentagon
@@ -156,7 +156,7 @@ namespace H3.Extensions {
                 return false;
             }
 
-            H3Index origin = edge.GetOriginFromUnidirectionalEdge();
+            var origin = edge.GetOriginFromUnidirectionalEdge();
             if (origin.IsPentagon && neighbourDirection == Direction.K) {
                 return false;
             }

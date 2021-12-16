@@ -180,7 +180,7 @@ namespace H3.Model {
         public double GetPointDistanceInKm(GeoCoord p2) => GetPointDistanceInRadians(p2) * EARTH_RADIUS_KM;
 
         /// <summary>
-        /// The great circle disance in meters between two spherical coordiantes.
+        /// The great circle distance in meters between two spherical coordinates.
         /// </summary>
         /// <param name="p2">Destination coordinate</param>
         /// <returns>The great circle distance in meters between this coordinate
@@ -196,7 +196,7 @@ namespace H3.Model {
         /// <returns>Estimated number of cells required to trace the line</returns>
         public int LineHexEstimate(GeoCoord other, int resolution) {
             // Get the area of the pentagon as the maximally-distorted area possible
-            H3Index firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution][0];
+            var firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution][0];
             var pentagonRadiusKm = firstPentagon.GetRadiusInKm();
             var dist = GetPointDistanceInKm(other);
             var estimate = (int)Math.Ceiling(dist / (2 * pentagonRadiusKm));
@@ -210,12 +210,12 @@ namespace H3.Model {
 
         public static implicit operator GeoCoord((double, double) c) => new(c.Item1, c.Item2);
 
-        public static bool operator ==(GeoCoord a, GeoCoord b) => a.Latitude == b.Latitude && a.Longitude == b.Longitude;
+        public static bool operator ==(GeoCoord a, GeoCoord b) => Math.Abs(a.Latitude - b.Latitude) < EPSILON_RAD && Math.Abs(a.Longitude - b.Longitude) < EPSILON_RAD;
 
-        public static bool operator !=(GeoCoord a, GeoCoord b) => a.Latitude != b.Latitude || a.Longitude != b.Longitude;
+        public static bool operator !=(GeoCoord a, GeoCoord b) => Math.Abs(a.Latitude - b.Latitude) >= EPSILON_RAD || Math.Abs(a.Longitude - b.Longitude) >= EPSILON_RAD;
 
         public override bool Equals(object? other) {
-            return other is GeoCoord c && Latitude == c.Latitude && Longitude == c.Longitude;
+            return other is GeoCoord c && Math.Abs(Latitude - c.Latitude) < EPSILON_RAD && Math.Abs(Longitude - c.Longitude) < EPSILON_RAD;
         }
 
         public override int GetHashCode() {

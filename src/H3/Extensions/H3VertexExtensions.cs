@@ -185,7 +185,7 @@ namespace H3.Extensions {
             }
 
             // Default the owner and vertex number to the input cell
-            H3Index owner = cell;
+            var owner = cell;
             var ownerVertexNum = vertexNum;
 
             // Determine the owner, looking at the three cells that share the vertex.
@@ -289,7 +289,7 @@ namespace H3.Extensions {
                 ReservedBits = 0
             };
 
-            FaceIJK fijk = owner.ToFaceIJK();
+            var fijk = owner.ToFaceIJK();
             var resolution = owner.Resolution;
 
             var vertices = owner.IsPentagon
@@ -321,7 +321,7 @@ namespace H3.Extensions {
 
             // The easiest way to ensure that the owner + vertex number is valid,
             // and that the vertex is canonical, is to recreate and compare.
-            H3Index canonical = owner.GetVertexIndex(vertexNum);
+            var canonical = owner.GetVertexIndex(vertexNum);
             return vertex == canonical;
         }
 
