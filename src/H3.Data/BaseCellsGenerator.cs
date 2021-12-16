@@ -32,6 +32,8 @@ namespace H3.Model {{
 }}
 ";
 
+        // TODO precompute base cell radius per resolution; will need geocoords for each resolution though (we could probably use that as well)
+
         public void Execute(GeneratorExecutionContext context) {
             var cells = new StringBuilder();
             var cellNames = new StringBuilder();

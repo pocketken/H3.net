@@ -82,7 +82,7 @@ namespace H3.Algorithms {
         /// <param name="resolution">H3 resolution</param>
         /// <param name="testMode">Specify which <see cref="VertexTestMode"/> to use when checking
         /// index vertex containment.  Defaults to <see cref="VertexTestMode.Center"/></param>.
-        /// <returns>Indices where center point is contained within polygon</returns>
+        /// <returns>Indices that are contained within polygon</returns>
         public static IEnumerable<H3Index> Fill(this Geometry polygon, int resolution, VertexTestMode testMode = VertexTestMode.Center) {
             if (polygon.IsEmpty) return Enumerable.Empty<H3Index>();
             var isTransMeridian = polygon.IsTransMeridian();
@@ -155,6 +155,7 @@ namespace H3.Algorithms {
 
                         yield return neighbour;
                         toSearch.Push(neighbour);
+                        break;
                     }
                 }
             }

@@ -126,6 +126,30 @@ namespace H3.Test.Algorithms {
         }
 
         [Test]
+        public void Test_Polyfill_VertexNodeAny_UberSfTestPoly() {
+            // Arrange
+            var polygon = CreatePolygon(UberSfTestPoly);
+
+            // Act
+            var filledCount = polygon.Fill(9, VertexTestMode.Any).Count();
+
+            // Assert
+            Assert.AreEqual(1334, filledCount, "should return 1334 indicies");
+        }
+
+        [Test]
+        public void Test_Polyfill_VertexNodeAll_UberSfTestPoly() {
+            // Arrange
+            var polygon = CreatePolygon(UberSfTestPoly);
+
+            // Act
+            var filledCount = polygon.Fill(9, VertexTestMode.All).Count();
+
+            // Assert
+            Assert.AreEqual(1175, filledCount, "should return 1175 indicies");
+        }
+
+        [Test]
         public void Test_Polyfill_PrimeMeridian() {
             // Arrange
             var polygon = CreatePolygon(PrimeMeridianVerts);
