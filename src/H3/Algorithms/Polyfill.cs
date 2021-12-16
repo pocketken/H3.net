@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using H3.Extensions;
 using H3.Model;
@@ -39,6 +40,12 @@ namespace H3.Algorithms {
 
     }
 
+    public enum VertexTestMode {
+        Center,
+        Any,
+        All
+    }
+
     /// <summary>
     /// Polyfill algorithms for H3Index.
     /// </summary>
@@ -54,10 +61,10 @@ namespace H3.Algorithms {
         /// </summary>
         /// <param name="polygon">Containment polygon</param>
         /// <param name="resolution">H3 resolution</param>
-        /// <param name="testLocation"></param>
-        /// <returns>Indicies where center point is contained within polygon</returns>
-        public static IEnumerable<H3Index> Fill(this Geometry polygon, int resolution, Location testLocation = Location.Interior) {
-            if (polygon.IsEmpty) yield break;
+        /// <param name="testMode"></param>
+        /// <returns>Indices where center point is contained within polygon</returns>
+        public static IEnumerable<H3Index> Fill(this Geometry polygon, int resolution, VertexTestMode testMode = VertexTestMode.Center) {
+            if (polygon.IsEmpty) return Enumerable.Empty<H3Index>();
             var isTransMeridian = polygon.IsTransMeridian();
             var testPoly = isTransMeridian ? SplitGeometry(polygon) : polygon;
 
@@ -67,6 +74,24 @@ namespace H3.Algorithms {
             toSearch.Push(testPoly.InteriorPoint.Coordinate.ToH3Index(resolution));
 
             IndexedPointInAreaLocator locator = new(testPoly);
+
+            return testMode switch {
+                VertexTestMode.All => FillUsingAllVertices(locator, toSearch, searched),
+                VertexTestMode.Any => FillUsingAnyVertex(locator, toSearch, searched),
+                VertexTestMode.Center => FillUsingCenterVertex(locator, toSearch, searched),
+                _ => throw new ArgumentOutOfRangeException(nameof(testMode), "invalid vertex test mode")
+            };
+        }
+
+        /// <summary>
+        /// Performs a polyfill operation utilizing the center <see cref="GeoCoord"/> of each index produced
+        /// during the fill.
+        /// </summary>
+        /// <param name="locator"></param>
+        /// <param name="toSearch"></param>
+        /// <param name="searched"></param>
+        /// <returns></returns>
+        private static IEnumerable<H3Index> FillUsingCenterVertex(IPointOnGeometryLocator locator, Stack<H3Index> toSearch, ISet<ulong> searched) {
             var coordinate = new Coordinate();
             var faceIjk = new FaceIJK();
 
@@ -78,8 +103,73 @@ namespace H3.Algorithms {
                     searched.Add(neighbour);
 
                     var location = locator.Locate(neighbour.ToCoordinate(coordinate, faceIjk));
-                    if (location != testLocation)
+                    if (location != Location.Interior)
                         continue;
+
+                    yield return neighbour;
+                    toSearch.Push(neighbour);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Performs a polyfill operation utilizing any <see cref="GeoCoord"/> from the cell boundary of each
+        /// index produced during the fill.
+        /// </summary>
+        private static IEnumerable<H3Index> FillUsingAnyVertex(IPointOnGeometryLocator locator, Stack<H3Index> toSearch, ISet<ulong> searched) {
+            var coordinate = new Coordinate();
+
+            while (toSearch.Count != 0) {
+                var index = toSearch.Pop();
+
+                foreach (var neighbour in index.GetNeighbours()) {
+                    if (searched.Contains(neighbour)) continue;
+                    searched.Add(neighbour);
+
+                    foreach (var vertex in neighbour.GetCellBoundaryVertices()) {
+                        coordinate.X = vertex.LongitudeDegrees;
+                        coordinate.Y = vertex.LatitudeDegrees;
+
+                        var location = locator.Locate(coordinate);
+                        if (location != Location.Interior)
+                            continue;
+
+                        yield return neighbour;
+                        toSearch.Push(neighbour);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Performs a polyfill operation utilizing all <see cref="GeoCoord"/>s from the cell boundary of each
+        /// index produced during the fill.
+        /// </summary>
+        private static IEnumerable<H3Index> FillUsingAllVertices(IPointOnGeometryLocator locator, Stack<H3Index> toSearch, ISet<ulong> searched) {
+            var coordinate = new Coordinate();
+
+            while (toSearch.Count != 0) {
+                var index = toSearch.Pop();
+
+                foreach (var neighbour in index.GetNeighbours()) {
+                    if (searched.Contains(neighbour)) continue;
+                    searched.Add(neighbour);
+
+                    var matched = true;
+
+                    foreach (var vertex in neighbour.GetCellBoundaryVertices()) {
+                        coordinate.X = vertex.LongitudeDegrees;
+                        coordinate.Y = vertex.LatitudeDegrees;
+
+                        var location = locator.Locate(coordinate);
+                        if (location == Location.Interior)
+                            continue;
+
+                        matched = false;
+                        break;
+                    }
+
+                    if (!matched) continue;
 
                     yield return neighbour;
                     toSearch.Push(neighbour);
