@@ -183,7 +183,7 @@ namespace H3.Test.Extensions {
         public void Test_Upstream_IsValidVertex_InvalidOwner() {
             // Arrange
             H3Index origin = 0x823d6ffffffffff;
-            H3Index vert = origin.GetVertexIndex(0);
+            var vert = origin.GetVertexIndex(0);
 
             // Act
             vert ^= 1;
@@ -196,7 +196,7 @@ namespace H3.Test.Extensions {
         public void Test_Upstream_IsValidVertex_OriginDoesNotOwnCanonicalVertex() {
             // Arrange
             H3Index origin = 0x823d6ffffffffff;
-            H3Index vert = origin.GetVertexIndex(0);
+            var vert = origin.GetVertexIndex(0);
 
             // Act
             H3Index owner = new(vert) {

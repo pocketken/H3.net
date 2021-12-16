@@ -25,8 +25,8 @@ namespace H3.Extensions {
         /// <returns>set of compacted cells</returns>
         public static List<H3Index> Compact(this IEnumerable<H3Index> indexEnumerable) {
             Dictionary<int, HashSet<H3Index>> indexes = new();
-            int maxResolution = -1;
-            int count = 0;
+            var maxResolution = -1;
+            var count = 0;
 
             // first group by resolution
             foreach (var index in indexEnumerable) {
@@ -34,7 +34,7 @@ namespace H3.Extensions {
                     continue;
                 }
 
-                int indexResolution = index.Resolution;
+                var indexResolution = index.Resolution;
                 maxResolution = Math.Max(maxResolution, indexResolution);
 
                 if (!indexes.ContainsKey(indexResolution)) {
@@ -51,9 +51,9 @@ namespace H3.Extensions {
 
             // loop backward through each resolution, throwing any compacted parents into
             // the resolution below us
-            for (int resolution = maxResolution; resolution > 0; resolution -= 1) {
+            for (var resolution = maxResolution; resolution > 0; resolution -= 1) {
                 if (indexes.TryGetValue(resolution, out var toCompact)) {
-                    int parentResolution = resolution - 1;
+                    var parentResolution = resolution - 1;
 
                     foreach (var index in toCompact) {
                         var parent = index.GetParentForResolution(parentResolution);
@@ -68,7 +68,13 @@ namespace H3.Extensions {
                     // any parent that has enough children should be added
                     // back in to be tested at the next lowest resolution.
                     // anything else is uncompactable.
+                    #if NETSTANDARD2_0
+                    foreach (var item in parents) {
+                        var parent = item.Key;
+                        var children = item.Value;
+                    #else
                     foreach (var (parent, children) in parents) {
+                    #endif
                         if (children.Count >= (parent.IsPentagon ? 6 : 7)) {
                             if (!indexes.ContainsKey(parentResolution)) {
                                 indexes[parentResolution] = new HashSet<H3Index>();
@@ -95,18 +101,18 @@ namespace H3.Extensions {
 
         /// <summary>
         /// Takes a compacted set of cells and expands back to the original
-        /// set of cells at a specific resoution.
+        /// set of cells at a specific resolution.
         /// </summary>
         /// <param name="indexes">set of cells</param>
         /// <param name="resolution">resolution to expand to</param>
-        /// <returns>original set of cells. Thows ArgumentException if any
+        /// <returns>original set of cells. Throws ArgumentException if any
         /// cell in the set is smaller than the output resolution or invalid
         /// resolution is requested.</returns>
         public static IEnumerable<H3Index> UncompactToResolution(this IEnumerable<H3Index> indexes, int resolution) =>
             indexes.Where(index => index != H3Index.Invalid)
                 .Distinct()
                 .SelectMany(index => {
-                    int currentResolution = index.Resolution;
+                    var currentResolution = index.Resolution;
                     if (!IsValidChildResolution(currentResolution, resolution)) {
                         throw new ArgumentException("set contains cell smaller than target resolution");
                     }
@@ -132,7 +138,7 @@ namespace H3.Extensions {
         /// not.
         /// </returns>
         public static bool AreOfSameResolution(this IEnumerable<H3Index> indexes) {
-            int resolution = -1;
+            var resolution = -1;
             foreach (var index in indexes) {
                 if (resolution == -1) {
                     resolution = index.Resolution;

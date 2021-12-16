@@ -9,10 +9,10 @@ namespace H3.Model {
         public int BaseCellNumber { get; init; }
         public int[] Faces { get; init; } = new int[NUM_PENT_VERTS];
 
-        public BaseCell BaseCell => LookupTables.BaseCells[BaseCellNumber];
+        public BaseCell BaseCell => BaseCells.Cells[BaseCellNumber];
 
         public static PentagonDirectionToFaceMapping ForBaseCell(int baseCellNumber) =>
-            LookupTables.PentagonDirectionFaces.Where(df => df.BaseCellNumber == baseCellNumber).First();
+            LookupTables.PentagonDirectionFaces.First(df => df.BaseCellNumber == baseCellNumber);
 
         public static implicit operator PentagonDirectionToFaceMapping((int, (int, int, int, int, int)) data) {
             return new PentagonDirectionToFaceMapping {

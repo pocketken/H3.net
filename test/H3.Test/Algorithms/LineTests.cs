@@ -40,8 +40,8 @@ namespace H3.Test.Algorithms {
         [Test]
         public void Test_LineTo_ReturnsExpectedIndicies() {
             // Arrange
-            H3Index start = H3Index.FromPoint(new Point(-110, 30), 14);
-            H3Index end = H3Index.FromPoint(new Point(-110, 30.0005), 14);
+            var start = H3Index.FromPoint(new Point(-110, 30), 14);
+            var end = H3Index.FromPoint(new Point(-110, 30.0005), 14);
 
             // Act
             var line = start.LineTo(end).ToArray();
@@ -83,7 +83,7 @@ namespace H3.Test.Algorithms {
             // Assert
             foreach (var (Start, End, Distance, Line) in lines) {
                 if (Distance >= 0) {
-                    int i = 0;
+                    var i = 0;
                     H3Index lastIndex = null;
                     H3Index previousLastIndex = null;
 

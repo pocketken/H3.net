@@ -11,16 +11,23 @@ namespace H3.Algorithms {
     /// <summary>
     /// Holder for indexes produced from the k ring functions.
     /// </summary>
-    public record RingCell {
+    public readonly struct RingCell {
+
+        public RingCell(H3Index index, int distance) {
+            Index = index;
+            Distance = distance;
+        }
+
         /// <summary>
         /// H3 index
         /// </summary>
-        public H3Index Index { get; init; } = H3Index.Invalid;
+        public H3Index Index { get; }
 
         /// <summary>
         /// k cell distance from the origin (ring level)
         /// </summary>
-        public int Distance { get; init; }
+        public int Distance { get; }
+
     }
 
     /// <summary>
@@ -61,11 +68,11 @@ namespace H3.Algorithms {
                 yield break;
             }
 
-            H3Index index = origin;
+            var index = origin;
 
             // break out to the requested ring
-            int rotations = 0;
-            for (int ring = 0; ring < k; ring +=1 ) {
+            var rotations = 0;
+            for (var ring = 0; ring < k; ring +=1 ) {
                 (index, rotations) = index.GetDirectNeighbour(LookupTables.NextRingDirection, rotations);
                 if (index == H3Index.Invalid) throw new HexRingKSequenceException();
                 if (index.IsPentagon) throw new HexRingPentagonException();
@@ -74,18 +81,19 @@ namespace H3.Algorithms {
             H3Index lastIndex = new(index);
             yield return index;
 
-            for (int direction = 0; direction < 6; direction += 1) {
-                for (int pos = 0; pos < k; pos += 1) {
+            for (var direction = 0; direction < 6; direction += 1) {
+                for (var pos = 0; pos < k; pos += 1) {
                     (index, rotations) = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], rotations);
                     if (index == H3Index.Invalid) throw new HexRingKSequenceException();
 
                     // Skip the very last index, it was already added. We do
                     // however need to traverse to it because of the pentagonal
                     // distortion check, below.
-                    if (pos != k - 1 || direction != 5) {
-                        yield return index;
-                        if (index.IsPentagon) throw new HexRingPentagonException();
-                    }
+                    if (pos == k - 1 && direction == 5)
+                        continue;
+
+                    yield return index;
+                    if (index.IsPentagon) throw new HexRingPentagonException();
                 }
             }
 
@@ -130,7 +138,7 @@ namespace H3.Algorithms {
             // since k >= 0, start with origin
             Queue<RingCell> queue = new();
             Dictionary<ulong, int> searched = new();
-            queue.Enqueue(new RingCell { Index = origin, Distance = 0 });
+            queue.Enqueue(new RingCell(origin, 0));
 
             while (queue.Count != 0) {
                 var cell = queue.Dequeue();
@@ -141,11 +149,11 @@ namespace H3.Algorithms {
                     continue;
 
                 foreach (var neighbour in cell.Index.GetNeighbours()) {
-                    if (neighbour == origin || searched.TryGetValue(neighbour, out int previousK) && previousK <= nextK) {
+                    if (neighbour == origin || searched.TryGetValue(neighbour, out var previousK) && previousK <= nextK) {
                         continue;
                     }
                     searched[neighbour] = nextK;
-                    queue.Enqueue(new RingCell { Index = neighbour, Distance = nextK });
+                    queue.Enqueue(new RingCell(neighbour, nextK));
                 }
             }
         }
@@ -165,10 +173,10 @@ namespace H3.Algorithms {
         /// <returns>Enumerable set of RingCell, or an exception if a traversal error is
         /// encountered (eg pentagon)</returns>
         public static IEnumerable<RingCell> GetKRingFast(this H3Index origin, int k) {
-            H3Index index = origin;
+            var index = origin;
 
             // k must be >= 0, so origin is always needed
-            yield return new RingCell { Index = index, Distance = 0 };
+            yield return new RingCell(index, 0);
 
             // Pentagon was encountered; bail out as user doesn't want this.
             if (index.IsPentagon) throw new HexRingPentagonException();
@@ -177,17 +185,17 @@ namespace H3.Algorithms {
             if (k == 0) yield break;
 
             // 0 < ring <= k, current ring
-            int ring = 1;
+            var ring = 1;
 
             // 0 <= direction < 6, current side of the ring
-            int direction = 0;
+            var direction = 0;
 
             // 0 <= i < ring, current position on the side of the ring
-            int i = 0;
+            var i = 0;
 
             // Number of 60 degree ccw rotations to perform on the direction (based on
             // which faces have been crossed.)
-            int rotations = 0;
+            var rotations = 0;
 
             while (ring <= k) {
                 if (direction == 0 && i == 0) {
@@ -211,7 +219,7 @@ namespace H3.Algorithms {
                     throw new HexRingKSequenceException();
                 }
 
-                yield return new RingCell { Index = index, Distance = ring };
+                yield return new RingCell(index, ring);
                 i += 1;
 
                 // Check if end of this side of the k-ring

@@ -19,8 +19,8 @@ namespace H3.Algorithms {
         /// <returns>grid distance in cells; -1 if could not be computed</returns>
         public static int DistanceTo(this H3Index origin, H3Index destination) {
             try {
-                CoordIJK originIJK = LocalCoordIJK.ToLocalIJK(origin, origin);
-                CoordIJK destinationIJK = LocalCoordIJK.ToLocalIJK(origin, destination);
+                var originIJK = LocalCoordIJK.ToLocalIJK(origin, origin);
+                var destinationIJK = LocalCoordIJK.ToLocalIJK(origin, destination);
 
                 return originIJK.GetDistanceTo(destinationIJK);
             } catch {
@@ -49,6 +49,8 @@ namespace H3.Algorithms {
         public static IEnumerable<H3Index> LineTo(this H3Index origin, H3Index destination) {
             CoordIJK startIjk;
             CoordIJK endIjk;
+            var workIjk1 = new CoordIJK();
+            var workIjk2 = new CoordIJK();
 
             // translate to local coordinates
             try {
@@ -81,7 +83,7 @@ namespace H3.Algorithms {
                     startK + kStep * n,
                     endIjk
                 ).Uncube();
-                yield return LocalCoordIJK.ToH3Index(origin, endIjk);
+                yield return LocalCoordIJK.ToH3Index(origin, endIjk, startIjk, workIjk1, workIjk2);
             }
         }
 

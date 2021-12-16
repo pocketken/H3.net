@@ -20,7 +20,7 @@ namespace H3.Extensions {
         /// <returns>The unidirectional edge H3Index, or Invalid on failure.
         /// </returns>
         public static H3Index GetUnidirectionalEdge(this H3Index origin, H3Index destination) {
-            Direction direction = origin.DirectionForNeighbour(destination);
+            var direction = origin.DirectionForNeighbour(destination);
 
             // The direction will be invalid if the cells are not neighbors
             if (direction == Direction.Invalid) {
@@ -41,12 +41,12 @@ namespace H3.Extensions {
         /// <param name="origin">Origin H3 index</param>
         /// <returns>All of the unidirectional edges for the H3 origin index.</returns>
         public static IEnumerable<H3Index> GetUnidirectionalEdges(this H3Index origin) {
-            bool isPentagon = origin.IsPentagon;
+            var isPentagon = origin.IsPentagon;
 
             // This is actually quite simple. Just modify the bits of the origin
             // slightly for each direction, except the 'k' direction in pentagons,
             // which is zeroed.
-            for (int d = 0; d < 6; d += 1) {
+            for (var d = 0; d < 6; d += 1) {
                 if (isPentagon && d == 0) {
                     yield return H3Index.Invalid;
                     continue;
@@ -105,17 +105,17 @@ namespace H3.Extensions {
             if (!edge.IsUnidirectionalEdgeValid()) {
                 return Enumerable.Empty<GeoCoord>();
             }
-            Direction direction = (Direction)edge.ReservedBits;
-            H3Index origin = edge.GetOriginFromUnidirectionalEdge();
+            var direction = (Direction)edge.ReservedBits;
+            var origin = edge.GetOriginFromUnidirectionalEdge();
 
             // get the start vertex for the edge
-            int startVertex = origin.GetVertexNumberForDirection(direction);
+            var startVertex = origin.GetVertexNumberForDirection(direction);
             if (startVertex == H3VertexExtensions.InvalidVertex) {
                 return Enumerable.Empty<GeoCoord>();
             }
 
-            FaceIJK face = origin.ToFaceIJK();
-            int resolution = origin.Resolution;
+            var face = origin.ToFaceIJK();
+            var resolution = origin.Resolution;
 
             return origin.IsPentagon
                 ? face.GetPentagonBoundary(resolution, startVertex, 2)
@@ -131,10 +131,10 @@ namespace H3.Extensions {
         public static double GetExactEdgeLengthInRadians(this H3Index edge) {
             var vertices = edge.GetUnidirectionalEdgeBoundaryVertices().ToArray();
 
-            double length = 0.0;
+            var length = 0.0;
             if (vertices.Length == 0) return length;
 
-            for (int i = 0; i < vertices.Length - 1; i += 1) {
+            for (var i = 0; i < vertices.Length - 1; i += 1) {
                 length += vertices[i].GetPointDistanceInRadians(vertices[i + 1]);
             }
 
@@ -151,12 +151,12 @@ namespace H3.Extensions {
                 return false;
             }
 
-            Direction neighbourDirection = (Direction)edge.ReservedBits;
+            var neighbourDirection = (Direction)edge.ReservedBits;
             if (neighbourDirection is <= Direction.Center or >= Direction.Invalid) {
                 return false;
             }
 
-            H3Index origin = edge.GetOriginFromUnidirectionalEdge();
+            var origin = edge.GetOriginFromUnidirectionalEdge();
             if (origin.IsPentagon && neighbourDirection == Direction.K) {
                 return false;
             }

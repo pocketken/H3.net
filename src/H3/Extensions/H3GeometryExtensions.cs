@@ -18,13 +18,15 @@ namespace H3.Extensions {
         /// <param name="inputIndex"></param>
         /// <param name="result">optional result object; defaults to new <see cref="Coordinate"/>
         /// instance.</param>
+        /// <param name="toUpdateFaceIjk">Optional <see cref="FaceIJK"/> object to use during
+        /// conversion (useful to reduce allocations when performing many coordinate conversions);
+        /// defaults to a new instance if not provided.</param>
         /// <returns></returns>
         public static Coordinate ToCoordinate(this H3Index inputIndex, Coordinate? result = default, FaceIJK? toUpdateFaceIjk = default) {
             result ??= new Coordinate();
 
-            var index = inputIndex;
-            var resolution = index.Resolution;
-            var faceIjk = index.ToFaceIJK(toUpdateFaceIjk);
+            var resolution = inputIndex.Resolution;
+            var faceIjk = inputIndex.ToFaceIJK(toUpdateFaceIjk);
 
             var center = LookupTables.GeoFaceCenters[faceIjk.Face];
             var (x, y) = faceIjk.Coord.GetVec2dOrdinates();
@@ -71,7 +73,11 @@ namespace H3.Extensions {
                 var cosP1Lat = Math.Cos(center.Latitude);
                 var sinDist = Math.Sin(distance);
                 var cosDist = Math.Cos(distance);
+                #if NETSTANDARD2_0
+                var sinLat = Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(azimuth), -1.0, 1.0);
+                #else
                 var sinLat = Math.Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(azimuth), -1.0, 1.0);
+                #endif
                 latitude = Math.Asin(sinLat);
 
                 if (Math.Abs(latitude - M_PI_2) < EPSILON) {
@@ -84,8 +90,13 @@ namespace H3.Extensions {
                     longitude = 0;
                 } else {
                     var cosP2Lat = Math.Cos(latitude);
+                    #if NETSTANDARD2_0
+                    var sinLon = Clamp(Math.Sin(azimuth) * sinDist / cosP2Lat, -1.0, 1.0);
+                    var cosLon = Clamp((cosDist - sinP1Lat * Math.Sin(latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    #else
                     var sinLon = Math.Clamp(Math.Sin(azimuth) * sinDist / cosP2Lat, -1.0, 1.0);
                     var cosLon = Math.Clamp((cosDist - sinP1Lat * Math.Sin(latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    #endif
                     longitude = ConstrainLongitude(center.Longitude + Math.Atan2(sinLon, cosLon));
                 }
             }
@@ -127,61 +138,72 @@ namespace H3.Extensions {
         /// </summary>
         /// <returns>Faces intersected by the index</returns>
         public static int[] GetFaces(this H3Index index) {
-            int resolution = index.Resolution;
+            while (true) {
+                var resolution = index.Resolution;
 
-            // We can't use the vertex-based approach here for class II pentagons,
-            // because all their vertices are on the icosahedron edges. Their
-            // direct child pentagons cross the same faces, so use those instead.
-            if (index.IsPentagon && !IsResolutionClass3(resolution)) {
-                // Note that this would not work for res 15, but this is only run on
-                // Class II pentagons, it should never be invoked for a res 15 index.
-                return index.GetDirectChild(Direction.Center).GetFaces();
-            }
-
-            // convert to FaceIJK
-            FaceIJK fijk = index.ToFaceIJK();
-
-            // Get all vertices as FaceIJK addresses. For simplicity, always
-            // initialize the array with 6 verts, ignoring the last one for pentagons
-            int vertexCount;
-            FaceIJK[] vertices;
-
-            if (index.IsPentagon) {
-                vertexCount = NUM_PENT_VERTS;
-                vertices = fijk.GetPentagonVertices(ref resolution);
-            } else {
-                vertexCount = NUM_HEX_VERTS;
-                vertices = fijk.GetHexVertices(ref resolution);
-            }
-
-            // We may not use all of the slots in the output array,
-            // so fill with invalid values to indicate unused slots
-            int[] result = new int[index.MaximumFaceCount];
-            Array.Fill(result, -1);
-
-            // add each vertex face, using the output array as a hash set
-            for (int i = 0; i < vertexCount; i += 1) {
-                FaceIJK vert = vertices[i];
-
-                // Adjust overage, determining whether this vertex is
-                // on another face
-                if (index.IsPentagon) {
-                    vert.AdjustPentagonVertexOverage(resolution);
-                } else {
-                    vert.AdjustOverageClass2(resolution, false, true);
+                // We can't use the vertex-based approach here for class II pentagons,
+                // because all their vertices are on the icosahedron edges. Their
+                // direct child pentagons cross the same faces, so use those instead.
+                if (index.IsPentagon && !IsResolutionClass3(resolution)) {
+                    // Note that this would not work for res 15, but this is only run on
+                    // Class II pentagons, it should never be invoked for a res 15 index.
+                    index = index.GetDirectChild(Direction.Center);
+                    continue;
                 }
 
-                // Save the face to the output array
-                int face = vert.Face;
-                int pos = 0;
+                // convert to FaceIJK
+                var fijk = index.ToFaceIJK();
 
-                // Find the first empty output position, or the first position
-                // matching the current face
-                while (result[pos] != -1 && result[pos] != face) pos++;
-                result[pos] = face;
+                // Get all vertices as FaceIJK addresses. For simplicity, always
+                // initialize the array with 6 verts, ignoring the last one for pentagons
+                int vertexCount;
+                FaceIJK[] vertices;
+
+                if (index.IsPentagon) {
+                    vertexCount = NUM_PENT_VERTS;
+                    vertices = fijk.GetPentagonVertices(ref resolution);
+                } else {
+                    vertexCount = NUM_HEX_VERTS;
+                    vertices = fijk.GetHexVertices(ref resolution);
+                }
+
+                // We may not use all of the slots in the output array,
+                // so fill with invalid values to indicate unused slots
+                var result = new int[index.MaximumFaceCount];
+#if NETSTANDARD2_0
+                for (var i = 0; i < index.MaximumFaceCount; i += 1) {
+                    result[i] = -1;
+                }
+#else
+                Array.Fill(result, -1);
+#endif
+
+                // add each vertex face, using the output array as a hash set
+                for (var i = 0; i < vertexCount; i += 1) {
+                    var vert = vertices[i];
+
+                    // Adjust overage, determining whether this vertex is
+                    // on another face
+                    if (index.IsPentagon) {
+                        vert.AdjustPentagonVertexOverage(resolution);
+                    } else {
+                        vert.AdjustOverageClass2(resolution, false, true);
+                    }
+
+                    // Save the face to the output array
+                    var face = vert.Face;
+                    var pos = 0;
+
+                    // Find the first empty output position, or the first position
+                    // matching the current face
+                    while (result[pos] != -1 && result[pos] != face)
+                        pos++;
+
+                    result[pos] = face;
+                }
+
+                return result;
             }
-
-            return result;
         }
 
         /// <summary>
@@ -194,13 +216,17 @@ namespace H3.Extensions {
         /// <param name="index">H3 cell</param>
         /// <returns>area in radians^2</returns>
         public static double CellAreaInRadiansSquared(this H3Index index) {
-            GeoCoord c = index.ToGeoCoord();
-            var boundary = index.GetCellBoundaryVertices().ToArray();
-            double area = 0.0;
+            var resolution = index.Resolution;
+            var faceIjk = index.ToFaceIJK();
+            var center = faceIjk.ToGeoCoord(resolution);
+            var boundary = (index.IsPentagon
+                ? faceIjk.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS)
+                : faceIjk.GetHexagonBoundary(resolution, 0, NUM_HEX_VERTS)).ToArray();
+            var area = 0.0;
 
-            for (int i = 0; i < boundary.Length; i += 1) {
-                int j = (i + 1) % boundary.Length;
-                area += GeoCoord.GetTriangleArea(boundary[i], boundary[j], c);
+            for (var i = 0; i < boundary.Length; i += 1) {
+                var j = (i + 1) % boundary.Length;
+                area += GeoCoord.GetTriangleArea(boundary[i], boundary[j], center);
             }
 
             return area;
@@ -228,8 +254,12 @@ namespace H3.Extensions {
         /// <param name="index">H3Index to get area for</param>
         /// <returns></returns>
         public static double GetRadiusInKm(this H3Index index) {
-            GeoCoord center = index.ToGeoCoord();
-            GeoCoord firstVertex = index.GetCellBoundaryVertices().First();
+            var resolution = index.Resolution;
+            var faceIjk = index.ToFaceIJK();
+            var center = faceIjk.ToGeoCoord(resolution);
+            var firstVertex =  (index.IsPentagon
+                ? faceIjk.GetPentagonBoundary(resolution, 0, 1)
+                : faceIjk.GetHexagonBoundary(resolution, 0, 1)).First();
             return center.GetPointDistanceInKm(firstVertex);
         }
 
@@ -238,10 +268,14 @@ namespace H3.Extensions {
         /// a given H3 index.
         /// </summary>
         /// <param name="index">H3Index to get boundary for</param>
+        /// <param name="toUpdateIjk">Optional <see cref="FaceIJK"/> to be used
+        /// for index coordinate conversions; defaults to none.  Useful for
+        /// reducing allocations when producing boundaries for a large number
+        /// of indices.</param>
         /// <returns>boundary coordinates</returns>
-        public static IEnumerable<GeoCoord> GetCellBoundaryVertices(this H3Index index) {
-            FaceIJK face = index.ToFaceIJK();
-            int resolution = index.Resolution;
+        public static IEnumerable<GeoCoord> GetCellBoundaryVertices(this H3Index index, FaceIJK? toUpdateIjk = default) {
+            var face = index.ToFaceIJK(toUpdateIjk);
+            var resolution = index.Resolution;
             return index.IsPentagon
                 ? face.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS)
                 : face.GetHexagonBoundary(resolution, 0, NUM_HEX_VERTS);
@@ -267,14 +301,14 @@ namespace H3.Extensions {
 
         /// <summary>
         /// Generates a Multi-Polygon containing all of the cell boundaries for
-        /// a given set of H3 indicies.
+        /// a given set of H3 indices.
         /// </summary>
-        /// <param name="indicies"></param>
+        /// <param name="indices"></param>
         /// <param name="geomFactory"></param>
         /// <returns></returns>
-        public static MultiPolygon GetCellBoundaries(this IEnumerable<H3Index> indicies, GeometryFactory? geomFactory = null) {
+        public static MultiPolygon GetCellBoundaries(this IEnumerable<H3Index> indices, GeometryFactory? geomFactory = null) {
             var gf = geomFactory ?? DefaultGeometryFactory;
-            return gf.CreateMultiPolygon(indicies.Select(index => index.GetCellBoundary()).ToArray());
+            return gf.CreateMultiPolygon(indices.Select(index => index.GetCellBoundary()).ToArray());
         }
 
     }

@@ -5,13 +5,16 @@ using System.Linq;
 using H3.Algorithms;
 using H3.Extensions;
 using H3.Test;
-using H3Lib.Extensions;
 using BenchmarkDotNet.Jobs;
 using H3.Model;
+using H3Lib.Extensions;
 
 namespace H3.Benchmarks.Algorithms {
 
+    [SimpleJob(RuntimeMoniker.Net60)]
     [SimpleJob(RuntimeMoniker.Net50)]
+    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
+    [SimpleJob(RuntimeMoniker.Net48)]
     [MemoryDiagnoser]
     public class RingBenchmarks {
 
@@ -46,8 +49,9 @@ namespace H3.Benchmarks.Algorithms {
         [Benchmark(Description = "H3Lib.KRingDistances(hex, k = 50)")]
         public Dictionary<H3Lib.H3Index, int> H3Lib_KRingDistancesHex() => TestH3LibIndex.KRingDistances(K);
 
-        [Benchmark(Description = "H3Lib.KRingDistances(pent, k = 50)")]
-        public Dictionary<H3Lib.H3Index, int> H3Lib_KRingDistancesPent() => TestH3LibPentagonIndex.KRingDistances(K);
+        //[Benchmark(Description = "H3Lib.KRingDistances(pent, k = 50)")]
+        //public Dictionary<H3Lib.H3Index, int> H3Lib_KRingDistancesPent() => TestH3LibPentagonIndex.KRingDistances(K);
+
     }
 
 }

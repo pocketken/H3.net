@@ -8,7 +8,10 @@ using H3Lib.Extensions;
 
 namespace H3.Benchmarks.Extensions {
 
+    [SimpleJob(RuntimeMoniker.Net60)]
     [SimpleJob(RuntimeMoniker.Net50)]
+    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
+    [SimpleJob(RuntimeMoniker.Net48)]
     [MemoryDiagnoser]
     public class CompactBenchmarks {
 
@@ -27,7 +30,10 @@ namespace H3.Benchmarks.Extensions {
         public List<H3Lib.H3Index> H3LibCompact() => H3LibTestCompactList.Compact().Item2;
     }
 
+    [SimpleJob(RuntimeMoniker.Net60)]
     [SimpleJob(RuntimeMoniker.Net50)]
+    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
+    [SimpleJob(RuntimeMoniker.Net48)]
     [MemoryDiagnoser]
     public class UncompactBenchmarks {
 

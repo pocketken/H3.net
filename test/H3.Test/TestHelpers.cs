@@ -91,21 +91,21 @@ namespace H3.Test {
 
         public static void AssertAll(H3Index[] expected, H3Index[] actual) {
             Assert.AreEqual(expected.Length, actual.Length, "should have same Length");
-            for (int i = 0; i < expected.Length; i+= 1) {
+            for (var i = 0; i < expected.Length; i+= 1) {
                 Assert.IsTrue(actual.Contains(expected[i]), $"index {expected[i]} should be found");
             }
         }
 
         public static void AssertAll(ulong[] expected, H3Index[] actual) {
             Assert.AreEqual(expected.Length, actual.Length, "should have same Length");
-            for (int i = 0; i < expected.Length; i += 1) {
+            for (var i = 0; i < expected.Length; i += 1) {
                 Assert.IsTrue(expected[i] == actual[i], $"index {i} should be {expected[i]} not {actual[i]}");
             }
         }
 
         public static IEnumerable<string> GetTestData(Func<string, bool> matches) {
             var executingAssembly = Assembly.GetExecutingAssembly();
-            string basePath = $"{executingAssembly.GetName().Name}.TestData";
+            var basePath = $"{executingAssembly.GetName().Name}.TestData";
             return executingAssembly.GetManifestResourceNames().Where(res =>
                 res.StartsWith(basePath) && matches(res));
         }

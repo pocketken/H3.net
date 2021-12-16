@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>pocketken.H3.3.7.2.0</AssemblyName>
-    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>pocketken.H3.3.7.2.1</AssemblyName>
+    <TargetFrameworks>net6.0;net5.0;netstandard2.1;netstandard2.0</TargetFrameworks>
+    <LangVersion>9.0</LangVersion>
     <PackOnBuild>true</PackOnBuild>
     <PackageId>pocketken.H3</PackageId>
-    <PackageVersion>3.7.2.0</PackageVersion>
+    <PackageVersion>3.7.2.1</PackageVersion>
     <Authors>pocketken</Authors>
     <Description>Port of Uber's H3 to .NET</Description>
     <PackageProjectUrl>https://github.com/pocketken/H3.net</PackageProjectUrl>
@@ -14,27 +15,59 @@
     <Company />
     <IsPackable>true</IsPackable>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>3.7.2.0</Version>
+    <Version>3.7.2.1</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>C:\Dev\H3.net\src\H3\pocketken.H3.3.7.2.0.xml</DocumentationFile>
+    <DocumentationFile>pocketken.H3.3.7.2.1.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(MSBuildThisFileDirectory)/Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetTopologySuite" Version="2.3.0" />
+    <PackageReference Include="NetTopologySuite" Version="2.4.0" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework.Contains(`netstandard`))' == 'true'">
+    <PackageReference Include="System.Text.Json" Version="5.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+  </ItemGroup>
+
   <ItemGroup>
-    <Folder Include="Model\" />
-    <Folder Include="Algorithms\" />
-    <Folder Include="Extensions\" />
+    <Compile Remove="IsExternalInit.cs" Condition="'$(TargetFramework)' == 'net5.0' Or '$(TargetFramework)' == 'net6.0'" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\H3.Data\H3.Data.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <OutputItemType>Analyzer</OutputItemType>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Don't include the output from a previous source generator execution into future runs; the */** trick here ensures that there's
+    at least one subdirectory, which is our key that it's coming from a source generator as opposed to something that is coming from
+    some other tool. -->
+    <Compile Remove="$(CompilerGeneratedFilesOutputPath)/*/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Algorithms\" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="..\..\LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
   </ItemGroup>
+
   <ProjectExtensions>
     <MonoDevelop>
       <Properties>

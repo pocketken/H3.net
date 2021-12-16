@@ -33,7 +33,7 @@ namespace H3.Test {
                     return new TestCaseData(TestHelpers.ReadLines(reader)
                         .Where(s => !string.IsNullOrWhiteSpace(s))
                         .Select(s => {
-                            var segs = s.Split(" ");
+                            var segs = s.Split(' ');
                             return (
                                 new H3Index(segs[0]),
                                 Convert.ToDouble(segs[1]) * M_PI_180,
@@ -61,7 +61,7 @@ namespace H3.Test {
                     return new TestCaseData(TestHelpers.ReadLines(reader)
                         .Where(s => !string.IsNullOrWhiteSpace(s))
                         .Select(s => {
-                            var segs = s.Split(" ");
+                            var segs = s.Split(' ');
                             return (
                                 Convert.ToDouble(segs[1]) * M_PI_180,
                                 Convert.ToDouble(segs[2]) * M_PI_180,
@@ -98,7 +98,7 @@ namespace H3.Test {
             Point point = new(-110, 30);
 
             // Act
-            H3Index h3 = H3Index.FromPoint(point, 14);
+            var h3 = H3Index.FromPoint(point, 14);
 
             // Assert
             AssertKnownIndexValue(h3);
@@ -130,10 +130,10 @@ namespace H3.Test {
         [TestCaseSource(typeof(H3IndexTests), "ToGeoCoordTestCases")]
         public bool Test_Upstream_ToGeoCoord((H3Index, double, double)[] expectedValues) {
             // Act
-            GeoCoord[] actualCoords = expectedValues.Select(t => t.Item1.ToGeoCoord()).ToArray();
+            var actualCoords = expectedValues.Select(t => t.Item1.ToGeoCoord()).ToArray();
 
             // Assert
-            for (int i = 0; i < expectedValues.Length; i += 1) {
+            for (var i = 0; i < expectedValues.Length; i += 1) {
                 var (_, expectedLatitude, expectedLongitude) = expectedValues[i];
                 var actualCoord = actualCoords[i];
                 var matches = Math.Abs(expectedLatitude - actualCoord.Latitude) < 0.000001 &&
@@ -150,10 +150,10 @@ namespace H3.Test {
         [TestCaseSource(typeof(H3IndexTests), "FromGeoCoordTestCases")]
         public bool Test_Upstream_FromGeoCoord((double, double, int, H3Index)[] expectedValues) {
             // Act
-            H3Index[] actualIndexes = expectedValues.Select(t => H3Index.FromGeoCoord((t.Item1, t.Item2), t.Item3)).ToArray();
+            var actualIndexes = expectedValues.Select(t => H3Index.FromGeoCoord((t.Item1, t.Item2), t.Item3)).ToArray();
 
             // Assert
-            for (int i = 0; i < expectedValues.Length; i += 1) {
+            for (var i = 0; i < expectedValues.Length; i += 1) {
                 var expectedIndex = expectedValues[i].Item4;
                 var actualIndex = actualIndexes[i];
                 if (expectedIndex != actualIndex) {
@@ -196,8 +196,13 @@ namespace H3.Test {
         [TestCase("15")]
         public void Test_Upstream_IsValid_InvalidMode(string modeValue) {
             // Arrange
+            #if NET48
+            var mode = (Mode)Enum.Parse(typeof(Mode), modeValue, true);
+            #else
+            var mode = Enum.Parse<Mode>(modeValue);
+            #endif
             var index = new H3Index {
-                Mode = Enum.Parse<Mode>(modeValue)
+                Mode = mode
             };
 
             // Act
@@ -341,7 +346,7 @@ namespace H3.Test {
             Assert.AreEqual(0, h3.ReservedBits, "should have reserved bits of 0");
             Assert.AreEqual(0, h3.HighBit, "should have high bit of 0");
 
-            for (int r = 1; r <= 14; r += 1) {
+            for (var r = 1; r <= 14; r += 1) {
                 Assert.AreEqual(
                     TestHelpers.TestIndexDirectionPerResolution[r-1],
                     h3.GetDirectionForResolution(r),

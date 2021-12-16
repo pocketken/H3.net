@@ -79,11 +79,15 @@ namespace H3.Model {
                 }
             } else {
                 // not due north or south
-                double sinP1Lat = Math.Sin(p1.Latitude);
-                double cosP1Lat = Math.Cos(p1.Latitude);
-                double cosDist = Math.Cos(distance);
-                double sinDist = Math.Sin(distance);
-                double sinLat = Math.Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(az), -1.0, 1.0);
+                var sinP1Lat = Math.Sin(p1.Latitude);
+                var cosP1Lat = Math.Cos(p1.Latitude);
+                var cosDist = Math.Cos(distance);
+                var sinDist = Math.Sin(distance);
+                #if NETSTANDARD2_0
+                var sinLat = Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(az), -1.0, 1.0);
+                #else
+                var sinLat = Math.Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(az), -1.0, 1.0);
+                #endif
                 p2.Latitude = Math.Asin(sinLat);
 
                 if (Math.Abs(p2.Latitude - M_PI_2) < EPSILON) {
@@ -95,9 +99,14 @@ namespace H3.Model {
                     p2.Latitude = -M_PI_2;
                     p2.Longitude = 0;
                 } else {
-                    double cosP2Lat = Math.Cos(p2.Latitude);
-                    double sinLon = Math.Clamp(Math.Sin(az) * sinDist / cosP2Lat, -1.0, 1.0);
-                    double cosLon = Math.Clamp((cosDist - sinP1Lat * Math.Sin(p2.Latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    var cosP2Lat = Math.Cos(p2.Latitude);
+                    #if NETSTANDARD2_0
+                    var sinLon = Clamp(Math.Sin(az) * sinDist / cosP2Lat, -1.0, 1.0);
+                    var cosLon = Clamp((cosDist - sinP1Lat * Math.Sin(p2.Latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    #else
+                    var sinLon = Math.Clamp(Math.Sin(az) * sinDist / cosP2Lat, -1.0, 1.0);
+                    var cosLon = Math.Clamp((cosDist - sinP1Lat * Math.Sin(p2.Latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                    #endif
                     p2.Longitude = ConstrainLongitude(p1.Longitude + Math.Atan2(sinLon, cosLon));
                 }
             }
@@ -171,7 +180,7 @@ namespace H3.Model {
         public double GetPointDistanceInKm(GeoCoord p2) => GetPointDistanceInRadians(p2) * EARTH_RADIUS_KM;
 
         /// <summary>
-        /// The great circle disance in meters between two spherical coordiantes.
+        /// The great circle distance in meters between two spherical coordinates.
         /// </summary>
         /// <param name="p2">Destination coordinate</param>
         /// <returns>The great circle distance in meters between this coordinate
@@ -187,10 +196,10 @@ namespace H3.Model {
         /// <returns>Estimated number of cells required to trace the line</returns>
         public int LineHexEstimate(GeoCoord other, int resolution) {
             // Get the area of the pentagon as the maximally-distorted area possible
-            H3Index firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution][0];
-            double pentagonRadiusKm = firstPentagon.GetRadiusInKm();
-            double dist = GetPointDistanceInKm(other);
-            int estimate = (int)Math.Ceiling(dist / (2 * pentagonRadiusKm));
+            var firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution][0];
+            var pentagonRadiusKm = firstPentagon.GetRadiusInKm();
+            var dist = GetPointDistanceInKm(other);
+            var estimate = (int)Math.Ceiling(dist / (2 * pentagonRadiusKm));
             return estimate == 0 ? 1 : estimate;
         }
 
@@ -201,12 +210,12 @@ namespace H3.Model {
 
         public static implicit operator GeoCoord((double, double) c) => new(c.Item1, c.Item2);
 
-        public static bool operator ==(GeoCoord a, GeoCoord b) => a.Latitude == b.Latitude && a.Longitude == b.Longitude;
+        public static bool operator ==(GeoCoord a, GeoCoord b) => Math.Abs(a.Latitude - b.Latitude) < EPSILON_RAD && Math.Abs(a.Longitude - b.Longitude) < EPSILON_RAD;
 
-        public static bool operator !=(GeoCoord a, GeoCoord b) => a.Latitude != b.Latitude || a.Longitude != b.Longitude;
+        public static bool operator !=(GeoCoord a, GeoCoord b) => Math.Abs(a.Latitude - b.Latitude) >= EPSILON_RAD || Math.Abs(a.Longitude - b.Longitude) >= EPSILON_RAD;
 
         public override bool Equals(object? other) {
-            return other is GeoCoord c && Latitude == c.Latitude && Longitude == c.Longitude;
+            return other is GeoCoord c && Math.Abs(Latitude - c.Latitude) < EPSILON_RAD && Math.Abs(Longitude - c.Longitude) < EPSILON_RAD;
         }
 
         public override int GetHashCode() {
