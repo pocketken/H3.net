@@ -268,9 +268,13 @@ namespace H3.Extensions {
         /// a given H3 index.
         /// </summary>
         /// <param name="index">H3Index to get boundary for</param>
+        /// <param name="toUpdateIjk">Optional <see cref="FaceIJK"/> to be used
+        /// for index coordinate conversions; defaults to none.  Useful for
+        /// reducing allocations when producing boundaries for a large number
+        /// of indices.</param>
         /// <returns>boundary coordinates</returns>
-        public static IEnumerable<GeoCoord> GetCellBoundaryVertices(this H3Index index) {
-            var face = index.ToFaceIJK();
+        public static IEnumerable<GeoCoord> GetCellBoundaryVertices(this H3Index index, FaceIJK? toUpdateIjk = default) {
+            var face = index.ToFaceIJK(toUpdateIjk);
             var resolution = index.Resolution;
             return index.IsPentagon
                 ? face.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS)

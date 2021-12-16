@@ -40,9 +40,28 @@ namespace H3.Algorithms {
 
     }
 
+    /// <summary>
+    /// The vertex testing mode to use when checking containment during
+    /// polyfill operations.
+    /// </summary>
     public enum VertexTestMode {
+        /// <summary>
+        /// Specifies that the index's center vertex should be contained
+        /// within the geometry.  This matches the polyfill behaviour of
+        /// the upstream library.
+        /// </summary>
         Center,
+
+        /// <summary>
+        /// Specifies that any of the index's boundary vertices can be
+        /// contained within the geometry.
+        /// </summary>
         Any,
+
+        /// <summary>
+        /// Specifies that all of the index's boundary vertices must be
+        /// contained within the geometry.
+        /// </summary>
         All
     }
 
@@ -61,7 +80,8 @@ namespace H3.Algorithms {
         /// </summary>
         /// <param name="polygon">Containment polygon</param>
         /// <param name="resolution">H3 resolution</param>
-        /// <param name="testMode"></param>
+        /// <param name="testMode">Specify which <see cref="VertexTestMode"/> to use when checking
+        /// index vertex containment.  Defaults to <see cref="VertexTestMode.Center"/></param>.
         /// <returns>Indices where center point is contained within polygon</returns>
         public static IEnumerable<H3Index> Fill(this Geometry polygon, int resolution, VertexTestMode testMode = VertexTestMode.Center) {
             if (polygon.IsEmpty) return Enumerable.Empty<H3Index>();
@@ -69,10 +89,8 @@ namespace H3.Algorithms {
             var testPoly = isTransMeridian ? SplitGeometry(polygon) : polygon;
 
             HashSet<ulong> searched = new();
-
             Stack<H3Index> toSearch = new();
             toSearch.Push(testPoly.InteriorPoint.Coordinate.ToH3Index(resolution));
-
             IndexedPointInAreaLocator locator = new(testPoly);
 
             return testMode switch {
@@ -118,6 +136,7 @@ namespace H3.Algorithms {
         /// </summary>
         private static IEnumerable<H3Index> FillUsingAnyVertex(IPointOnGeometryLocator locator, Stack<H3Index> toSearch, ISet<ulong> searched) {
             var coordinate = new Coordinate();
+            var faceIjk = new FaceIJK();
 
             while (toSearch.Count != 0) {
                 var index = toSearch.Pop();
@@ -126,7 +145,7 @@ namespace H3.Algorithms {
                     if (searched.Contains(neighbour)) continue;
                     searched.Add(neighbour);
 
-                    foreach (var vertex in neighbour.GetCellBoundaryVertices()) {
+                    foreach (var vertex in neighbour.GetCellBoundaryVertices(faceIjk)) {
                         coordinate.X = vertex.LongitudeDegrees;
                         coordinate.Y = vertex.LatitudeDegrees;
 
@@ -147,6 +166,7 @@ namespace H3.Algorithms {
         /// </summary>
         private static IEnumerable<H3Index> FillUsingAllVertices(IPointOnGeometryLocator locator, Stack<H3Index> toSearch, ISet<ulong> searched) {
             var coordinate = new Coordinate();
+            var faceIjk = new FaceIJK();
 
             while (toSearch.Count != 0) {
                 var index = toSearch.Pop();
@@ -157,7 +177,7 @@ namespace H3.Algorithms {
 
                     var matched = true;
 
-                    foreach (var vertex in neighbour.GetCellBoundaryVertices()) {
+                    foreach (var vertex in neighbour.GetCellBoundaryVertices(faceIjk)) {
                         coordinate.X = vertex.LongitudeDegrees;
                         coordinate.Y = vertex.LatitudeDegrees;
 
@@ -181,11 +201,11 @@ namespace H3.Algorithms {
         /// Returns all of the H3 indexes that follow the provided LineString
         /// at the specified resolution.
         /// </summary>
-        /// <param name="polyline"></param>
+        /// <param name="polyLine"></param>
         /// <param name="resolution"></param>
         /// <returns></returns>
-        public static IEnumerable<H3Index> Fill(this LineString polyline, int resolution) =>
-            polyline.Coordinates.TraceCoordinates(resolution);
+        public static IEnumerable<H3Index> Fill(this LineString polyLine, int resolution) =>
+            polyLine.Coordinates.TraceCoordinates(resolution);
 
         /// <summary>
         /// Gets all of the H3 indices that define the provided set of <see cref="Coordinate"/>s.
@@ -194,7 +214,7 @@ namespace H3.Algorithms {
         /// <param name="resolution"></param>
         /// <returns></returns>
         public static IEnumerable<H3Index> TraceCoordinates(this Coordinate[] coordinates, int resolution) {
-            HashSet<H3Index> indicies = new();
+            HashSet<H3Index> indices = new();
 
             // trace the coordinates
             var coordLen = coordinates.Length - 1;
@@ -211,18 +231,18 @@ namespace H3.Algorithms {
                 v2.Longitude = vB.X * M_PI_180;
                 v2.Latitude = vB.Y * M_PI_180;
 
-                // estimate number of indicies between points, use that as a
+                // estimate number of indices between points, use that as a
                 // number of segments to chop the line into
                 var count = v1.LineHexEstimate(v2, resolution);
 
                 for (var j = 1; j < count; j += 1) {
                     // interpolate line
                     var interpolated = LinearLocation.PointAlongSegmentByFraction(vA, vB, (double)j / count);
-                    indicies.Add(interpolated.ToH3Index(resolution, faceIjk, v3d));
+                    indices.Add(interpolated.ToH3Index(resolution, faceIjk, v3d));
                 }
             }
 
-            return indicies;
+            return indices;
         }
 
         /// <summary>
