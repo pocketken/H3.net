@@ -20,7 +20,7 @@ var filled = somePolygon.Fill(9).ToList();
 
 #### `LineString`s / `TraceCoordinates`
 
-There's also a `Fill` method which takes a NTS `LineString` instead of `Polygon`, and is the equivalent of calling `lineString.Coordinates.TraceCoordinates()`.  Tracing coordinatees works by drawing lines bewtween each vertex, estimating the number of cells between the vertices for the selected resolution, and then using NTS' `LinearLocation.PointAlongSegmentByFraction` to interpolate the indexes that make up that line.  This is similar to the `index.LineTo()` method, excep that instead of generating the line in grid space coordinates,`TraceCoordinates` interpolates lines utilizing the spherical coordinates (center) of each index.
+There's also a `Fill` method which takes a NTS `LineString` instead of `Polygon`, and is the equivalent of calling `lineString.Coordinates.TraceCoordinates()`.  Tracing coordinatees works by drawing lines bewtween each vertex, estimating the number of cells between the vertices for the selected resolution, and then using NTS' `LinearLocation.PointAlongSegmentByFraction` to interpolate the indexes that make up that line.  This is similar to the `index.LineTo()` method, except that instead of generating the line in grid space coordinates,`TraceCoordinates` interpolates lines utilizing the spherical coordinates (center) of each index.
 
 ## `GetCellBoundaries` (`h3SetToMultiPolygon`):
 Returns a `MultiPolygon` containing all of the cell boundaries of the input set of indices.
