@@ -17,7 +17,7 @@ namespace H3.Model {
         public static implicit operator PentagonDirectionToFaceMapping((int, (int, int, int, int, int)) data) {
             return new PentagonDirectionToFaceMapping {
                 BaseCellNumber = data.Item1,
-                Faces = new int[NUM_PENT_VERTS] {
+                Faces = new[] {
                     data.Item2.Item1,
                     data.Item2.Item2,
                     data.Item2.Item3,

@@ -82,23 +82,25 @@ namespace H3.Test.Extensions {
                             index = new H3Index(line);
                             continue;
                         }
-                        if (line == "{") {
-                            coords = new List<GeoCoord>();
+                        switch (line) {
+                            case "{":
+                                coords = new List<GeoCoord>();
+                                continue;
+                            case "}":
+                                data.Add((index, coords!.ToArray()));
+                                index = null;
+                                coords = null;
+                                continue;
+                        }
+
+                        if (coords == null)
                             continue;
-                        }
-                        if (line == "}") {
-                            data.Add((index, coords.ToArray()));
-                            index = null;
-                            coords = null;
-                            continue;
-                        }
-                        if (coords != null) {
-                            var match = Regex.Match(line, @"\s+([0-9.-]+) ([0-9.-]+)");
-                            coords.Add(new GeoCoord(
-                                Convert.ToDouble(match.Groups[1].Value) * M_PI_180,
-                                Convert.ToDouble(match.Groups[2].Value) * M_PI_180)
-                            );
-                        }
+
+                        var match = Regex.Match(line, @"\s+([0-9.-]+) ([0-9.-]+)");
+                        coords.Add(new GeoCoord(
+                            Convert.ToDouble(match.Groups[1].Value) * M_PI_180,
+                            Convert.ToDouble(match.Groups[2].Value) * M_PI_180)
+                        );
                     }
 
                     return new TestCaseData(testFile, data).Returns(true);
@@ -142,7 +144,7 @@ namespace H3.Test.Extensions {
         }
 
         [Test]
-        [TestCaseSource(typeof(H3GeometryExtensionsTests), "GetCellBoundaryVerticesTestCases")]
+        [TestCaseSource(typeof(H3GeometryExtensionsTests), nameof(GetCellBoundaryVerticesTestCases))]
         public bool Test_Upstream_GetCellBoundaryVertices(string testDataFn, List<(H3Index, GeoCoord[])> expectedData) {
             // Arrange
 
@@ -229,9 +231,7 @@ namespace H3.Test.Extensions {
             Assert.AreEqual(5, CountValidFaces(faces), "should have 5 faces");
         }
 
-        private static int CountValidFaces(int[] faces) => faces
-            .Where(face => face is >= 0 and <= 19)
-            .Count();
+        private static int CountValidFaces(int[] faces) => faces.Count(face => face is >= 0 and <= 19);
 
         private static void AssertCellBoundaryVertices(Point[] expected, GeoCoord[] actual) {
             Assert.AreEqual(expected.Length, actual.Length, "should be same length");

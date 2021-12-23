@@ -49,7 +49,7 @@ namespace H3.Extensions {
         /// </summary>
         /// <param name="origin">an anchoring index for the IJ coordinate system</param>
         /// <param name="coord">IJ coordinates to index</param>
-        /// <returns>H3Index for coordintes</returns>
+        /// <returns>H3Index for coordinates</returns>
         public static H3Index FromLocalIJ(this H3Index origin, CoordIJ coord) {
             try {
                 return LocalCoordIJK.ToH3Index(origin, coord.ToCoordIJK());
@@ -103,7 +103,7 @@ namespace H3.Extensions {
         /// </summary>
         /// <param name="origin">an anchoring index for the IJK coordinate system</param>
         /// <param name="coord">IJK coordinates to index</param>
-        /// <returns>H3Index for coordintes</returns>
+        /// <returns>H3Index for coordinates</returns>
         public static H3Index FromLocalIJK(this H3Index origin, CoordIJK coord) {
             try {
                 return LocalCoordIJK.ToH3Index(origin, coord);
@@ -129,7 +129,7 @@ namespace H3.Extensions {
         /// or if the index is on the other side of a pentagon.
         /// </summary>
         /// <param name="origin">an anchoring index for the IJ coordinate system</param>
-        /// <param name="index">index to generate IJ coordinates for</param>
+        /// <param name="destination">index to generate IJ coordinates for</param>
         /// <returns>local IJ coordinates</returns>
         public static CoordIJK ToLocalIJK(H3Index origin, H3Index destination) {
             H3Index index = new(destination);

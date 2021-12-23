@@ -8,7 +8,7 @@ using static H3.Utils;
 
 namespace H3.Model {
 
-    public class GeoCoord {
+    public sealed class GeoCoord {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public double LatitudeDegrees => Latitude * M_180_PI;
@@ -215,7 +215,7 @@ namespace H3.Model {
         public static bool operator !=(GeoCoord a, GeoCoord b) => Math.Abs(a.Latitude - b.Latitude) >= EPSILON_RAD || Math.Abs(a.Longitude - b.Longitude) >= EPSILON_RAD;
 
         public override bool Equals(object? other) {
-            return other is GeoCoord c && Math.Abs(Latitude - c.Latitude) < EPSILON_RAD && Math.Abs(Longitude - c.Longitude) < EPSILON_RAD;
+            return other is GeoCoord c && this == c;
         }
 
         public override int GetHashCode() {

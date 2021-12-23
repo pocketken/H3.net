@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using NetTopologySuite.Geometries;
+using static H3.Constants;
 using static H3.Utils;
 
 #nullable enable
@@ -46,11 +47,11 @@ namespace H3.Model {
 
         public static Vec3d FromPoint(Point point) => FromGeoCoord(GeoCoord.FromPoint(point));
 
-        public static bool operator ==(Vec3d a, Vec3d b) => a.X == b.X & a.Y == b.Y && a.Z == b.Z;
+        public static bool operator ==(Vec3d a, Vec3d b) => Math.Abs(a.X - b.X) < EPSILON && Math.Abs(a.Y - b.Y) < EPSILON && Math.Abs(a.Z - b.Z) < EPSILON;
 
-        public static bool operator !=(Vec3d a, Vec3d b) => a.X != b.X || a.Y != b.Y || a.Z != b.Z;
+        public static bool operator !=(Vec3d a, Vec3d b) => Math.Abs(a.X - b.X) >= EPSILON || Math.Abs(a.Y - b.Y) >= EPSILON || Math.Abs(a.Z - b.Z) >= EPSILON;
 
-        public override bool Equals(object? other) => other is Vec3d v && X == v.X && Y == v.Y && Z == v.Z;
+        public override bool Equals(object? other) => other is Vec3d v && this == v;
 
         public override int GetHashCode() => HashCode.Combine(X, Y, Z);
 
