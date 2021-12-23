@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using H3.Model;
 using static H3.Constants;
 using static H3.Utils;
@@ -9,7 +10,7 @@ using static H3.Utils;
 namespace H3.Extensions {
 
     /// <summary>
-    /// Extends the H3Index class with support for bitwise hierarchial queries.
+    /// Extends the H3Index class with support for bitwise hierarchical queries.
     /// </summary>
     public static class H3HierarchyExtensions {
 
@@ -254,11 +255,7 @@ namespace H3.Extensions {
             }
 
             // Otherwise, we have to determine the neighbor relationship the "hard" way.
-            foreach (var neighbour in origin.GetNeighbours()) {
-                if (neighbour == destination) return true;
-            }
-
-            return false;
+            return origin.GetNeighbours().Any(neighbour => neighbour == destination);
         }
 
         /// <summary>
@@ -383,6 +380,31 @@ namespace H3.Extensions {
                 }
             }
         }
+
+        /// <summary>
+        /// Whether or not the parent <see cref="H3Index"/> contains the specified
+        /// child <see cref="H3Index"/>; meaning, the child is equal to the parent
+        /// at the parent's resolution.
+        /// </summary>
+        /// <param name="parent"></param>
+        /// <param name="potentialChild"></param>
+        /// <returns></returns>
+        public static bool Contains(this H3Index parent, H3Index potentialChild) {
+            var parentRes = parent.Resolution;
+            if (!IsValidChildResolution(parentRes, potentialChild.Resolution)) return false;
+            return potentialChild.GetParentForResolution(parentRes) == parent;
+        }
+
+        /// <summary>
+        /// Whether or not the child <see cref="H3Index"/> is contained by the
+        /// specified parent <see cref="H3Index"/>; meaning, the child is equal
+        /// to the parent at the parent's resolution.
+        /// </summary>
+        /// <param name="child"></param>
+        /// <param name="potentialParent"></param>
+        /// <returns></returns>
+        public static bool ContainedBy(this H3Index child, H3Index potentialParent) =>
+            potentialParent.Contains(child);
 
     }
 }

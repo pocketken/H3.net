@@ -137,7 +137,7 @@ namespace H3.Algorithms {
 
             // since k >= 0, start with origin
             Queue<RingCell> queue = new();
-            Dictionary<ulong, int> searched = new();
+            HashSet<ulong> searched = new();
             queue.Enqueue(new RingCell(origin, 0));
 
             while (queue.Count != 0) {
@@ -148,11 +148,17 @@ namespace H3.Algorithms {
                 if (nextK > k)
                     continue;
 
-                foreach (var neighbour in cell.Index.GetNeighbours()) {
-                    if (neighbour == origin || searched.TryGetValue(neighbour, out var previousK) && previousK <= nextK) {
+                for (var d = Direction.K; d < Direction.Invalid; d += 1) {
+                    var (neighbour, _) = cell.Index.GetDirectNeighbour(d);
+                    if (neighbour == H3Index.Invalid || neighbour == origin || neighbour == cell.Index) {
                         continue;
                     }
-                    searched[neighbour] = nextK;
+
+                    if (searched.Contains(neighbour)) {
+                        continue;
+                    }
+
+                    searched.Add(neighbour);
                     queue.Enqueue(new RingCell(neighbour, nextK));
                 }
             }

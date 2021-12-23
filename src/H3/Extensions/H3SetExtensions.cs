@@ -52,42 +52,43 @@ namespace H3.Extensions {
             // loop backward through each resolution, throwing any compacted parents into
             // the resolution below us
             for (var resolution = maxResolution; resolution > 0; resolution -= 1) {
-                if (indexes.TryGetValue(resolution, out var toCompact)) {
-                    var parentResolution = resolution - 1;
+                if (!indexes.TryGetValue(resolution, out var toCompact))
+                    continue;
 
-                    foreach (var index in toCompact) {
-                        var parent = index.GetParentForResolution(parentResolution);
+                var parentResolution = resolution - 1;
 
-                        if (!parents.ContainsKey(parent)) {
-                            parents[parent] = new List<H3Index>(7);
+                foreach (var index in toCompact) {
+                    var parent = index.GetParentForResolution(parentResolution);
+
+                    if (!parents.ContainsKey(parent)) {
+                        parents[parent] = new List<H3Index>(7);
+                    }
+
+                    parents[parent].Add(index);
+                }
+
+                // any parent that has enough children should be added
+                // back in to be tested at the next lowest resolution.
+                // anything else is uncompactable.
+#if NETSTANDARD2_0
+                foreach (var item in parents) {
+                    var parent = item.Key;
+                    var children = item.Value;
+#else
+                foreach (var (parent, children) in parents) {
+#endif
+                    if (children.Count >= (parent.IsPentagon ? 6 : 7)) {
+                        if (!indexes.ContainsKey(parentResolution)) {
+                            indexes[parentResolution] = new HashSet<H3Index>();
                         }
-
-                        parents[parent].Add(index);
+                        indexes[parentResolution].Add(parent);
+                    } else {
+                        results.AddRange(children);
                     }
+                }
 
-                    // any parent that has enough children should be added
-                    // back in to be tested at the next lowest resolution.
-                    // anything else is uncompactable.
-                    #if NETSTANDARD2_0
-                    foreach (var item in parents) {
-                        var parent = item.Key;
-                        var children = item.Value;
-                    #else
-                    foreach (var (parent, children) in parents) {
-                    #endif
-                        if (children.Count >= (parent.IsPentagon ? 6 : 7)) {
-                            if (!indexes.ContainsKey(parentResolution)) {
-                                indexes[parentResolution] = new HashSet<H3Index>();
-                            }
-                            indexes[parentResolution].Add(parent);
-                        } else {
-                            results.AddRange(children);
-                        }
-                    }
-
-                    if (resolution > 1) {
-                        parents.Clear();
-                    }
+                if (resolution > 1) {
+                    parents.Clear();
                 }
             }
 

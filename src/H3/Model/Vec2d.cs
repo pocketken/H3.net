@@ -51,7 +51,7 @@ namespace H3.Model {
 
         public static bool operator ==(Vec2d a, Vec2d b) => Math.Abs(a.X - b.X) < EPSILON && Math.Abs(a.Y - b.Y) < EPSILON;
 
-        public static bool operator !=(Vec2d a, Vec2d b) => Math.Abs(a.X - b.X) > EPSILON || Math.Abs(a.Y - b.Y) > EPSILON;
+        public static bool operator !=(Vec2d a, Vec2d b) => Math.Abs(a.X - b.X) >= EPSILON || Math.Abs(a.Y - b.Y) >= EPSILON;
 
         public override bool Equals(object? other) => other is Vec2d v && this == v;
 

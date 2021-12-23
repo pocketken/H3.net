@@ -19,10 +19,10 @@ namespace H3.Algorithms {
         /// <returns>grid distance in cells; -1 if could not be computed</returns>
         public static int DistanceTo(this H3Index origin, H3Index destination) {
             try {
-                var originIJK = LocalCoordIJK.ToLocalIJK(origin, origin);
-                var destinationIJK = LocalCoordIJK.ToLocalIJK(origin, destination);
+                var originIjk = LocalCoordIJK.ToLocalIJK(origin, origin);
+                var destinationIjk = LocalCoordIJK.ToLocalIJK(origin, destination);
 
-                return originIJK.GetDistanceTo(destinationIJK);
+                return originIjk.GetDistanceTo(destinationIjk);
             } catch {
                 return -1;
             }
