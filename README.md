@@ -9,7 +9,7 @@ H3 is a geospatial indexing system using a hexagonal grid that can be (approxima
 Available on [nuget.org](https://nuget.org) as [pocketken.H3](https://www.nuget.org/packages/pocketken.H3/).
 
 ```
-PM> Install-Package pocketken.H3 -Version 3.7.2.1
+PM> Install-Package pocketken.H3 -Version 4.0.0
 ```
 
 See [CHANGES.md](CHANGES.md) for a list of changes between releases.
