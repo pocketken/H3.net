@@ -281,7 +281,7 @@ public static class H3VertexExtensions {
     /// </summary>
     /// <param name="vertex"></param>
     /// <returns></returns>
-    public static GeoCoord VertexToGeoCoord(this H3Index vertex) {
+    public static LatLng VertexToGeoCoord(this H3Index vertex) {
         // Get the vertex number and owner from the vertex
         var vertexNum = vertex.ReservedBits;
         H3Index owner = new(vertex) {
@@ -315,7 +315,7 @@ public static class H3VertexExtensions {
             ReservedBits = 0
         };
 
-        if (!owner.IsValid) {
+        if (!owner.IsValidCell) {
             return false;
         }
 

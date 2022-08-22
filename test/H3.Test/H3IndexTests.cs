@@ -17,7 +17,7 @@ namespace H3.Test;
 public class H3IndexTests {
 
     /// <summary>
-    /// All of the upstream Index -> GeoCoord tests
+    /// All of the upstream Index -> LatLng tests
     /// </summary>
     public static IEnumerable<TestCaseData> ToGeoCoordTestCases {
         get {
@@ -45,7 +45,7 @@ public class H3IndexTests {
     }
 
     /// <summary>
-    /// All of the upstream GeoCoord -> Index tests
+    /// All of the upstream LatLng -> Index tests
     /// </summary>
     public static IEnumerable<TestCaseData> FromGeoCoordTestCases {
         get {
@@ -130,7 +130,7 @@ public class H3IndexTests {
     [TestCaseSource(typeof(H3IndexTests), "ToGeoCoordTestCases")]
     public bool Test_Upstream_ToGeoCoord((H3Index, double, double)[] expectedValues) {
         // Act
-        var actualCoords = expectedValues.Select(t => t.Item1.ToGeoCoord()).ToArray();
+        var actualCoords = expectedValues.Select(t => t.Item1.ToLatLng()).ToArray();
 
         // Assert
         for (var i = 0; i < expectedValues.Length; i += 1) {
@@ -150,7 +150,7 @@ public class H3IndexTests {
     [TestCaseSource(typeof(H3IndexTests), "FromGeoCoordTestCases")]
     public bool Test_Upstream_FromGeoCoord((double, double, int, H3Index)[] expectedValues) {
         // Act
-        var actualIndexes = expectedValues.Select(t => H3Index.FromGeoCoord((t.Item1, t.Item2), t.Item3)).ToArray();
+        var actualIndexes = expectedValues.Select(t => H3Index.FromLatLng((t.Item1, t.Item2), t.Item3)).ToArray();
 
         // Assert
         for (var i = 0; i < expectedValues.Length; i += 1) {
@@ -172,7 +172,7 @@ public class H3IndexTests {
         };
 
         // Act
-        var actual = index.IsValid;
+        var actual = index.IsValidCell;
 
         // Assert
         Assert.That(actual, Is.False, "should not be valid (invalid base cell)");
@@ -206,7 +206,7 @@ public class H3IndexTests {
         };
 
         // Act
-        var actual = index.IsValid;
+        var actual = index.IsValidCell;
 
         // Assert
         Assert.That(actual, Is.False, "should not be valid (invalid mode)");
@@ -220,7 +220,7 @@ public class H3IndexTests {
         };
 
         // Act
-        var actual = index.IsValid;
+        var actual = index.IsValidCell;
 
         // Assert
         Assert.That(actual, Is.False, "should not be valid (invalid high bit)");
@@ -234,7 +234,7 @@ public class H3IndexTests {
         };
 
         // Act
-        var actual = index.IsValid;
+        var actual = index.IsValidCell;
 
         // Assert
         Assert.That(actual, Is.False, "should not be valid (invalid/too large digit)");
@@ -246,7 +246,7 @@ public class H3IndexTests {
         var index = H3Index.Create(1, 4, Direction.K);
 
         // Act
-        var actual = index.IsValid;
+        var actual = index.IsValidCell;
 
         // Assert
         Assert.That(actual, Is.False, "should not be valid (deleted subsequence)");
@@ -338,7 +338,7 @@ public class H3IndexTests {
 
     private static void AssertKnownIndexValue(H3Index h3) {
         Assert.IsTrue(TestHelpers.TestIndexValue == h3, "ulong value should equal H3Index");
-        Assert.IsTrue(h3.IsValid, "should be valid");
+        Assert.IsTrue(h3.IsValidCell, "should be valid");
         Assert.IsFalse(h3.IsPentagon, "should not be a pentagon");
         Assert.AreEqual(Mode.Cell, h3.Mode, "should be mode of hexagon");
         Assert.AreEqual(14, h3.Resolution, "should be res 14");

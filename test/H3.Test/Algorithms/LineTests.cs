@@ -44,7 +44,7 @@ public class LineTests {
         var end = H3Index.FromPoint(new Point(-110, 30.0005), 14);
 
         // Act
-        var line = start.LineTo(end).ToArray();
+        var line = start.GridPathCells(end).ToArray();
 
         // Assert
         TestHelpers.AssertAll(TestLineIndicies, line);
@@ -57,7 +57,7 @@ public class LineTests {
         H3Index end = 0x851d9b1bfffffff;
 
         // Act
-        var lineSize = start.DistanceTo(end);
+        var lineSize = start.GridDistance(end);
 
         // Assert
         Assert.AreEqual(-1, lineSize, "line size should be -1");
@@ -74,11 +74,11 @@ public class LineTests {
             .SelectMany(start =>
                 start
                     .GetKRing(k)
-                    .Select(n => (Start: start, End: n.Index, Distance: start.DistanceTo(n.Index)))
+                    .Select(n => (Start: start, End: n.Index, Distance: start.GridDistance(n.Index)))
             );
 
         // Act
-        var lines = endpoints.Select(e => (e.Start, e.End, e.Distance, Line: e.Start.LineTo(e.End)));
+        var lines = endpoints.Select(e => (e.Start, e.End, e.Distance, Line: e.Start.GridPathCells(e.End)));
 
         // Assert
         foreach (var (Start, End, Distance, Line) in lines) {
@@ -92,7 +92,7 @@ public class LineTests {
                         Assert.AreEqual(Start, index, $"line should start with {Start}");
                     }
 
-                    Assert.IsTrue(index.IsValid, $"{index} should be valid");
+                    Assert.IsTrue(index.IsValidCell, $"{index} should be valid");
                     if (lastIndex != null) {
                         Assert.IsTrue(index.IsNeighbour(lastIndex), $"{index} should be neighbours with previous index {lastIndex}");
                     }

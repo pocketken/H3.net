@@ -45,7 +45,7 @@ public static class DirectionExtensions {
     };
 
     /// <summary>
-    /// Returns the Direction that is 60 degrees clockwise to the current
+    /// Returns the <see cref="Direction"/> that is 60 degrees clockwise to the current
     /// direction.
     /// </summary>
     /// <param name="direction"></param>
@@ -56,7 +56,7 @@ public static class DirectionExtensions {
     }
 
     /// <summary>
-    /// Returns the Direction that is 60 degrees clockwise to the current
+    /// Returns the <see cref="Direction"/> that is 60 degrees clockwise to the current
     /// direction.
     /// </summary>
     /// <param name="direction"></param>
@@ -68,7 +68,7 @@ public static class DirectionExtensions {
     }
 
     /// <summary>
-    /// Returns the Direction that is 60 degrees counter-clockwise to the current
+    /// Returns the <see cref="Direction"/> that is 60 degrees counter-clockwise to the current
     /// direction.
     /// </summary>
     /// <param name="direction"></param>
@@ -79,7 +79,7 @@ public static class DirectionExtensions {
     }
 
     /// <summary>
-    /// Returns the Direction that is 60 degrees counter-clockwise to the current
+    /// Returns the <see cref="Direction"/> that is 60 degrees counter-clockwise to the current
     /// direction.
     /// </summary>
     /// <param name="direction"></param>

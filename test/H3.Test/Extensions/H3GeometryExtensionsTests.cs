@@ -72,10 +72,10 @@ public class H3GeometryExtensionsTests {
 
                 using var reader = new StreamReader(stream);
 
-                List<(H3Index, GeoCoord[])> data = new();
+                List<(H3Index, LatLng[])> data = new();
                 string line;
                 H3Index index = null;
-                List<GeoCoord> coords = null;
+                List<LatLng> coords = null;
 
                 while ((line = reader.ReadLine()) != null) {
                     if (index == null) {
@@ -84,7 +84,7 @@ public class H3GeometryExtensionsTests {
                     }
                     switch (line) {
                         case "{":
-                            coords = new List<GeoCoord>();
+                            coords = new List<LatLng>();
                             continue;
                         case "}":
                             data.Add((index, coords!.ToArray()));
@@ -97,7 +97,7 @@ public class H3GeometryExtensionsTests {
                         continue;
 
                     var match = Regex.Match(line, @"\s+([0-9.-]+) ([0-9.-]+)");
-                    coords.Add(new GeoCoord(
+                    coords.Add(new LatLng(
                         Convert.ToDouble(match.Groups[1].Value) * M_PI_180,
                         Convert.ToDouble(match.Groups[2].Value) * M_PI_180)
                     );
@@ -111,8 +111,8 @@ public class H3GeometryExtensionsTests {
     [Test]
     public void Test_GetCellBoundaryVertices_AtRes0() {
         // Arrange
-        GeoCoord c = new(0, 0);
-        var index = H3Index.FromGeoCoord(c, 0);
+        LatLng c = new(0, 0);
+        var index = H3Index.FromLatLng(c, 0);
 
         // Act
         var boundary = index.GetCellBoundaryVertices().ToArray();
@@ -145,7 +145,7 @@ public class H3GeometryExtensionsTests {
 
     [Test]
     [TestCaseSource(typeof(H3GeometryExtensionsTests), nameof(GetCellBoundaryVerticesTestCases))]
-    public bool Test_Upstream_GetCellBoundaryVertices(string testDataFn, List<(H3Index, GeoCoord[])> expectedData) {
+    public bool Test_Upstream_GetCellBoundaryVertices(string testDataFn, List<(H3Index, LatLng[])> expectedData) {
         // Arrange
 
         // Act
@@ -178,8 +178,8 @@ public class H3GeometryExtensionsTests {
     [Test]
     public void Test_GetCellAreaInKm2() {
         // Arrange
-        GeoCoord c = new(0, 0);
-        var indexes = Enumerable.Range(0, MAX_H3_RES + 1).Select(r => H3Index.FromGeoCoord(c, r)).ToArray();
+        LatLng c = new(0, 0);
+        var indexes = Enumerable.Range(0, MAX_H3_RES + 1).Select(r => H3Index.FromLatLng(c, r)).ToArray();
 
         // Act
         var areas = indexes.Select(index => index.CellAreaInKmSquared()).ToArray();
@@ -233,7 +233,7 @@ public class H3GeometryExtensionsTests {
 
     private static int CountValidFaces(int[] faces) => faces.Count(face => face is >= 0 and <= 19);
 
-    private static void AssertCellBoundaryVertices(Point[] expected, GeoCoord[] actual) {
+    private static void AssertCellBoundaryVertices(Point[] expected, LatLng[] actual) {
         Assert.AreEqual(expected.Length, actual.Length, "should be same length");
         for (var i = 0; i < expected.Length; i += 1) {
             var p = expected[i];

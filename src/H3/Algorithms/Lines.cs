@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using H3.Extensions;
 using H3.Model;
 
-namespace H3.Algorithms; 
+namespace H3.Algorithms;
 
 public static class Lines {
 
@@ -17,7 +18,22 @@ public static class Lines {
     /// <param name="origin">index to find distance from</param>
     /// <param name="destination">index to find distance to</param>
     /// <returns>grid distance in cells; -1 if could not be computed</returns>
+    [Obsolete("as of 4.0: use GridDistance instead")]
     public static int DistanceTo(this H3Index origin, H3Index destination) {
+        return origin.GridDistance(destination);
+    }
+
+    /// <summary>
+    /// Produces the grid distance between the two indexes.
+    ///
+    /// This function may fail to find the distance between two indexes, for
+    /// example if they are very far apart. It may also fail when finding
+    /// distances for indexes on opposite sides of a pentagon.
+    /// </summary>
+    /// <param name="origin">index to find distance from</param>
+    /// <param name="destination">index to find distance to</param>
+    /// <returns>grid distance in cells; -1 if could not be computed</returns>
+    public static int GridDistance(this H3Index origin, H3Index destination) {
         try {
             var originIjk = LocalCoordIJK.ToLocalIJK(origin, origin);
             var destinationIjk = LocalCoordIJK.ToLocalIJK(origin, destination);
@@ -29,15 +45,15 @@ public static class Lines {
     }
 
     /// <summary>
-    /// Given two H3 indexes, return the line of indexes between them (inclusive).
+    /// Given two H3 cells, return the path of cells between them (inclusive).
     /// </summary>
     /// <remarks>
-    /// This function may fail to find the line between two indexes, for
+    /// This function may fail to find the line between two cells, for
     /// example if they are very far apart. It may also fail when finding
     /// distances for indexes on opposite sides of a pentagon.
     /// - The specific output of this function should not be considered stable
     ///   across library versions. The only guarantees the library provides are
-    ///   that the line length will be `DistanceTo(start, end) + 1` and that
+    ///   that the line length will be `GridDistance(start, end) + 1` and that
     ///   every index in the line will be a neighbor of the preceding index.
     /// - Lines are drawn in grid space, and may not correspond exactly to either
     ///   Cartesian lines or great arcs.
@@ -46,7 +62,30 @@ public static class Lines {
     /// <param name="destination">end index of the line</param>
     /// <returns>all points from start to end, inclusive; empty if could not
     /// compute a line</returns>
+    [Obsolete("as of 4.0: use GridPathCells instead")]
     public static IEnumerable<H3Index> LineTo(this H3Index origin, H3Index destination) {
+        return origin.GridPathCells(destination);
+    }
+
+    /// <summary>
+    /// Given two H3 cells, return the path of cells between them (inclusive).
+    /// </summary>
+    /// <remarks>
+    /// This function may fail to find the line between two cells, for
+    /// example if they are very far apart. It may also fail when finding
+    /// distances for indexes on opposite sides of a pentagon.
+    /// - The specific output of this function should not be considered stable
+    ///   across library versions. The only guarantees the library provides are
+    ///   that the line length will be `GridDistance(start, end) + 1` and that
+    ///   every index in the line will be a neighbor of the preceding index.
+    /// - Lines are drawn in grid space, and may not correspond exactly to either
+    ///   Cartesian lines or great arcs.
+    /// </remarks>
+    /// <param name="origin">start index of the line</param>
+    /// <param name="destination">end index of the line</param>
+    /// <returns>all points from start to end, inclusive; empty if could not
+    /// compute a line</returns>
+    public static IEnumerable<H3Index> GridPathCells(this H3Index origin, H3Index destination) {
         CoordIJK startIjk;
         CoordIJK endIjk;
         var workIjk1 = new CoordIJK();

@@ -61,7 +61,7 @@ public class H3HierarchyExtensionsTests {
     public void Test_Upstream_GetParentForResolution() {
         // Arrange
         var fromCenter = Enumerable.Range(0, MAX_H3_RES + 1)
-            .ToDictionary(res => res, res => H3Index.FromGeoCoord(TestHelpers.SfCoord, res));
+            .ToDictionary(res => res, res => H3Index.FromLatLng(TestHelpers.SfCoord, res));
         var sfAt15 = fromCenter[15];
 
         // Act
@@ -99,7 +99,7 @@ public class H3HierarchyExtensionsTests {
     [Test]
     public void Test_Upstream_GetChildrenForResolution_OneResStep() {
         // Arrange
-        var sfHex8 = H3Index.FromGeoCoord(TestHelpers.SfCoord, 8);
+        var sfHex8 = H3Index.FromLatLng(TestHelpers.SfCoord, 8);
 
         // Act
         var children = sfHex8.GetChildrenForResolution(9).ToList();
@@ -112,7 +112,7 @@ public class H3HierarchyExtensionsTests {
     [Test]
     public void Test_Upstream_GetChildrenForResolution_MultipleResStep() {
         // Arrange
-        var sfHex8 = H3Index.FromGeoCoord(TestHelpers.SfCoord, 8);
+        var sfHex8 = H3Index.FromLatLng(TestHelpers.SfCoord, 8);
 
         // Act
         var children = sfHex8.GetChildrenForResolution(10).ToList();
@@ -181,10 +181,10 @@ public class H3HierarchyExtensionsTests {
     [Test]
     public void Test_Upstream_GetChildCenterForResolution() {
         // Arrange
-        var center = H3Index.Create(8, 4, Direction.J).ToGeoCoord();
+        var center = H3Index.Create(8, 4, Direction.J).ToLatLng();
         var indexes = Enumerable.Range(0, MAX_H3_RES)
-            .Select(res => H3Index.FromGeoCoord(center, res));
-        var centers = indexes.ToDictionary(i => i, i => H3Index.FromGeoCoord(i.ToGeoCoord(), i.Resolution + 1));
+            .Select(res => H3Index.FromLatLng(center, res));
+        var centers = indexes.ToDictionary(i => i, i => H3Index.FromLatLng(i.ToLatLng(), i.Resolution + 1));
 
         // Act
         var children = indexes.ToDictionary(i => i, i => i.GetChildCenterForResolution(i.Resolution + 1));

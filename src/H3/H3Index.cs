@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
 using H3.Model;
 using static H3.Constants;
@@ -11,7 +9,7 @@ using System.Text.Json.Serialization;
 
 #nullable enable
 
-namespace H3; 
+namespace H3;
 
 [JsonConverter(typeof(H3IndexJsonConverter))]
 public sealed partial class H3Index : IComparable<H3Index> {
@@ -122,10 +120,13 @@ public sealed partial class H3Index : IComparable<H3Index> {
         set => Value = (Value & H3_RESERVED_MASK_NEGATIVE) | ((ulong)value << H3_RESERVED_OFFSET);
     }
 
+    [Obsolete("as of 4.0: use IsValidCell instead")]
+    public bool IsValid => IsValidCell;
+
     /// <summary>
-    /// Whether or not the index is valid.
+    /// Whether or not the index is a valid cell.
     /// </summary>
-    public bool IsValid {
+    public bool IsValidCell {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get {
             // null is obviously invalid
@@ -368,8 +369,8 @@ public sealed partial class H3Index : IComparable<H3Index> {
     #region conversions
 
     /// <summary>
-    /// Convert an H3Index to the FaceIJK address on a specified icosahedral face.  Note that
-    /// <paramref name="faceIjk"/> will be mutated by this function.
+    /// Convert an <see cref="H3Index"/> to the <see cref="FaceIJK"/> address on a specified
+    /// icosahedral face.  Note that <paramref name="faceIjk"/> will be mutated by this function.
     /// </summary>
     /// <param name="faceIjk"></param>
     /// <returns></returns>
@@ -393,8 +394,10 @@ public sealed partial class H3Index : IComparable<H3Index> {
     }
 
     /// <summary>
-    /// Convert an H3Index to a FaceIJK address.
+    /// Convert a <see cref="H3Index"/> to a <see cref="FaceIJK"/> address.
     /// </summary>
+    /// <param name="toUpdateFijk">optional value to update and return
+    /// instead of allocating a new address</param>
     /// <returns></returns>
     public FaceIJK ToFaceIJK(FaceIJK? toUpdateFijk = default) {
         var index = this;
@@ -452,25 +455,36 @@ public sealed partial class H3Index : IComparable<H3Index> {
     }
 
     /// <summary>
-    /// Determines the spherical coordinates of the center point of a H3
-    /// index.
+    /// Determines the spherical coordinates of the center point of a
+    /// <see cref="H3Index"/>
     /// </summary>
-    /// <returns>Center point GeoCoord</returns>
-    public GeoCoord ToGeoCoord() => ToFaceIJK().ToGeoCoord(Resolution);
+    /// <returns>Center point LatLng</returns>
+    [Obsolete("as of 4.0: use ToLatLng instead")]
+    public GeoCoord ToGeoCoord() {
+        return new GeoCoord(ToLatLng());
+    }
 
     /// <summary>
-    /// Determines the spherical coordinates of the center point of a H3
-    /// index, and returns it as a NTS <see cref="Point"/>.
+    /// Determines the spherical coordinates of the center point of a
+    /// <see cref="H3Index"/>
     /// </summary>
-    /// <param name="geometryFactory">GeometryFactory to be used to create
-    /// point; defaults to DefaultGeometryFactory.  Note that coordinates
-    /// are provided in degrees and SRS is assumed to be EPSG:4326.</param>
+    /// <returns>Center point LatLng</returns>
+    public LatLng ToLatLng() => ToFaceIJK().ToGeoCoord(Resolution);
+
+    /// <summary>
+    /// Determines the spherical coordinates of the center point of a <see cref="H3Index"/>,
+    /// and returns it as a NTS <see cref="Point"/>.
+    /// </summary>
+    /// <param name="geometryFactory">geometry factory to be used to create
+    /// point; defaults to <see cref="Utils.DefaultGeometryFactory"/>.  Note that
+    /// coordinates are provided in degrees and SRS is assumed to be EPSG:4326.</param>
     /// <returns></returns>
     public Point ToPoint(GeometryFactory? geometryFactory = null) =>
-        ToGeoCoord().ToPoint(geometryFactory);
+        ToLatLng().ToPoint(geometryFactory);
 
     /// <summary>
-    /// Convert an FaceIJK address to the corresponding H3Index.
+    /// Convert a <see cref="FaceIJK"/> address to its corresponding <see cref="H3Index"/>
+    /// at the specified resolution.
     /// </summary>
     /// <param name="face">The FaceIJK address</param>
     /// <param name="resolution">The cell resolution</param>
@@ -561,22 +575,34 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// Encodes a coordinate on the sphere to the H3 index of the containing cell at
     /// the specified resolution.
     /// </summary>
-    /// <param name="geoCoord">The spherical coordinates to encode</param>
+    /// <param name="latLng">The spherical coordinates to encode</param>
     /// <param name="resolution">The desired H3 resolution for the encoding</param>
     /// <returns>Returns H3Index.Invalid (H3_NULL) on invalid input</returns>
-    public static H3Index FromGeoCoord(GeoCoord geoCoord, int resolution) {
+    [Obsolete("as of 4.0: use FromLatLng instead")]
+    public static H3Index FromGeoCoord(GeoCoord latLng, int resolution) {
+        return FromLatLng(new LatLng(latLng.Latitude, latLng.Longitude), resolution);
+    }
+
+    /// <summary>
+    /// Encodes a coordinate on the sphere to the H3 index of the containing cell at
+    /// the specified resolution.
+    /// </summary>
+    /// <param name="latLng">The spherical coordinates to encode</param>
+    /// <param name="resolution">The desired H3 resolution for the encoding</param>
+    /// <returns>Returns H3Index.Invalid (H3_NULL) on invalid input</returns>
+    public static H3Index FromLatLng(LatLng latLng, int resolution) {
         if (resolution is < 0 or > MAX_H3_RES) return Invalid;
 
 #if NETSTANDARD2_0
-            if (!geoCoord.Latitude.IsFinite() || !geoCoord.Longitude.IsFinite()) return Invalid;
+            if (!latLng.Latitude.IsFinite() || !latLng.Longitude.IsFinite()) return Invalid;
 #else
-        if (!double.IsFinite(geoCoord.Latitude) || !double.IsFinite(geoCoord.Longitude)) return Invalid;
+        if (!double.IsFinite(latLng.Latitude) || !double.IsFinite(latLng.Longitude)) return Invalid;
 #endif
-        return FromFaceIJK(FaceIJK.FromGeoCoord(geoCoord.Longitude, geoCoord.Latitude, resolution), resolution);
+        return FromFaceIJK(FaceIJK.FromGeoCoord(latLng.Longitude, latLng.Latitude, resolution), resolution);
     }
 
     public static H3Index FromPoint(Point point, int resolution) =>
-        FromGeoCoord(GeoCoord.FromPoint(point), resolution);
+        FromLatLng(LatLng.FromPoint(point), resolution);
 
     public static implicit operator ulong(H3Index index) => index.Value;
 

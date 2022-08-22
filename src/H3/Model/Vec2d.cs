@@ -49,7 +49,7 @@ public sealed class Vec2d {
         }
     }
 
-    public GeoCoord ToFaceGeoCoord(int face, int resolution, bool isSubstrate) => FaceIJK.ToFaceGeoCoord(X, Y, face, resolution, isSubstrate);
+    public LatLng ToFaceGeoCoord(int face, int resolution, bool isSubstrate) => FaceIJK.ToFaceGeoCoord(X, Y, face, resolution, isSubstrate);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(Vec2d a, Vec2d b) => Math.Abs(a.X - b.X) < EPSILON && Math.Abs(a.Y - b.Y) < EPSILON;

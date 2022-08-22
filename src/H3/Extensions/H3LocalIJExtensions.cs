@@ -4,13 +4,10 @@ using static H3.Utils;
 
 #nullable enable
 
-namespace H3.Extensions; 
+namespace H3.Extensions;
 
 /// <summary>
 /// Extends the H3Index class with support for generating LocalIJ coordinates.
-///
-/// This functionality is experimental, and its output is not guaranteed
-/// to be compatible across different versions of H3.
 /// </summary>
 public static class H3LocalIJExtensions {
 
@@ -25,14 +22,31 @@ public static class H3LocalIJExtensions {
     ///
     /// Failure may occur if the index is too far away from the origin
     /// or if the index is on the other side of a pentagon.
-    ///
-    /// This function is experimental, and its output is not guaranteed
-    /// to be compatible across different versions of H3.
     /// </summary>
     /// <param name="origin"></param>
     /// <param name="index"></param>
     /// <returns></returns>
-    public static CoordIJ ToLocalIJ(this H3Index origin, H3Index index) =>
+    [Obsolete("as of 4.0: use CellToLocalIj instead")]
+    public static CoordIJ ToLocalIJ(this H3Index origin, H3Index index) {
+        return origin.CellToLocalIj(index);
+    }
+
+    /// <summary>
+    /// Produces ij coordinates for an index anchored by an origin.
+    ///
+    /// The coordinate space used by this function may have deleted
+    /// regions or warping due to pentagonal distortion.
+    ///
+    /// Coordinates are only comparable if they come from the same
+    /// origin index.
+    ///
+    /// Failure may occur if the index is too far away from the origin
+    /// or if the index is on the other side of a pentagon.
+    /// </summary>
+    /// <param name="origin"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static CoordIJ CellToLocalIj(this H3Index origin, H3Index index) =>
         CoordIJ.FromCoordIJK(LocalCoordIJK.ToLocalIJK(origin, index));
 
     /// <summary>
@@ -43,14 +57,28 @@ public static class H3LocalIJExtensions {
     ///
     /// Failure may occur if the index is too far away from the origin
     /// or if the index is on the other side of a pentagon.
-    ///
-    /// This function is experimental, and its output is not guaranteed
-    /// to be compatible across different versions of H3.
     /// </summary>
     /// <param name="origin">an anchoring index for the IJ coordinate system</param>
     /// <param name="coord">IJ coordinates to index</param>
     /// <returns>H3Index for coordinates</returns>
+    [Obsolete("as of 4.0: use LocalIjToCell instead")]
     public static H3Index FromLocalIJ(this H3Index origin, CoordIJ coord) {
+        return origin.LocalIjToCell(coord);
+    }
+
+    /// <summary>
+    /// Produces an index for ij coordinates anchored by an origin.
+    ///
+    /// The coordinate space used by this function may have deleted
+    /// regions or warping due to pentagonal distortion.
+    ///
+    /// Failure may occur if the index is too far away from the origin
+    /// or if the index is on the other side of a pentagon.
+    /// </summary>
+    /// <param name="origin">an anchoring index for the IJ coordinate system</param>
+    /// <param name="coord">IJ coordinates to index</param>
+    /// <returns>H3Index for coordinates</returns>
+    public static H3Index LocalIjToCell(this H3Index origin, CoordIJ coord) {
         try {
             return LocalCoordIJK.ToH3Index(origin, coord.ToCoordIJK());
         } catch {
@@ -62,9 +90,6 @@ public static class H3LocalIJExtensions {
 
 /// <summary>
 /// Extends the H3Index class with support for generating LocalIJK coordinates.
-///
-/// This functionality is experimental, and its output is not guaranteed
-/// to be compatible across different versions of H3.
 /// </summary>
 public static class H3LocalIJKExtensions {
 
@@ -79,14 +104,31 @@ public static class H3LocalIJKExtensions {
     ///
     /// Failure may occur if the index is too far away from the origin
     /// or if the index is on the other side of a pentagon.
-    ///
-    /// This function is experimental, and its output is not guaranteed
-    /// to be compatible across different versions of H3.
     /// </summary>
     /// <param name="origin"></param>
     /// <param name="index"></param>
     /// <returns></returns>
-    public static CoordIJK ToLocalIJK(this H3Index origin, H3Index index) =>
+    [Obsolete("as of 4.0: use CellToLocalIjk instead")]
+    public static CoordIJK ToLocalIJK(this H3Index origin, H3Index index) {
+        return origin.CellToLocalIjk(index);
+    }
+
+    /// <summary>
+    /// Produces ijk coordinates for an index anchored by an origin.
+    ///
+    /// The coordinate space used by this function may have deleted
+    /// regions or warping due to pentagonal distortion.
+    ///
+    /// Coordinates are only comparable if they come from the same
+    /// origin index.
+    ///
+    /// Failure may occur if the index is too far away from the origin
+    /// or if the index is on the other side of a pentagon.
+    /// </summary>
+    /// <param name="origin"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static CoordIJK CellToLocalIjk(this H3Index origin, H3Index index) =>
         LocalCoordIJK.ToLocalIJK(origin, index);
 
     /// <summary>
@@ -97,14 +139,28 @@ public static class H3LocalIJKExtensions {
     ///
     /// Failure may occur if the index is too far away from the origin
     /// or if the index is on the other side of a pentagon.
-    ///
-    /// This function is experimental, and its output is not guaranteed
-    /// to be compatible across different versions of H3.
     /// </summary>
     /// <param name="origin">an anchoring index for the IJK coordinate system</param>
     /// <param name="coord">IJK coordinates to index</param>
     /// <returns>H3Index for coordinates</returns>
+    [Obsolete("as of 4.0: use LocalIjkToCell instead")]
     public static H3Index FromLocalIJK(this H3Index origin, CoordIJK coord) {
+        return origin.LocalIjkToCell(coord);
+    }
+
+    /// <summary>
+    /// Produces an index for ijk coordinates anchored by an origin.
+    ///
+    /// The coordinate space used by this function may have deleted
+    /// regions or warping due to pentagonal distortion.
+    ///
+    /// Failure may occur if the index is too far away from the origin
+    /// or if the index is on the other side of a pentagon.
+    /// </summary>
+    /// <param name="origin">an anchoring index for the IJK coordinate system</param>
+    /// <param name="coord">IJK coordinates to index</param>
+    /// <returns>H3Index for coordinates</returns>
+    public static H3Index LocalIjkToCell(this H3Index origin, CoordIJK coord) {
         try {
             return LocalCoordIJK.ToH3Index(origin, coord);
         }  catch {

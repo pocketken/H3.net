@@ -16,8 +16,8 @@ public static class TestHelpers {
     public const ulong TestIndexValue = 0x8e48e1d7038d527;
 
     // uber sf test point
-    public static readonly GeoCoord SfCoord = (0.659966917655, -2.1364398519396);
-    public static readonly H3Index SfIndex = H3Index.FromGeoCoord(SfCoord, 9);
+    public static readonly LatLng SfCoord = (0.659966917655, -2.1364398519396);
+    public static readonly H3Index SfIndex = H3Index.FromLatLng(SfCoord, 9);
 
     // result of select h3_to_children('8e48e1d7038d527'::h3index, 15) in PG
     public static readonly ulong[] TestIndexChildrenAtRes15 = new ulong[7] {
@@ -86,7 +86,7 @@ public static class TestHelpers {
 
     public static IEnumerable<H3Index> GetAllCellsForResolution(int resolution) {
         if (resolution == 0) return AllResolution0Indexes;
-        return AllResolution0Indexes.UncompactToResolution(resolution);
+        return AllResolution0Indexes.UncompactCellsToResolution(resolution);
     }
 
     public static void AssertAll(H3Index[] expected, H3Index[] actual) {

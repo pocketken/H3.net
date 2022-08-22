@@ -75,7 +75,7 @@ public class H3SetExtensionsTests {
         H3Index[] indicies = { TestHelpers.SfIndex, (H3Index)TestHelpers.TestIndexValue };
 
         // Act
-        var actual = indicies.Compact().ToArray();
+        var actual = indicies.CompactCells().ToArray();
 
         // Assert
         TestHelpers.AssertAll(indicies, actual);
@@ -84,7 +84,7 @@ public class H3SetExtensionsTests {
     [Test]
     public void Test_Compact_MatchesPg() {
         // Act
-        var result = TestHelpers.TestIndexKRingsTo2.Select(e => (H3Index)e.Item1).Compact().ToArray();
+        var result = TestHelpers.TestIndexKRingsTo2.Select(e => (H3Index)e.Item1).CompactCells().ToArray();
 
         // Assert
         TestHelpers.AssertAll(TestCompactArray, result);
@@ -97,7 +97,7 @@ public class H3SetExtensionsTests {
         input.AddRange(TestHelpers.TestIndexKRingsTo2.Take(5).Select(e => (H3Index)e.Item1));
 
         // Act
-        var result = input.Compact().ToArray();
+        var result = input.CompactCells().ToArray();
 
         // Assert
         TestHelpers.AssertAll(TestCompactArray, result);
@@ -106,7 +106,7 @@ public class H3SetExtensionsTests {
     [Test]
     public void Test_Uncomapct_MatchesPg() {
         // Act
-        var result = TestCompactArray.UncompactToResolution(14).ToArray();
+        var result = TestCompactArray.UncompactCellsToResolution(14).ToArray();
 
         // Assert
         TestHelpers.AssertAll(TestUncompactArray, result);
@@ -118,7 +118,7 @@ public class H3SetExtensionsTests {
         var sunnyvaleExpanded = Sunnyvale.GetKRing(9).Select(c => c.Index);
 
         // Act
-        var actual = sunnyvaleExpanded.Compact().ToList();
+        var actual = sunnyvaleExpanded.CompactCells().ToList();
 
         // Assert
         Assert.AreEqual(73, actual.Count, "should reduce to 73 indexes");
@@ -135,8 +135,8 @@ public class H3SetExtensionsTests {
 
         // Act
         var actual = sunnyvaleExpanded
-            .Compact()
-            .UncompactToResolution(9)
+            .CompactCells()
+            .UncompactCellsToResolution(9)
             .ToList();
 
         // Assert
@@ -146,7 +146,7 @@ public class H3SetExtensionsTests {
     [Test]
     public void Test_Upstream_Compact_Uncompactable() {
         // Act
-        var actual = Uncompactable.Compact().ToList();
+        var actual = Uncompactable.CompactCells().ToList();
 
         // Assert
         Assert.AreEqual(Uncompactable, actual, "should return original input");
@@ -158,7 +158,7 @@ public class H3SetExtensionsTests {
         var expected = UncompactableWithZero.Where(i => i != H3Index.Invalid).ToList();
 
         // Act
-        var actual = UncompactableWithZero.Compact().ToList();
+        var actual = UncompactableWithZero.CompactCells().ToList();
 
         // Assert
         Assert.AreEqual(expected, actual, "should return original input without H3_NULL");
@@ -170,7 +170,7 @@ public class H3SetExtensionsTests {
     [TestCase(16)]
     public void Test_Upstream_Uncompact_WrongResolution(int resolution) {
         // Act
-        var exception = Assert.Throws<ArgumentException>(() => UncompactSomeHexagons.UncompactToResolution(resolution).ToList());
+        var exception = Assert.Throws<ArgumentException>(() => UncompactSomeHexagons.UncompactCellsToResolution(resolution).ToList());
 
         // Assert
         Assert.AreEqual("set contains cell smaller than target resolution", exception.Message, "expected message");
@@ -186,7 +186,7 @@ public class H3SetExtensionsTests {
         var expectedChildren = index.GetChildrenForResolution(2);
 
         // Act
-        var actual = indexes.UncompactToResolution(2);
+        var actual = indexes.UncompactCellsToResolution(2);
 
         // Assert
         Assert.AreEqual(expectedChildren, actual, "should be equal");
@@ -202,7 +202,7 @@ public class H3SetExtensionsTests {
         var children = index.GetChildrenForResolution(2);
 
         // Act
-        var actual = children.Compact();
+        var actual = children.CompactCells();
 
         // Assert
         Assert.AreEqual(expectedIndexes, actual, "should be equal");

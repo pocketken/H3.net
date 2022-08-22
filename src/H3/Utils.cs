@@ -61,7 +61,7 @@ public static class Utils {
     /// <returns>The great circle distance in radians between this coordinate
     /// and the destination coordinate.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double PointDistanceInRadians(double p1Lon, double p1Lat, double p2Lon, double p2Lat) {
+    public static double GreatCircleDistanceInRadians(double p1Lon, double p1Lat, double p2Lon, double p2Lat) {
         var sinLat = Math.Sin((p2Lat - p1Lat) / 2.0);
         var sinLon = Math.Sin((p2Lon - p1Lon) / 2.0);
         var a = sinLat * sinLat + Math.Cos(p1Lat) * Math.Cos(p2Lat) * sinLon * sinLon;

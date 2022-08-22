@@ -8,7 +8,7 @@ using static H3.Utils;
 
 #nullable enable
 
-namespace H3.Extensions; 
+namespace H3.Extensions;
 
 public static class H3GeometryExtensions {
 
@@ -230,7 +230,7 @@ public static class H3GeometryExtensions {
 
         for (var i = 0; i < boundary.Length; i += 1) {
             var j = (i + 1) % boundary.Length;
-            area += GeoCoord.GetTriangleArea(boundary[i], boundary[j], center);
+            area += LatLng.GetTriangleArea(boundary[i], boundary[j], center);
         }
 
         return area;
@@ -264,7 +264,7 @@ public static class H3GeometryExtensions {
         var firstVertex =  (index.IsPentagon
             ? faceIjk.GetPentagonBoundary(resolution, 0, 1)
             : faceIjk.GetHexagonBoundary(resolution, 0, 1)).First();
-        return center.GetPointDistanceInKm(firstVertex);
+        return center.GetGreatCircleDistanceInKm(firstVertex);
     }
 
     /// <summary>
@@ -277,7 +277,7 @@ public static class H3GeometryExtensions {
     /// reducing allocations when producing boundaries for a large number
     /// of indices.</param>
     /// <returns>boundary coordinates</returns>
-    public static IEnumerable<GeoCoord> GetCellBoundaryVertices(this H3Index index, FaceIJK? toUpdateIjk = default) {
+    public static IEnumerable<LatLng> GetCellBoundaryVertices(this H3Index index, FaceIJK? toUpdateIjk = default) {
         var face = index.ToFaceIJK(toUpdateIjk);
         var resolution = index.Resolution;
         return index.IsPentagon

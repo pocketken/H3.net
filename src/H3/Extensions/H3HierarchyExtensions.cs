@@ -14,7 +14,7 @@ namespace H3.Extensions;
 public static class H3HierarchyExtensions {
 
     /// <summary>
-    /// Returns the cell index neighboring the origin, in the direction dir.
+    /// Returns the cell index neighboring the origin, in the <see cref="Direction"/> dir.
     ///
     /// Implementation note: The only reachable case where this returns 0 is if the
     /// origin is a pentagon and the translation is in the k direction. Thus,
@@ -190,7 +190,7 @@ public static class H3HierarchyExtensions {
     }
 
     /// <summary>
-    /// Get the direction from the origin to a given neighbor. This is effectively
+    /// Get the <see cref="Direction"/> from the origin to a given neighbor. This is effectively
     /// the reverse operation for NeighborRotations. Returns Direction.Invalid if the
     /// cells are not neighbors.
     ///
@@ -212,7 +212,7 @@ public static class H3HierarchyExtensions {
     }
 
     /// <summary>
-    /// Returns whether or not the provided H3Indexes are neighbours.
+    /// Returns whether or not the provided <see cref="H3Index"/> are neighbours.
     /// </summary>
     /// <param name="origin">Origin H3 index</param>
     /// <param name="destination">Destination H3 index</param>
@@ -263,7 +263,7 @@ public static class H3HierarchyExtensions {
     }
 
     /// <summary>
-    /// Produces the parent index for a given H3 index at the specified
+    /// Produces the parent index for a given <see cref="H3Index"/> at the specified
     /// resolution.
     /// </summary>
     /// <param name="origin">origin index</param>
@@ -288,7 +288,7 @@ public static class H3HierarchyExtensions {
     }
 
     /// <summary>
-    /// Returns the immediate child index based on the specified cell number.
+    /// Returns the immediate child <see cref="H3Index"/> in the specified <see cref="Direction"/>.
     /// Bit operations only, could generate invalid indexes if not careful
     /// (deleted cell under a pentagon).
     /// </summary>
@@ -301,12 +301,12 @@ public static class H3HierarchyExtensions {
     };
 
     /// <summary>
-    /// Produces the center child index for a given H3 index at the specified
+    /// Produces the center child index for a given <see cref="H3Index"/> at the specified
     /// resolution.
     /// </summary>
     /// <param name="origin">origin index to find center of</param>
     /// <param name="childResolution">the resolution to switch to, must be &gt; resolution &lt;= MAX_H3_RES</param>
-    /// <returns>H3Index of the center child, or H3Index.Invalid if you actually asked for a parent</returns>
+    /// <returns><see cref="H3Index"/> of the center child, or <see cref="H3Index.Invalid"/> if you actually asked for a parent</returns>
     public static H3Index GetChildCenterForResolution(this H3Index origin, int childResolution) {
         var resolution = origin.Resolution;
         if (!IsValidChildResolution(resolution, childResolution)) return H3Index.Invalid;
@@ -321,8 +321,7 @@ public static class H3HierarchyExtensions {
     }
 
     /// <summary>
-    /// Takes the given cell id and generates all of the children at the specified
-    /// resolution.
+    /// Produces all child <see cref="H3Index"/> for the specified resolution.
     /// </summary>
     /// <param name="origin">index to find children for</param>
     /// <param name="childResolution">resolution of child level</param>

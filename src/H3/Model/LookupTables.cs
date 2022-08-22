@@ -744,7 +744,7 @@ public static class LookupTables {
         }
     };
 
-    public static readonly GeoCoord[] GeoFaceCenters = {
+    public static readonly LatLng[] GeoFaceCenters = {
         new(0.803582649718989942, 1.248397419617396099),    // face  0
         new(1.307747883455638156, 2.536945009877921159),    // face  1
         new(1.054751253523952054, -1.347517358900396623),   // face  2

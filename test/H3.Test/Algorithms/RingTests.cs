@@ -50,7 +50,7 @@ public class RingTests {
     [Test]
     public void Test_Upstream_GetKRing() {
         // Arrange
-        var index = H3Index.FromGeoCoord((0.659966917655, 2 * 3.14159 - 2.1364398519396), 0);
+        var index = H3Index.FromLatLng((0.659966917655, 2 * 3.14159 - 2.1364398519396), 0);
         (H3Index, int)[] expected = {
             (0x8029fffffffffff, 0),
             (0x801dfffffffffff, 1),

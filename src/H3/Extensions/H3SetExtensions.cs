@@ -5,7 +5,7 @@ using static H3.Utils;
 
 #nullable enable
 
-namespace H3.Extensions; 
+namespace H3.Extensions;
 
 /// <summary>
 /// Provides extension methods that operate on sets of H3Index.
@@ -25,7 +25,25 @@ public static class H3SetExtensions {
     /// </remarks>
     /// <param name="indexEnumerable">set of cells to compact</param>
     /// <returns>set of compacted cells</returns>
+    [Obsolete("as of 4.0: Use CompactCells instead")]
     public static List<H3Index> Compact(this IEnumerable<H3Index> indexEnumerable) {
+        return indexEnumerable.CompactCells();
+    }
+
+    /// <summary>
+    /// Takes a set of cells and compacts them by removing duplicates and
+    /// pruning full child branches to the parent level. This is also done for
+    /// all parents recursively to get the minimum number of indexes that perfectly
+    /// cover the defined space.</summary>
+    /// <remarks>This implementation differs from upstream in that mixed resolutions
+    /// are supported, and duplicate or invalid inputs are filtered instead returning
+    /// an error code when they are encountered.  Based on the "FlexiCompact" method
+    /// in H3Lib
+    /// (https://github.com/RichardVasquez/h3net/blob/v3.7.1/H3Lib/Extensions/H3LibExtensions.cs#L359)
+    /// </remarks>
+    /// <param name="indexEnumerable">set of cells to compact</param>
+    /// <returns>set of compacted cells</returns>
+    public static List<H3Index> CompactCells(this IEnumerable<H3Index> indexEnumerable) {
         Dictionary<int, HashSet<H3Index>> indexes = new();
         var maxResolution = -1;
         var count = 0;
@@ -111,7 +129,21 @@ public static class H3SetExtensions {
     /// <returns>original set of cells. Throws ArgumentException if any
     /// cell in the set is smaller than the output resolution or invalid
     /// resolution is requested.</returns>
-    public static IEnumerable<H3Index> UncompactToResolution(this IEnumerable<H3Index> indexes, int resolution) =>
+    [Obsolete("as of 4.0: use UncompactCellsToResolution instead")]
+    public static IEnumerable<H3Index> UncompactToResolution(this IEnumerable<H3Index> indexes, int resolution) {
+        return indexes.UncompactCellsToResolution(resolution);
+    }
+
+    /// <summary>
+    /// Takes a compacted set of cells and expands back to the original
+    /// set of cells at a specific resolution.
+    /// </summary>
+    /// <param name="indexes">set of cells</param>
+    /// <param name="resolution">resolution to expand to</param>
+    /// <returns>original set of cells. Throws ArgumentException if any
+    /// cell in the set is smaller than the output resolution or invalid
+    /// resolution is requested.</returns>
+    public static IEnumerable<H3Index> UncompactCellsToResolution(this IEnumerable<H3Index> indexes, int resolution) =>
         indexes.Where(index => index != H3Index.Invalid)
             .Distinct()
             .SelectMany(index => {
@@ -129,8 +161,18 @@ public static class H3SetExtensions {
     /// </summary>
     /// <param name="indexes"></param>
     /// <returns>expanded set ofindexes</returns>
+    [Obsolete("as of 4.0: use UncompactCellsToHighestResolution instead")]
     public static IEnumerable<H3Index> UncompactToHighestResolution(this IEnumerable<H3Index> indexes) =>
-        UncompactToResolution(indexes, indexes.Max(i => i.Resolution));
+        UncompactCellsToResolution(indexes, indexes.Max(i => i.Resolution));
+
+    /// <summary>
+    /// Takes a set of indexes and expands to the highest found resolution
+    /// within the set.
+    /// </summary>
+    /// <param name="indexes"></param>
+    /// <returns>expanded set ofindexes</returns>
+    public static IEnumerable<H3Index> UncompactCellsToHighestResolution(this IEnumerable<H3Index> indexes) =>
+        UncompactCellsToResolution(indexes, indexes.Max(i => i.Resolution));
 
     /// <summary>
     /// Determines whether or not all H3Index entries within the enumerable are

@@ -215,7 +215,7 @@ public sealed class FaceIJK {
     /// <param name="start">The first topological vertex to return</param>
     /// <param name="length">The number of topological vertexes to return</param>
     /// <returns>The spherical coordinates of the cell boundary</returns>
-    public IEnumerable<GeoCoord> GetPentagonBoundary(int resolution, int start, int length) {
+    public IEnumerable<LatLng> GetPentagonBoundary(int resolution, int start, int length) {
         unchecked {
             var adjustedResolution = resolution;
             FaceIJK centerIjk = new(this);
@@ -334,7 +334,7 @@ public sealed class FaceIJK {
     /// <param name="start">The first topological vertex to return</param>
     /// <param name="length">The number of topological vertexes to return</param>
     /// <returns>The spherical coordinates of the cell boundary</returns>
-    public IEnumerable<GeoCoord> GetHexagonBoundary(int resolution, int start, int length) {
+    public IEnumerable<LatLng> GetHexagonBoundary(int resolution, int start, int length) {
         unchecked {
             var adjustedResolution = resolution;
             FaceIJK centerIjk = new(this);
@@ -437,20 +437,20 @@ public sealed class FaceIJK {
         }
     }
 
-    public GeoCoord ToGeoCoord(int resolution) {
+    public LatLng ToGeoCoord(int resolution) {
         return ToFaceGeoCoord(resolution, false);
     }
 
-    public GeoCoord ToFaceGeoCoord(int resolution, bool isSubstrate) {
+    public LatLng ToFaceGeoCoord(int resolution, bool isSubstrate) {
         var (x, y) = Coord.GetVec2dOrdinates();
         return ToFaceGeoCoord(x, y, Face, resolution, isSubstrate);
     }
 
-    public static GeoCoord ToFaceGeoCoord(double x, double y, int face, int resolution, bool isSubstrate) {
+    public static LatLng ToFaceGeoCoord(double x, double y, int face, int resolution, bool isSubstrate) {
         unchecked {
             var r = Math.Sqrt(x * x + y * y);
             if (r < EPSILON) {
-                return new GeoCoord(LookupTables.GeoFaceCenters[face]);
+                return new LatLng(LookupTables.GeoFaceCenters[face]);
             }
 
             var theta = Math.Atan2(y, x);
@@ -467,7 +467,7 @@ public sealed class FaceIJK {
             }
 
             theta = NormalizeAngle(LookupTables.AxisAzimuths[face] - theta);
-            return GeoCoord.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
+            return LatLng.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
         }
     }
 

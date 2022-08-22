@@ -32,7 +32,7 @@ public sealed class Vec3d {
     public double PointSquareDistance(Vec3d v2) =>
         Square(X - v2.X) + Square(Y - v2.Y) + Square(Z - v2.Z);
 
-    public static Vec3d FromGeoCoord(GeoCoord coord, Vec3d? result = default) {
+    public static Vec3d FromGeoCoord(LatLng coord, Vec3d? result = default) {
         return FromLonLat(coord.Longitude, coord.Latitude, result);
     }
 
@@ -47,7 +47,7 @@ public sealed class Vec3d {
         }
     }
 
-    public static Vec3d FromPoint(Point point) => FromGeoCoord(GeoCoord.FromPoint(point));
+    public static Vec3d FromPoint(Point point) => FromGeoCoord(LatLng.FromPoint(point));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(Vec3d a, Vec3d b) => Math.Abs(a.X - b.X) < EPSILON && Math.Abs(a.Y - b.Y) < EPSILON && Math.Abs(a.Z - b.Z) < EPSILON;

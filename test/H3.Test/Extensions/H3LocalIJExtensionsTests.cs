@@ -57,7 +57,7 @@ public class H3LocalIJExtensionsTests {
         H3Index end = 0x8e48e1d7038952f;
 
         // Act
-        var localIj = start.ToLocalIJ(end);
+        var localIj = start.CellToLocalIj(end);
 
         // Assert
         Assert.IsTrue(localIj == TestLocalIJ, "should be equal");
@@ -66,7 +66,7 @@ public class H3LocalIJExtensionsTests {
     [Test]
     public void Test_Upstream_ToLocalIJK_BaseCells() {
         // Act
-        var actual = PentagonIndex.ToLocalIJK(BaseCell15);
+        var actual = PentagonIndex.CellToLocalIjk(BaseCell15);
 
         // Assert
         Assert.IsTrue(actual.IsValid, "should be valid");
@@ -80,7 +80,7 @@ public class H3LocalIJExtensionsTests {
         CoordIJ zero = (0, 0);
 
         // Act
-        var actual = origin.FromLocalIJ(zero);
+        var actual = origin.LocalIjToCell(zero);
 
         // Assert
         Assert.AreEqual(origin, actual, "should be equal");
@@ -94,7 +94,7 @@ public class H3LocalIJExtensionsTests {
         H3Index expectedIndex = 0x8051fffffffffff;
 
         // Act
-        var actual = origin.FromLocalIJ(offset);
+        var actual = origin.LocalIjToCell(offset);
 
         // Assert
         Assert.AreEqual(expectedIndex, actual, "should be equal");
@@ -110,7 +110,7 @@ public class H3LocalIJExtensionsTests {
         CoordIJ coord = (i, j);
 
         // Act
-        var actual = origin.FromLocalIJ(coord);
+        var actual = origin.LocalIjToCell(coord);
 
         // Assert
         Assert.AreEqual(H3Index.Invalid, actual, "should equal H3_NULL");
@@ -131,7 +131,7 @@ public class H3LocalIJExtensionsTests {
         H3Index expected = expectedIndex;
 
         // Act
-        var actual = origin.FromLocalIJ(coord);
+        var actual = origin.LocalIjToCell(coord);
 
         // Assert
         Assert.AreEqual(expected, actual, "should be equal");
@@ -144,7 +144,7 @@ public class H3LocalIJExtensionsTests {
         CoordIJ expectedCoord = (expectedI, expectedJ);
 
         // Act
-        var actual = originIndex.ToLocalIJ(destIndex);
+        var actual = originIndex.CellToLocalIj(destIndex);
 
         // Assert
         Assert.AreEqual(expectedCoord, actual, "should be equal");
@@ -153,7 +153,7 @@ public class H3LocalIJExtensionsTests {
     [Test]
     public void Test_Upstream_ToLocakIJ_FailsIfNotNeighbours() {
         // Act
-        Assert.Throws<ArgumentException>(() => PentagonIndex.ToLocalIJ(BaseCell31));
+        Assert.Throws<ArgumentException>(() => PentagonIndex.CellToLocalIj(BaseCell31));
     }
 
     [Test]
@@ -167,7 +167,7 @@ public class H3LocalIJExtensionsTests {
 #endif
 
         // Act
-        var actual = Assert.Throws<ArgumentOutOfRangeException>(() => invalid.ToLocalIJ(BaseCell15));
+        var actual = Assert.Throws<ArgumentOutOfRangeException>(() => invalid.CellToLocalIj(BaseCell15));
 
         // Assert
         Assert.AreEqual(expectedMessage, actual.Message, "same message");
@@ -179,7 +179,7 @@ public class H3LocalIJExtensionsTests {
         H3Index invalid = 0x7fffffffffffffff;
 
         // Act
-        var actual = Assert.Throws<IndexOutOfRangeException>(() => invalid.ToLocalIJ(invalid));
+        var actual = Assert.Throws<IndexOutOfRangeException>(() => invalid.CellToLocalIj(invalid));
 
         // Assert
         Assert.AreEqual("Index was outside the bounds of the array.", actual.Message, "same message");
@@ -192,10 +192,10 @@ public class H3LocalIJExtensionsTests {
     public void Test_Upstream_ToLocalIJ_Identity(int resolution) {
         // Arrange
         var coords = TestHelpers.GetAllCellsForResolution(resolution)
-            .Select(index => (Origin: index, LocalCoordIJ: index.ToLocalIJ(index)));
+            .Select(index => (Origin: index, LocalCoordIJ: index.CellToLocalIj(index)));
 
         // Act
-        var actual = coords.Select(c => (Expected: c.Origin, Actual: c.Origin.FromLocalIJ(c.LocalCoordIJ)));
+        var actual = coords.Select(c => (Expected: c.Origin, Actual: c.Origin.LocalIjToCell(c.LocalCoordIJ)));
 
         // Assert
         foreach (var (Expected, Actual) in actual) {
@@ -209,7 +209,7 @@ public class H3LocalIJExtensionsTests {
         var coords = TestHelpers.GetAllCellsForResolution(0)
             .Select(index => (
                 Origin: index,
-                LocalCoordIJK: index.ToLocalIJ(index).ToCoordIJK(),
+                LocalCoordIJK: index.CellToLocalIj(index).ToCoordIJK(),
                 Expected: LookupTables.UnitVectors[0]
             ));
 
@@ -225,7 +225,7 @@ public class H3LocalIJExtensionsTests {
         var coords = TestHelpers.GetAllCellsForResolution(1)
             .Select(index => (
                 Origin: index,
-                LocalCoordIJK: index.ToLocalIJ(index).ToCoordIJK(),
+                LocalCoordIJK: index.CellToLocalIj(index).ToCoordIJK(),
                 Expected: LookupTables.DirectionToUnitVector[index.GetDirectionForResolution(1)]
             ));
 
@@ -245,7 +245,7 @@ public class H3LocalIJExtensionsTests {
 
                 return (
                     Origin: index,
-                    LocalCoordIJK: index.ToLocalIJ(index).ToCoordIJK(),
+                    LocalCoordIJK: index.CellToLocalIj(index).ToCoordIJK(),
                     Expected: expected
                 );
             });
@@ -271,9 +271,9 @@ public class H3LocalIJExtensionsTests {
                         var offset = index.GetDirectNeighbour((Direction)dir).Item1;
                         return (
                             Origin: index,
-                            OriginIJK: index.ToLocalIJK(index),
+                            OriginIJK: index.CellToLocalIjk(index),
                             Index: offset,
-                            LocalCoordIJ: index.ToLocalIJ(offset),
+                            LocalCoordIJ: index.CellToLocalIj(offset),
                             Direction: (Direction)dir
                         );
                     }));

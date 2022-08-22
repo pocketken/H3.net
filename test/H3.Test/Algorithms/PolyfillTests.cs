@@ -14,7 +14,7 @@ namespace H3.Test.Algorithms;
 public class PolyfillTests {
 
     // coordinates for the upstream lib's "SF" test poly
-    private static readonly GeoCoord[] UberSfTestPoly = {
+    private static readonly LatLng[] UberSfTestPoly = {
         (0.659966917655, -2.1364398519396),
         (0.6595011102219, -2.1359434279405),
         (0.6583348114025, -2.1354884206045),
@@ -25,26 +25,26 @@ public class PolyfillTests {
     };
 
     // upstream lib's prime meridian test poly
-    private static readonly GeoCoord[] PrimeMeridianVerts = {
+    private static readonly LatLng[] PrimeMeridianVerts = {
         (0.01, 0.01), (0.01, -0.01), (-0.01, -0.01), (-0.01, 0.01), (0.01, 0.01)
     };
 
     // upstream lib's trans meridian test poly/holes
-    private static readonly GeoCoord[] TransMeridianVerts = {
+    private static readonly LatLng[] TransMeridianVerts = {
         (0.01, -M_PI + 0.01),
         (0.01, M_PI - 0.01),
         (-0.01, M_PI - 0.01),
         (-0.01, -M_PI + 0.01),
         (0.01, -M_PI + 0.01)
     };
-    private static readonly GeoCoord[] TransMeridianHoleVerts = {
+    private static readonly LatLng[] TransMeridianHoleVerts = {
         (0.005, -M_PI + 0.005),
         (0.005, M_PI - 0.005),
         (-0.005, M_PI - 0.005),
         (-0.005, -M_PI + 0.005),
         (0.005, -M_PI + 0.005),
     };
-    private static readonly GeoCoord[] TransMeridianComplexVerts = {
+    private static readonly LatLng[] TransMeridianComplexVerts = {
         (0.1, -M_PI + 0.00001),
         (0.1, M_PI - 0.00001),
         (0.05, M_PI - 0.2),
@@ -55,7 +55,7 @@ public class PolyfillTests {
     };
 
     // upstream lib's "entire world" test poly
-    private static readonly GeoCoord[] EntireWorld = {
+    private static readonly LatLng[] EntireWorld = {
         (M_PI_2, -M_PI),
         (M_PI_2, M_PI),
         (-M_PI_2, M_PI),
@@ -86,7 +86,7 @@ public class PolyfillTests {
     [Test]
     public void Test_Polyfill_Exact() {
         // Arrange
-        var index = H3Index.FromGeoCoord((1, 2), 9);
+        var index = H3Index.FromLatLng((1, 2), 9);
         var boundary = index.GetCellBoundary();
 
         // Act
@@ -203,20 +203,20 @@ public class PolyfillTests {
     public void Test_Polyfill_Pentagon() {
         // Arrange
         var index = H3Index.Create(9, 24, 0);
-        var coord = index.ToGeoCoord();
-        GeoCoord topRight = new() {
+        var coord = index.ToLatLng();
+        LatLng topRight = new() {
             Latitude = coord.Latitude + EdgeLength2,
             Longitude = coord.Longitude + EdgeLength2
         };
-        GeoCoord topLeft = new() {
+        LatLng topLeft = new() {
             Latitude = coord.Latitude + EdgeLength2,
             Longitude = coord.Longitude - EdgeLength2
         };
-        GeoCoord bottomRight = new() {
+        LatLng bottomRight = new() {
             Latitude = coord.Latitude - EdgeLength2,
             Longitude = coord.Longitude + EdgeLength2
         };
-        GeoCoord bottomLeft = new() {
+        LatLng bottomLeft = new() {
             Latitude = coord.Latitude - EdgeLength2,
             Longitude = coord.Longitude - EdgeLength2
         };
@@ -255,7 +255,7 @@ public class PolyfillTests {
         var south = -34.30714385628804 * M_PI_180;
         var west = -57.65625 * M_PI_180;
 
-        var polygon = CreatePolygon(new GeoCoord[] {
+        var polygon = CreatePolygon(new LatLng[] {
             (north, east),
             (south, east),
             (south, west),
@@ -278,7 +278,7 @@ public class PolyfillTests {
         var south = -35.4606699514953 * M_PI_180;
         var west = -59.0625 * M_PI_180;
 
-        var polygon = CreatePolygon(new GeoCoord[] {
+        var polygon = CreatePolygon(new LatLng[] {
             (north, east),
             (south, east),
             (south, west),
@@ -296,7 +296,7 @@ public class PolyfillTests {
     [Test]
     public void Test_Upstream_H3jsIssue136() {
         // Arrange
-        GeoCoord[] testVerts = {
+        LatLng[] testVerts = {
             (0.10068990369902957, 0.8920772174196191),
             (0.10032914690616246, 0.8915914753447348),
             (0.10033349237998787, 0.8915860128746426),
@@ -315,7 +315,7 @@ public class PolyfillTests {
     [Test]
     public void Test_Upstream_H3Issue595_Res10() {
         // Arrange
-        GeoCoord[] verts = {
+        LatLng[] verts = {
             (51.51746913670682, -0.1251052178242358),
             (51.51981162007689, -0.1254345584085245),
             (51.522082928275104, -0.1264125733143912),
@@ -355,7 +355,7 @@ public class PolyfillTests {
             (51.51746913670682, -0.1251052178242358)
         };
         var polygon =
-            CreatePolygon(verts.Select(v => new GeoCoord(v.Latitude * M_PI_180, v.Longitude * M_PI_180)).ToArray());
+            CreatePolygon(verts.Select(v => new LatLng(v.Latitude * M_PI_180, v.Longitude * M_PI_180)).ToArray());
         var expectedCenter = H3Index.FromPoint(polygon.Centroid, 10);
 
         // Act
@@ -368,7 +368,7 @@ public class PolyfillTests {
     [Test]
     public void Test_Upstream_h3Issue595_Res9() {
         // Arrange
-        GeoCoord[] verts = {
+        LatLng[] verts = {
             (51.51746913670682, -0.1251052178242358),
             (51.51981162007689, -0.1254345584085245),
             (51.522082928275104, -0.1264125733143912),
@@ -408,7 +408,7 @@ public class PolyfillTests {
             (51.51746913670682, -0.1251052178242358)
         };
         var polygon =
-            CreatePolygon(verts.Select(v => new GeoCoord(v.Latitude * M_PI_180, v.Longitude * M_PI_180)).ToArray());
+            CreatePolygon(verts.Select(v => new LatLng(v.Latitude * M_PI_180, v.Longitude * M_PI_180)).ToArray());
         var expectedCenter = H3Index.FromPoint(polygon.Centroid, 9);
 
         // Act
@@ -424,7 +424,7 @@ public class PolyfillTests {
     /// </summary>
     /// <param name="verts"></param>
     /// <returns></returns>
-    private static Polygon CreatePolygon(GeoCoord[] verts) =>
+    private static Polygon CreatePolygon(LatLng[] verts) =>
         DefaultGeometryFactory.CreatePolygon(verts.Select(g => g.ToCoordinate()).Reverse().ToArray());
 
     /// <summary>
@@ -433,7 +433,7 @@ public class PolyfillTests {
     /// <param name="verts"></param>
     /// <param name="holeVerts"></param>
     /// <returns></returns>
-    private static Polygon CreatePolygonWithHole(GeoCoord[] verts, GeoCoord[] holeVerts) =>
+    private static Polygon CreatePolygonWithHole(LatLng[] verts, LatLng[] holeVerts) =>
         DefaultGeometryFactory.CreatePolygon(
             DefaultGeometryFactory.CreateLinearRing(verts.Select(g => g.ToCoordinate()).Reverse().ToArray()),
             new[] { DefaultGeometryFactory.CreateLinearRing(holeVerts.Select(g => g.ToCoordinate()).Reverse().ToArray()) }

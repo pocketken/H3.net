@@ -102,7 +102,7 @@ public static class Polyfill {
     }
 
     /// <summary>
-    /// Performs a polyfill operation utilizing the center <see cref="GeoCoord"/> of each index produced
+    /// Performs a polyfill operation utilizing the center <see cref="LatLng"/> of each index produced
     /// during the fill.
     /// </summary>
     /// <param name="locator"></param>
@@ -131,7 +131,7 @@ public static class Polyfill {
     }
 
     /// <summary>
-    /// Performs a polyfill operation utilizing any <see cref="GeoCoord"/> from the cell boundary of each
+    /// Performs a polyfill operation utilizing any <see cref="LatLng"/> from the cell boundary of each
     /// index produced during the fill.
     /// </summary>
     private static IEnumerable<H3Index> FillUsingAnyVertex(IPointOnGeometryLocator locator, Stack<H3Index> toSearch, ISet<ulong> searched) {
@@ -162,7 +162,7 @@ public static class Polyfill {
     }
 
     /// <summary>
-    /// Performs a polyfill operation utilizing all <see cref="GeoCoord"/>s from the cell boundary of each
+    /// Performs a polyfill operation utilizing all <see cref="LatLng"/>s from the cell boundary of each
     /// index produced during the fill.
     /// </summary>
     private static IEnumerable<H3Index> FillUsingAllVertices(IPointOnGeometryLocator locator, Stack<H3Index> toSearch, ISet<ulong> searched) {
@@ -220,8 +220,8 @@ public static class Polyfill {
         // trace the coordinates
         var coordLen = coordinates.Length - 1;
         FaceIJK faceIjk = new();
-        GeoCoord v1 = new();
-        GeoCoord v2 = new();
+        LatLng v1 = new();
+        LatLng v2 = new();
         Vec3d v3d = new();
         for (var c = 0; c < coordLen; c += 1) {
             // from this coordinate to next/first
