@@ -1,43 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using static H3.Constants;
 using static H3.Utils;
 
 #nullable enable
 
-namespace H3.Model {
+namespace H3.Model; 
 
-    public sealed class FaceIJK {
+public sealed class FaceIJK {
 
-        private const double THREE_M_SQRT32 = 3.0 * M_SQRT3_2;
+    private const double THREE_M_SQRT32 = 3.0 * M_SQRT3_2;
 
-        public int Face { get; set; }
-        public CoordIJK Coord { get; set; } = new(0, 0, 0);
+    public int Face { get; set; }
+    public CoordIJK Coord { get; set; } = new(0, 0, 0);
 
-        public const int IJ = 1;
-        public const int KI = 2;
-        public const int JK = 3;
+    public const int IJ = 1;
+    public const int KI = 2;
+    public const int JK = 3;
 
-        public BaseCellRotation? BaseCellRotation {
-            get {
-                if (Coord.I > MAX_FACE_COORD || Coord.J > MAX_FACE_COORD || Coord.K > MAX_FACE_COORD) return null;
-                return LookupTables.FaceIjkBaseCells[Face, Coord.I, Coord.J, Coord.K];
-            }
+    public BaseCellRotation? BaseCellRotation {
+        get {
+            if (Coord.I > MAX_FACE_COORD || Coord.J > MAX_FACE_COORD || Coord.K > MAX_FACE_COORD) return null;
+            return LookupTables.FaceIjkBaseCells[Face, Coord.I, Coord.J, Coord.K];
         }
+    }
 
-        public FaceIJK() { }
+    public FaceIJK() {
+    }
 
-        public FaceIJK(FaceIJK other) {
-            Face = other.Face;
-            Coord = new CoordIJK(other.Coord);
-        }
+    public FaceIJK(FaceIJK other) {
+        Face = other.Face;
+        Coord = new CoordIJK(other.Coord);
+    }
 
-        public FaceIJK(int face, CoordIJK coord) {
-            Face = face;
-            Coord = new CoordIJK(coord);
-        }
+    public FaceIJK(int face, CoordIJK coord) {
+        Face = face;
+        Coord = new CoordIJK(coord);
+    }
 
-        public static FaceIJK FromGeoCoord(double longitudeRadians, double latitudeRadians, int resolution, FaceIJK? toUpdate = default, Vec3d? workVec3d = default) {
+    public static FaceIJK FromGeoCoord(double longitudeRadians, double latitudeRadians, int resolution,
+        FaceIJK? toUpdate = default, Vec3d? workVec3d = default) {
+        unchecked {
             var v3d = Vec3d.FromLonLat(longitudeRadians, latitudeRadians, workVec3d);
             var result = toUpdate ?? new FaceIJK();
 
@@ -49,7 +53,7 @@ namespace H3.Model {
             var sqd = v3d.PointSquareDistance(LookupTables.FaceCenters[0]);
             for (var f = 1; f < NUM_ICOSA_FACES; f += 1) {
                 var sqdT = v3d.PointSquareDistance(LookupTables.FaceCenters[f]);
-                if (!(sqdT < sqd))
+                if (sqdT >= sqd)
                     continue;
 
                 result.Face = f;
@@ -62,7 +66,8 @@ namespace H3.Model {
 
             if (r >= EPSILON) {
                 var center = LookupTables.GeoFaceCenters[result.Face];
-                var az = NormalizeAngle(AzimuthInRadians(center.Longitude, center.Latitude, longitudeRadians, latitudeRadians));
+                var az = NormalizeAngle(AzimuthInRadians(center.Longitude, center.Latitude, longitudeRadians,
+                    latitudeRadians));
                 var theta = NormalizeAngle(LookupTables.AxisAzimuths[result.Face] - az);
 
                 if (IsResolutionClass3(resolution)) theta = NormalizeAngle(theta - M_AP7_ROT_RADS);
@@ -74,61 +79,64 @@ namespace H3.Model {
                 y = r * Math.Sin(theta);
             }
 
-            result.Coord = CoordIJK.FromVec2d(x, y, result.Coord);
+            CoordIJK.FromVec2d(x, y, result.Coord);
             return result;
         }
+    }
 
-        // TODO provide version that reuses result array
-        private FaceIJK[] GetVertices(CoordIJK[] class3Verts, CoordIJK[] class2Verts, ref int resolution) {
-            var verts = IsResolutionClass3(resolution) ? class3Verts : class2Verts;
-            Coord.DownAperture3CounterClockwise();
-            Coord.DownAperture3Clockwise();
+    // TODO provide version that reuses result array
+    private FaceIJK[] GetVertices(CoordIJK[] class3Verts, CoordIJK[] class2Verts, ref int resolution) {
+        var verts = IsResolutionClass3(resolution) ? class3Verts : class2Verts;
+        Coord.DownAperture3CounterClockwise();
+        Coord.DownAperture3Clockwise();
 
-            // if res is Class III we need to add a cw aperture 7 to get to
-            // icosahedral Class II
-            if (IsResolutionClass3(resolution)) {
-                Coord.DownAperture7Clockwise();
-                resolution += 1;
-            }
-
-            var result = new FaceIJK[verts.Length];
-            for (var v = 0; v < verts.Length; v += 1) {
-                result[v] = new FaceIJK(Face, (Coord + verts[v]).Normalize());
-            }
-
-            return result;
+        // if res is Class III we need to add a cw aperture 7 to get to
+        // icosahedral Class II
+        if (IsResolutionClass3(resolution)) {
+            Coord.DownAperture7Clockwise();
+            resolution += 1;
         }
 
-        /// <summary>
-        /// Get the vertices of a cell as substrate FaceIJK addresses.  Note that this modifies
-        /// the address in place!
-        /// </summary>
-        /// <param name="resolution">The H3 resolution of the cell. This may be adjusted if
-        /// necessary for the substrate grid resolution.</param>
-        /// <returns>cell vertices</returns>
-        public FaceIJK[] GetHexVertices(ref int resolution) =>
-            GetVertices(LookupTables.Class3HexVertices, LookupTables.Class2HexVertices, ref resolution);
+        var result = new FaceIJK[verts.Length];
+        for (var v = 0; v < verts.Length; v += 1) {
+            result[v] = new FaceIJK(Face, (Coord + verts[v]).Normalize());
+        }
 
-        /// <summary>
-        /// Get the vertices of a pentagon cell as substrate FaceIJK addresses.  Note that this
-        /// modifies the address in place!
-        /// </summary>
-        /// <param name="resolution">The H3 resolution of the cell. This may be adjusted if
-        /// necessary for the substrate grid resolution.</param>
-        /// <returns>cell vertices</returns>
-        public FaceIJK[] GetPentagonVertices(ref int resolution) =>
-            GetVertices(LookupTables.Class3PentagonVertices, LookupTables.Class2PentagonVertices, ref resolution);
+        return result;
+    }
 
-        /// <summary>
-        /// Adjusts a FaceIJK address in place so that the resulting cell address is
-        /// relative to the correct icosahedral face.
-        /// </summary>
-        /// <param name="resolution">H3 resolution of the cell</param>
-        /// <param name="pentagonLeading4">Whether or not the cell is a pentagon with
-        /// leading digit of 4 (Direction.I)</param>
-        /// <param name="isSubstrate">Whether or not the cell is on a substrate grid</param>
-        /// <returns></returns>
-        public Overage AdjustOverageClass2(int resolution, bool pentagonLeading4, bool isSubstrate) {
+    /// <summary>
+    /// Get the vertices of a cell as substrate FaceIJK addresses.  Note that this modifies
+    /// the address in place!
+    /// </summary>
+    /// <param name="resolution">The H3 resolution of the cell. This may be adjusted if
+    /// necessary for the substrate grid resolution.</param>
+    /// <returns>cell vertices</returns>
+    public FaceIJK[] GetHexVertices(ref int resolution) =>
+        GetVertices(LookupTables.Class3HexVertices, LookupTables.Class2HexVertices, ref resolution);
+
+    /// <summary>
+    /// Get the vertices of a pentagon cell as substrate FaceIJK addresses.  Note that this
+    /// modifies the address in place!
+    /// </summary>
+    /// <param name="resolution">The H3 resolution of the cell. This may be adjusted if
+    /// necessary for the substrate grid resolution.</param>
+    /// <returns>cell vertices</returns>
+    public FaceIJK[] GetPentagonVertices(ref int resolution) =>
+        GetVertices(LookupTables.Class3PentagonVertices, LookupTables.Class2PentagonVertices, ref resolution);
+
+    /// <summary>
+    /// Adjusts a FaceIJK address in place so that the resulting cell address is
+    /// relative to the correct icosahedral face.
+    /// </summary>
+    /// <param name="resolution">H3 resolution of the cell</param>
+    /// <param name="pentagonLeading4">Whether or not the cell is a pentagon with
+    /// leading digit of 4 (Direction.I)</param>
+    /// <param name="isSubstrate">Whether or not the cell is on a substrate grid</param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Overage AdjustOverageClass2(int resolution, bool pentagonLeading4, bool isSubstrate) {
+        unchecked {
             var overage = Overage.None;
 
             var maxDist = LookupTables.MaxDistanceByClass2Res[resolution];
@@ -140,7 +148,7 @@ namespace H3.Model {
             } else if (sum > maxDist) {
                 overage = Overage.NewFace;
 
-                FaceOrientIJK orientedFace;
+                var orientedFace = LookupTables.OrientedFaceNeighbours[Face, IJ];
                 if (Coord.K > 0) {
                     if (Coord.J > 0) {
                         orientedFace = LookupTables.OrientedFaceNeighbours[Face, JK];
@@ -156,8 +164,6 @@ namespace H3.Model {
                             Coord.I += maxDist;
                         }
                     }
-                } else {
-                    orientedFace = LookupTables.OrientedFaceNeighbours[Face, IJ];
                 }
 
                 Face = orientedFace.Face;
@@ -182,33 +188,35 @@ namespace H3.Model {
 
             return overage;
         }
+    }
 
-        /// <summary>
-        /// Adjusts a FaceIJK address for a pentagon vertex in a substrate grid in
-        /// place so that the resulting cell address is relative to the correct
-        /// icosahedral face.
-        /// </summary>
-        /// <param name="resolution">H3 resolution of the cell</param>
-        /// <returns></returns>
-        public Overage AdjustPentagonVertexOverage(int resolution) {
-            Overage overage;
+    /// <summary>
+    /// Adjusts a FaceIJK address for a pentagon vertex in a substrate grid in
+    /// place so that the resulting cell address is relative to the correct
+    /// icosahedral face.
+    /// </summary>
+    /// <param name="resolution">H3 resolution of the cell</param>
+    /// <returns></returns>
+    public Overage AdjustPentagonVertexOverage(int resolution) {
+        Overage overage;
 
-            do {
-                overage = AdjustOverageClass2(resolution, false, true);
-            } while (overage == Overage.NewFace);
+        do {
+            overage = AdjustOverageClass2(resolution, false, true);
+        } while (overage == Overage.NewFace);
 
-            return overage;
-        }
+        return overage;
+    }
 
-        /// <summary>
-        /// Generates the cell boundary in spherical coordinates for a pentagonal cell
-        /// given by a FaceIJK address at a specified resolution.
-        /// </summary>
-        /// <param name="resolution">The H3 resolution of the cell</param>
-        /// <param name="start">The first topological vertex to return</param>
-        /// <param name="length">The number of topological vertexes to return</param>
-        /// <returns>The spherical coordinates of the cell boundary</returns>
-        public IEnumerable<GeoCoord> GetPentagonBoundary(int resolution, int start, int length) {
+    /// <summary>
+    /// Generates the cell boundary in spherical coordinates for a pentagonal cell
+    /// given by a FaceIJK address at a specified resolution.
+    /// </summary>
+    /// <param name="resolution">The H3 resolution of the cell</param>
+    /// <param name="start">The first topological vertex to return</param>
+    /// <param name="length">The number of topological vertexes to return</param>
+    /// <returns>The spherical coordinates of the cell boundary</returns>
+    public IEnumerable<LatLng> GetPentagonBoundary(int resolution, int start, int length) {
+        unchecked {
             var adjustedResolution = resolution;
             FaceIJK centerIjk = new(this);
             var verts = centerIjk.GetPentagonVertices(ref adjustedResolution);
@@ -316,16 +324,18 @@ namespace H3.Model {
                 lastFijk.Coord.K = fijk.Coord.K;
             }
         }
+    }
 
-        /// <summary>
-        /// Generates the cell boundary in spherical coordinates for a cell given by a
-        /// FaceIJK address at a specified resolution.
-        /// </summary>
-        /// <param name="resolution">The H3 resolution of the cell</param>
-        /// <param name="start">The first topological vertex to return</param>
-        /// <param name="length">The number of topological vertexes to return</param>
-        /// <returns>The spherical coordinates of the cell boundary</returns>
-        public IEnumerable<GeoCoord> GetHexagonBoundary(int resolution, int start, int length) {
+    /// <summary>
+    /// Generates the cell boundary in spherical coordinates for a cell given by a
+    /// FaceIJK address at a specified resolution.
+    /// </summary>
+    /// <param name="resolution">The H3 resolution of the cell</param>
+    /// <param name="start">The first topological vertex to return</param>
+    /// <param name="length">The number of topological vertexes to return</param>
+    /// <returns>The spherical coordinates of the cell boundary</returns>
+    public IEnumerable<LatLng> GetHexagonBoundary(int resolution, int start, int length) {
+        unchecked {
             var adjustedResolution = resolution;
             FaceIJK centerIjk = new(this);
             var verts = centerIjk.GetHexVertices(ref adjustedResolution);
@@ -362,7 +372,8 @@ namespace H3.Model {
                     projection. Note that Class II cell edges have vertices on the face
                     edge, with no edge line intersections.
                 */
-                if (IsResolutionClass3(resolution) && vert > start && fijk.Face != lastFace && lastOverage != Overage.FaceEdge) {
+                if (IsResolutionClass3(resolution) && vert > start && fijk.Face != lastFace &&
+                    lastOverage != Overage.FaceEdge) {
                     // find hex2d of the two vertexes on original face
                     var lastV = (v + 5) % NUM_HEX_VERTS;
                     verts[lastV].Coord.ToVec2d(orig2d0);
@@ -424,20 +435,22 @@ namespace H3.Model {
                 lastOverage = overage;
             }
         }
+    }
 
-        public GeoCoord ToGeoCoord(int resolution) {
-            return ToFaceGeoCoord(resolution, false);
-        }
+    public LatLng ToGeoCoord(int resolution) {
+        return ToFaceGeoCoord(resolution, false);
+    }
 
-        public GeoCoord ToFaceGeoCoord(int resolution, bool isSubstrate) {
-            var (x, y) = Coord.GetVec2dOrdinates();
-            return ToFaceGeoCoord(x, y, Face, resolution, isSubstrate);
-        }
+    public LatLng ToFaceGeoCoord(int resolution, bool isSubstrate) {
+        var (x, y) = Coord.GetVec2dOrdinates();
+        return ToFaceGeoCoord(x, y, Face, resolution, isSubstrate);
+    }
 
-        public static GeoCoord ToFaceGeoCoord(double x, double y, int face, int resolution, bool isSubstrate) {
+    public static LatLng ToFaceGeoCoord(double x, double y, int face, int resolution, bool isSubstrate) {
+        unchecked {
             var r = Math.Sqrt(x * x + y * y);
             if (r < EPSILON) {
-                return new GeoCoord(LookupTables.GeoFaceCenters[face]);
+                return new LatLng(LookupTables.GeoFaceCenters[face]);
             }
 
             var theta = Math.Atan2(y, x);
@@ -454,25 +467,26 @@ namespace H3.Model {
             }
 
             theta = NormalizeAngle(LookupTables.AxisAzimuths[face] - theta);
-            return GeoCoord.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
+            return LatLng.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
         }
-
-        public static bool operator ==(FaceIJK? a, FaceIJK? b) {
-            if (a is null) return b is null;
-            if (b is null) return false;
-            return a.Face == b.Face && a.Coord == b.Coord;
-        }
-
-        public static bool operator !=(FaceIJK? a, FaceIJK? b) {
-            if (a is null) return b is not null;
-            if (b is null) return true;
-            return a.Face != b.Face || a.Coord != b.Coord;
-        }
-
-        public override bool Equals(object? other) => other is FaceIJK f && this == f;
-
-        public override int GetHashCode() => HashCode.Combine(Face, Coord);
-
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator ==(FaceIJK? a, FaceIJK? b) {
+        if (a is null) return b is null;
+        if (b is null) return false;
+        return a.Face == b.Face && a.Coord == b.Coord;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator !=(FaceIJK? a, FaceIJK? b) {
+        if (a is null) return b is not null;
+        if (b is null) return true;
+        return a.Face != b.Face || a.Coord != b.Coord;
+    }
+
+    public override bool Equals(object? other) => other is FaceIJK f && this == f;
+
+    public override int GetHashCode() => HashCode.Combine(Face, Coord);
 
 }
