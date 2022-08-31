@@ -134,7 +134,7 @@ public class H3VertexExtensionsTests {
         var origin = new H3Index(0x823d6ffffffffff);
 
         // Act
-        var index = origin.GetVertexIndex(vertexNum);
+        var index = origin.CellToVertex(vertexNum);
 
         // Assert
         Assert.AreEqual(H3Index.Invalid, index, "should return H3_NULL");
@@ -148,7 +148,7 @@ public class H3VertexExtensionsTests {
         var origin = new H3Index(0x823007fffffffff);
 
         // Act
-        var index = origin.GetVertexIndex(vertexNum);
+        var index = origin.CellToVertex(vertexNum);
 
         // Assert
         Assert.AreEqual(H3Index.Invalid, index, "should return H3_NULL");
@@ -172,7 +172,7 @@ public class H3VertexExtensionsTests {
         H3Index origin = 0x823d6ffffffffff;
 
         // Act
-        var indicies = origin.GetVertexIndicies().ToArray();
+        var indicies = origin.CellToVertexes().ToArray();
 
         // Assert
         Assert.AreEqual(NUM_HEX_VERTS, indicies.Length, "should return NUM_HEX_VERTS indicies");
@@ -183,7 +183,7 @@ public class H3VertexExtensionsTests {
     public void Test_Upstream_IsValidVertex_InvalidOwner() {
         // Arrange
         H3Index origin = 0x823d6ffffffffff;
-        var vert = origin.GetVertexIndex(0);
+        var vert = origin.CellToVertex(0);
 
         // Act
         vert ^= 1;
@@ -196,7 +196,7 @@ public class H3VertexExtensionsTests {
     public void Test_Upstream_IsValidVertex_OriginDoesNotOwnCanonicalVertex() {
         // Arrange
         H3Index origin = 0x823d6ffffffffff;
-        var vert = origin.GetVertexIndex(0);
+        var vert = origin.CellToVertex(0);
 
         // Act
         H3Index owner = new(vert) {
