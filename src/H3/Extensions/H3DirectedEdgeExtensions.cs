@@ -156,8 +156,8 @@ public static class H3DirectedEdgeExtensions {
     /// <param name="edge"></param>
     /// <returns></returns>
     [Obsolete("as of 4.0: use GetDirectedEdgeBoundaryVertices instead")]
-    public static IEnumerable<LatLng> GetUnidirectionalEdgeBoundaryVertices(this H3Index edge) {
-        return edge.GetDirectedEdgeBoundaryVertices();
+    public static IEnumerable<GeoCoord> GetUnidirectionalEdgeBoundaryVertices(this H3Index edge) {
+        return (IEnumerable<GeoCoord>)edge.GetDirectedEdgeBoundaryVertices();
     }
 
     /// <summary>
