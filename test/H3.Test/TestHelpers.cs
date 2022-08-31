@@ -86,7 +86,7 @@ public static class TestHelpers {
 
     public static IEnumerable<H3Index> GetAllCellsForResolution(int resolution) {
         if (resolution == 0) return AllResolution0Indexes;
-        return AllResolution0Indexes.UncompactCellsToResolution(resolution);
+        return AllResolution0Indexes.UncompactCells(resolution);
     }
 
     public static void AssertAll(H3Index[] expected, H3Index[] actual) {

@@ -20,7 +20,7 @@ ulong value = index;
 
 ## From/To Geospatial Coordinates
 
-To create an index based upon a geospatial coordinate and a target H3 resolution (`geoToH3`):
+To create an index based upon a geospatial coordinate and a target H3 resolution (`latLngToCell`):
 
 ```cs
 // from lon/lat, with a resolution of 9 -- note NTS Coordinates are longitude (X) first,
@@ -34,15 +34,15 @@ var index = coordinate.ToH3Index(9);
 var index = H3Index.FromPoint(point, 9);
 ```
 
-You can use `GeoCoord`s with radian inputs as well, which can be handy if you've got existing code using them you want to port over:
+You can use `LatLng`s with radian inputs as well, which can be handy if you've got existing code using them you want to port over:
 
 ```cs
 using H3.Model;
 
-var index = H3Index.FromGeoCoord(new GeoCoord(0.659966917655, -2.1364398519396), 9);
+var index = H3Index.FromLatLng(new LatLng(0.659966917655, -2.1364398519396), 9);
 ```
 
-To get the centroid of a given H3 index (`h3ToGeo`):
+To get the centroid of a given H3 index (`cellToLatLng`):
 
 ```cs
 // gives you a NTS Coordinate
@@ -51,11 +51,11 @@ var coordinate = index.ToCoordinate();
 // gives you a NTS Point
 var point = index.ToPoint();
 
-// gives you GeoCoord
-var geoCoord = index.ToGeoCoord();
+// gives you LatLng
+var latLng = index.ToLatLng();
 ```
 
-## `GetCellBoundary` (`h3ToGeoBoundary`)
+## `GetCellBoundary` (`cellToBoundary`)
 Returns the `Polygon` cell boundary of a given H3 index.
 
 ```cs

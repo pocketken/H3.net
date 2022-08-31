@@ -129,9 +129,9 @@ public static class H3SetExtensions {
     /// <returns>original set of cells. Throws ArgumentException if any
     /// cell in the set is smaller than the output resolution or invalid
     /// resolution is requested.</returns>
-    [Obsolete("as of 4.0: use UncompactCellsToResolution instead")]
+    [Obsolete("as of 4.0: use UncompactCells instead")]
     public static IEnumerable<H3Index> UncompactToResolution(this IEnumerable<H3Index> indexes, int resolution) {
-        return indexes.UncompactCellsToResolution(resolution);
+        return indexes.UncompactCells(resolution);
     }
 
     /// <summary>
@@ -143,7 +143,7 @@ public static class H3SetExtensions {
     /// <returns>original set of cells. Throws ArgumentException if any
     /// cell in the set is smaller than the output resolution or invalid
     /// resolution is requested.</returns>
-    public static IEnumerable<H3Index> UncompactCellsToResolution(this IEnumerable<H3Index> indexes, int resolution) =>
+    public static IEnumerable<H3Index> UncompactCells(this IEnumerable<H3Index> indexes, int resolution) =>
         indexes.Where(index => index != H3Index.Invalid)
             .Distinct()
             .SelectMany(index => {
@@ -163,7 +163,7 @@ public static class H3SetExtensions {
     /// <returns>expanded set ofindexes</returns>
     [Obsolete("as of 4.0: use UncompactCellsToHighestResolution instead")]
     public static IEnumerable<H3Index> UncompactToHighestResolution(this IEnumerable<H3Index> indexes) =>
-        UncompactCellsToResolution(indexes, indexes.Max(i => i.Resolution));
+        UncompactCells(indexes, indexes.Max(i => i.Resolution));
 
     /// <summary>
     /// Takes a set of indexes and expands to the highest found resolution
@@ -172,7 +172,7 @@ public static class H3SetExtensions {
     /// <param name="indexes"></param>
     /// <returns>expanded set ofindexes</returns>
     public static IEnumerable<H3Index> UncompactCellsToHighestResolution(this IEnumerable<H3Index> indexes) =>
-        UncompactCellsToResolution(indexes, indexes.Max(i => i.Resolution));
+        UncompactCells(indexes, indexes.Max(i => i.Resolution));
 
     /// <summary>
     /// Determines whether or not all H3Index entries within the enumerable are
