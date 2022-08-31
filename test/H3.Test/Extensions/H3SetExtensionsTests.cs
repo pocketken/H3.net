@@ -106,7 +106,7 @@ public class H3SetExtensionsTests {
     [Test]
     public void Test_Uncomapct_MatchesPg() {
         // Act
-        var result = TestCompactArray.UncompactCellsToResolution(14).ToArray();
+        var result = TestCompactArray.UncompactCells(14).ToArray();
 
         // Assert
         TestHelpers.AssertAll(TestUncompactArray, result);
@@ -115,7 +115,7 @@ public class H3SetExtensionsTests {
     [Test]
     public void Test_Upstream_Compact_Sunnyvale() {
         // Arrange
-        var sunnyvaleExpanded = Sunnyvale.GetKRing(9).Select(c => c.Index);
+        var sunnyvaleExpanded = Sunnyvale.GridDiskDistances(9).Select(c => c.Index);
 
         // Act
         var actual = sunnyvaleExpanded.CompactCells().ToList();
@@ -128,7 +128,7 @@ public class H3SetExtensionsTests {
     public void Test_Upstream_CompactUncompact_Roundtrip() {
         // Arrange
         var sunnyvaleExpanded = Sunnyvale
-            .GetKRing(9)
+            .GridDiskDistances(9)
             .Select(c => c.Index)
             .ToList();
         var expectedCount = sunnyvaleExpanded.Count;
@@ -136,7 +136,7 @@ public class H3SetExtensionsTests {
         // Act
         var actual = sunnyvaleExpanded
             .CompactCells()
-            .UncompactCellsToResolution(9)
+            .UncompactCells(9)
             .ToList();
 
         // Assert
@@ -170,7 +170,7 @@ public class H3SetExtensionsTests {
     [TestCase(16)]
     public void Test_Upstream_Uncompact_WrongResolution(int resolution) {
         // Act
-        var exception = Assert.Throws<ArgumentException>(() => UncompactSomeHexagons.UncompactCellsToResolution(resolution).ToList());
+        var exception = Assert.Throws<ArgumentException>(() => UncompactSomeHexagons.UncompactCells(resolution).ToList());
 
         // Assert
         Assert.AreEqual("set contains cell smaller than target resolution", exception.Message, "expected message");
@@ -186,7 +186,7 @@ public class H3SetExtensionsTests {
         var expectedChildren = index.GetChildrenForResolution(2);
 
         // Act
-        var actual = indexes.UncompactCellsToResolution(2);
+        var actual = indexes.UncompactCells(2);
 
         // Assert
         Assert.AreEqual(expectedChildren, actual, "should be equal");

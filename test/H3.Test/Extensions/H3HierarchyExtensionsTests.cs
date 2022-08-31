@@ -242,7 +242,7 @@ public class H3HierarchyExtensionsTests {
     [Test]
     public void Test_Upstream_IsNeighbour_MatchesRing1() {
         // Arrange
-        var neighbours = TestHelpers.SfIndex.GetKRing(1)
+        var neighbours = TestHelpers.SfIndex.GridDiskDistances(1)
             .Where(cell => cell.Distance > 0)
             .ToArray();
 
@@ -258,7 +258,7 @@ public class H3HierarchyExtensionsTests {
     [Test]
     public void Test_Upstream_IsNeighbour_DoesNotMatchRing2() {
         // Arrange
-        var neighbours = TestHelpers.SfIndex.GetKRing(2)
+        var neighbours = TestHelpers.SfIndex.GridDiskDistances(2)
             .Where(cell => cell.Distance > 1)
             .ToArray();
 

@@ -6,7 +6,7 @@ using H3.Model;
 
 #nullable enable
 
-namespace H3.Algorithms; 
+namespace H3.Algorithms;
 
 /// <summary>
 /// Holder for indexes produced from the k ring functions.
@@ -58,7 +58,22 @@ public static class Rings {
     /// <param name="origin"></param>
     /// <param name="k"></param>
     /// <returns></returns>
+    [Obsolete("as of 4.0: use GridRing instead")]
     public static IEnumerable<H3Index> GetHexRing(this H3Index origin, int k) {
+        return origin.GridRing(k);
+    }
+
+    /// <summary>
+    /// Returns the "hollow" ring of cells at exactly grid distance k from
+    /// the origin cell. In particular, k=0 returns just the origin cell.
+    ///
+    /// An exception may be thrown in some cases, for example if a pentagon is
+    /// encountered.
+    /// </summary>
+    /// <param name="origin"></param>
+    /// <param name="k"></param>
+    /// <returns></returns>
+    public static IEnumerable<H3Index> GridRing(this H3Index origin, int k) {
         // Identity short-circuit; return origin if k == 0
         if (k == 0) {
             yield return origin;
@@ -102,7 +117,7 @@ public static class Rings {
 
     /// <summary>
     /// Produce cells from the given origin cell within distance k.  This first
-    /// attempts to use the GetKRingFast method, and falls back to GetKRingSlow if
+    /// attempts to use the GridDiskDistancesUnsafe method, and falls back to GridDiskDistancesSafe if
     /// the fast method fails (e.g. pentagonal distortion).
     ///
     /// k-ring 0 is defined as the origin cell, k-ring 1 is defined as k-ring 0 and
@@ -113,17 +128,36 @@ public static class Rings {
     /// <param name="origin"></param>
     /// <param name="k"></param>
     /// <returns></returns>
+    [Obsolete("as of 4.0: use GridDiskDistances instead")]
     public static IEnumerable<RingCell> GetKRing(this H3Index origin, int k) {
+        return origin.GridDiskDistances(k);
+    }
+
+    /// <summary>
+    /// Produce cells from the given origin cell within distance k.  This first
+    /// attempts to use the <see cref="GridDiskDistancesUnsafe"/> method, and falls
+    /// back to <see cref="GridDiskDistancesSafe"/> if the fast method fails (e.g.
+    /// pentagonal distortion).
+    ///
+    /// k-ring 0 is defined as the origin cell, k-ring 1 is defined as k-ring 0 and
+    /// all neighboring cells, and so on.
+    ///
+    /// Results are provided in no particular order.
+    /// </summary>
+    /// <param name="origin"></param>
+    /// <param name="k"></param>
+    /// <returns></returns>
+    public static IEnumerable<RingCell> GridDiskDistances(this H3Index origin, int k) {
         try {
-            return origin.GetKRingFast(k).ToList();
+            return origin.GridDiskDistancesUnsafe(k).ToList();
         } catch {
-            return origin.GetKRingSlow(k);
+            return origin.GridDiskDistancesSafe(k);
         }
     }
 
     /// <summary>
     /// Iteratively produces indexes within k cell distance of the origin index.  This
-    /// is a higher-accuracy but slower version of GetKRingFast.
+    /// is a higher-accuracy but slower version of <see cref="GridDiskDistancesUnsafe"/>.
     ///
     /// k-ring 0 is defined as the origin index, k-ring 1 is defined as k-ring 0 and
     /// all neighboring indexes, and so on.
@@ -131,7 +165,22 @@ public static class Rings {
     /// <param name="origin">Origin location</param>
     /// <param name="k">k >= 0</param>
     /// <returns>all neighbours within k cell distance</returns>
+    [Obsolete("as of 4.0: use GridDiskDistancesSafe instead")]
     public static IEnumerable<RingCell> GetKRingSlow(this H3Index origin, int k) {
+        return origin.GridDiskDistancesSafe(k);
+    }
+
+    /// <summary>
+    /// Iteratively produces indexes within k cell distance of the origin index.  This
+    /// is a higher-accuracy but slower version of <see cref="GridDiskDistancesUnsafe"/>.
+    ///
+    /// k-ring 0 is defined as the origin index, k-ring 1 is defined as k-ring 0 and
+    /// all neighboring indexes, and so on.
+    /// </summary>
+    /// <param name="origin">Origin location</param>
+    /// <param name="k">k >= 0</param>
+    /// <returns>all neighbours within k cell distance</returns>
+    public static IEnumerable<RingCell> GridDiskDistancesSafe(this H3Index origin, int k) {
         // if not a valid index then nothing to do
         if (origin == H3Index.Invalid) yield break;
 
@@ -166,7 +215,7 @@ public static class Rings {
 
     /// <summary>
     /// Produces indexes within k cell distance of the origin index.  This is a
-    /// lower-accuracy but faster version of GetKRingSlow.
+    /// lower-accuracy but faster version of <see cref="GridDiskDistancesSafe"/>.
     ///
     /// k-ring 0 is defined as the origin index, k-ring 1 is defined as k-ring 0 and
     /// all neighboring indexes, and so on.
@@ -178,7 +227,26 @@ public static class Rings {
     /// <param name="k">k >= 0</param>
     /// <returns>Enumerable set of RingCell, or an exception if a traversal error is
     /// encountered (eg pentagon)</returns>
+    [Obsolete("as of 4.0: use GridDiskDistancesUnsafe instead")]
     public static IEnumerable<RingCell> GetKRingFast(this H3Index origin, int k) {
+        return origin.GridDiskDistancesUnsafe(k);
+    }
+
+    /// <summary>
+    /// Produces indexes within k cell distance of the origin index.  This is a
+    /// lower-accuracy but faster version of <see cref="GridDiskDistancesSafe"/>.
+    ///
+    /// k-ring 0 is defined as the origin index, k-ring 1 is defined as k-ring 0 and
+    /// all neighboring indexes, and so on.
+    ///
+    /// Output behavior is undefined when one of the indexes returned by this
+    /// function is a pentagon or is in the pentagon distortion area.
+    /// </summary>
+    /// <param name="origin">Origin location</param>
+    /// <param name="k">k >= 0</param>
+    /// <returns>Enumerable set of RingCell, or an exception if a traversal error is
+    /// encountered (eg pentagon)</returns>
+    public static IEnumerable<RingCell> GridDiskDistancesUnsafe(this H3Index origin, int k) {
         var index = origin;
 
         // k must be >= 0, so origin is always needed

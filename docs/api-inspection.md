@@ -2,22 +2,22 @@
 The `H3Index` class provides a wrapper around an index value, and provides convenient computed fields/properties for various index attributes:
 
 ```cs
-// h3GetResolution
+// getResolution
 int resolution = index.Resolution;
 
-// h3GetBaseCell
+// getBaseCellNumber
 Nodel.BaseCell baseCell = index.BaseCell;
 
-// h3IsValid
-bool isValid = index.IsValid;
+// isValidCell
+bool isValid = index.IsValidCell;
 
-// h3IsResClassII
+// isResClassIII
 bool isResClass3 = Utils.IsResolutionClass3(index.Resolution);
 
-// h3IsPentagon
+// isPentagon
 bool isPentagon = index.IsPentagon;
 
-// h3MaxFaceCount
+// maxFaceCount
 int maxFaces = index.MaximumFaceCount;
 ```
 
@@ -31,7 +31,7 @@ for (var r = 0; r <= resolution; r += 1>) {
 }
 ```
 
-## `GetFaces` (`h3GetFaces`)
+## `GetFaces` (`getIcosahedronFaces`)
 Find all icosahedron faces intersected by a given index.  Faces are represented as integers from 0-19, inclusive.  The array is sparse, and empty (no intersection) array values are represented by -1.
 
 ```cs

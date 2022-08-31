@@ -1,5 +1,15 @@
 # pocketken.H3 Change Log
 
+### 4.0.0.0 - 2022-08-30
+
+##### Breaking Changes :mega:
+- some terminology and naming changes to classes (e.g. `GeoCoord`), methods, etc. to hopefully better align with upstream 4.0.0.  Have tried to simplify upgrade w/`[Obsolete]` stubs, but, sorry in advance if anything breaks! [#64](https://github.com/pocketken/H3.net/issues/64)
+- removes support for .NET 5 [#75](https://github.com/pocketken/H3.net/issues/74)
+- fixes assembly naming -- the version is no longer included within the assembly name [#68](https://github.com/pocketken/H3.net/issues/68)
+
+##### Enhancements :tada:
+- minor IJK math optimizations [#78](https://github.com/pocketken/H3.net/pull/78)
+
 ### 3.7.2.1 - 2021-12-16
 
 ##### Breaking Changes :mega:
