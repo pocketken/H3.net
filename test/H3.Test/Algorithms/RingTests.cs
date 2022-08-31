@@ -32,7 +32,7 @@ public class RingTests {
     [Test]
     public void Test_GetKRingSlow_KnownValue() {
         // Act
-        var actual = new H3Index(TestHelpers.TestIndexValue).GetKRingSlow(2);
+        var actual = new H3Index(TestHelpers.TestIndexValue).GridDiskDistancesSafe(2);
 
         // Assert
         AssertRing(TestHelpers.TestIndexKRingsTo2, actual.ToArray());
@@ -41,7 +41,7 @@ public class RingTests {
     [Test]
     public void Test_GetKRingFast_KnownValue() {
         // Act
-        var ringDistanceList = new H3Index(TestHelpers.TestIndexValue).GetKRingFast(2);
+        var ringDistanceList = new H3Index(TestHelpers.TestIndexValue).GridDiskDistancesUnsafe(2);
 
         // Assert
         AssertRing(TestHelpers.TestIndexKRingsTo2, ringDistanceList.ToArray());
@@ -62,7 +62,7 @@ public class RingTests {
         };
 
         // Act
-        var ring = index.GetKRing(1).ToArray();
+        var ring = index.GridDiskDistances(1).ToArray();
 
         // Assert
         AssertRing(expected, ring);
@@ -82,7 +82,7 @@ public class RingTests {
         };
 
         // Act
-        var ring = index.GetKRing(1).ToArray();
+        var ring = index.GridDiskDistances(1).ToArray();
 
         // Assert
         AssertRing(expected, ring);
@@ -102,7 +102,7 @@ public class RingTests {
         };
 
         // Act
-        var ring = index.GetKRing(1).ToArray();
+        var ring = index.GridDiskDistances(1).ToArray();
 
         // Assert
         AssertRing(expected, ring);
@@ -111,7 +111,7 @@ public class RingTests {
     [Test]
     public void Test_Upstream_GetHexRing_Identity() {
         // Act
-        var actual = TestHelpers.SfIndex.GetHexRing(0).ToList();
+        var actual = TestHelpers.SfIndex.GridRing(0).ToList();
 
         // Assert
         Assert.AreEqual(1, actual.Count, "should have count of 1");
@@ -122,7 +122,7 @@ public class RingTests {
     [TestCaseSource(nameof(HexRingTestCases))]
     public void Test_Upstream_GetHexRing_Ring(int k, H3Index[] expectedRing) {
         // Act
-        var actual = TestHelpers.SfIndex.GetHexRing(k).ToList();
+        var actual = TestHelpers.SfIndex.GridRing(k).ToList();
 
         // Assert
         Assert.AreEqual(expectedRing.Length, actual.Count, "should have same count");
@@ -141,7 +141,7 @@ public class RingTests {
         H3Index nearPentagon = 0x837405fffffffff;
 
         // Act
-        var exception = Assert.Throws<HexRingPentagonException>(() => nearPentagon.GetHexRing(k).ToList(), "should throw pentagon exception");
+        var exception = Assert.Throws<HexRingPentagonException>(() => nearPentagon.GridRing(k).ToList(), "should throw pentagon exception");
     }
 
     [Test]
@@ -150,7 +150,7 @@ public class RingTests {
         var onPentagon = H3Index.Create(0, 4, 0);
 
         // Act
-        var exception = Assert.Throws<HexRingPentagonException>(() => onPentagon.GetHexRing(2).ToList(), "should throw pentagon exception");
+        var exception = Assert.Throws<HexRingPentagonException>(() => onPentagon.GridRing(2).ToList(), "should throw pentagon exception");
 
         // Assert
         Assert.That(exception, Is.Not.Null, "should have thrown exception");
@@ -162,7 +162,7 @@ public class RingTests {
         H3Index invalidDigit = 0x4d4b00fe5c5c3030;
 
         // Act
-        var exception = Assert.Throws<HexRingKSequenceException>(() => invalidDigit.GetHexRing(2).First());
+        var exception = Assert.Throws<HexRingKSequenceException>(() => invalidDigit.GridRing(2).First());
 
         // Assert
         Assert.That(exception, Is.Not.Null, "should have thrown exception");

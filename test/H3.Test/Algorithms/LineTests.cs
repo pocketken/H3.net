@@ -73,7 +73,7 @@ public class LineTests {
             .Where(index => !index.IsPentagon)
             .SelectMany(start =>
                 start
-                    .GetKRing(k)
+                    .GridDiskDistances(k)
                     .Select(n => (Start: start, End: n.Index, Distance: start.GridDistance(n.Index)))
             );
 

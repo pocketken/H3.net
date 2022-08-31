@@ -44,7 +44,7 @@ public class H3UniEdgeExtensionsTests {
     [Test]
     public void Test_Upstream_GetUnidirectionalEdge_FailsIfNotNeighbours() {
         // Arrange
-        var outerRingIndex = TestHelpers.SfIndex.GetKRing(2)
+        var outerRingIndex = TestHelpers.SfIndex.GridDiskDistances(2)
             .Where(cell => cell.Distance > 1)
             .Select(cell => cell.Index)
             .First();
@@ -223,7 +223,7 @@ public class H3UniEdgeExtensionsTests {
         var indexes = new H3Index[] { TestHelpers.TestIndexValue, TestHelpers.SfIndex };
 
         var rings = indexes.Select(index =>
-            index.GetKRing(1)
+            index.GridDiskDistances(1)
                 .Where(cell => cell.Distance > 0 && cell.Index != H3Index.Invalid)
                 .Select(cell => cell.Index)).ToArray();
 
@@ -244,7 +244,7 @@ public class H3UniEdgeExtensionsTests {
             .ToArray();
 
         var rings = pentagons.Select(index =>
-            index.GetKRing(1)
+            index.GridDiskDistances(1)
                 .Where(cell => cell.Distance > 0 && cell.Index != H3Index.Invalid)
                 .Select(cell => cell.Index)).ToArray();
 

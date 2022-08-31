@@ -115,7 +115,7 @@ public class H3SetExtensionsTests {
     [Test]
     public void Test_Upstream_Compact_Sunnyvale() {
         // Arrange
-        var sunnyvaleExpanded = Sunnyvale.GetKRing(9).Select(c => c.Index);
+        var sunnyvaleExpanded = Sunnyvale.GridDiskDistances(9).Select(c => c.Index);
 
         // Act
         var actual = sunnyvaleExpanded.CompactCells().ToList();
@@ -128,7 +128,7 @@ public class H3SetExtensionsTests {
     public void Test_Upstream_CompactUncompact_Roundtrip() {
         // Arrange
         var sunnyvaleExpanded = Sunnyvale
-            .GetKRing(9)
+            .GridDiskDistances(9)
             .Select(c => c.Index)
             .ToList();
         var expectedCount = sunnyvaleExpanded.Count;
