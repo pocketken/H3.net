@@ -12,15 +12,15 @@ Available on [nuget.org](https://nuget.org) as [pocketken.H3](https://www.nuget.
 PM> Install-Package pocketken.H3 -Version 4.0.0
 ```
 
-See [CHANGES.md](CHANGES.md) for a list of changes between releases.
+See [CHANGES.md](https://github.com/pocketken/H3.net/blob/main/CHANGES.md) for a list of changes between releases.
 
 ## Documentation
-Upstream documentation is available at [https://h3geo.org/](https://h3geo.org/).  Basic getting-started documentation for this port of the library is available [here](docs/basic-usage.md).  I have tried to make the library work and feel more "C# like" using classes, operators, extension methods, enumerables vs. arrays and so on, but some things may be implemented more or less as straight ports of the upstream library.
+Upstream documentation is available at [https://h3geo.org/](https://h3geo.org/).  Basic getting-started documentation for this port of the library is available [here](https://github.com/pocketken/H3.net/blob/main/docs/basic-usage.md).  I have tried to make the library work and feel more "C# like" using classes, operators, extension methods, enumerables vs. arrays and so on, but some things may be implemented more or less as straight ports of the upstream library.
 
 While the majority of the core H3 API should be here in one form or another, there's still the odd gap in terms of documentation and tests to validate behaviour vs. upstream.  PRs to improve code, tests and documentation are definitely welcome and appreciated, although please keep in mind I am quite busy these days and may be a bit slow to respond.  Sorry in advance!
 
 ## Benchmarks
-See these likely-out-of-date [benchmarks](docs/benchmarks.md), or you can run  them yourself - e.g.:
+See these likely-out-of-date [benchmarks](https://github.com/pocketken/H3.net/blob/main/docs/benchmarks.md), or you can run  them yourself - e.g.:
 
 ```sh
 dotnet run --configuration Release --project .\test\H3.Benchmarks\H3.Benchmarks.csproj --join --framework net6.0
