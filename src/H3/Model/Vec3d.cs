@@ -6,9 +6,9 @@ using static H3.Utils;
 
 #nullable enable
 
-namespace H3.Model; 
+namespace H3.Model;
 
-public sealed class Vec3d {
+public struct Vec3d {
 
     public double X { get; set; }
     public double Y { get; set; }

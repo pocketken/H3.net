@@ -10,7 +10,7 @@ using System.Reflection;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace H3.Test.Extensions; 
+namespace H3.Test.Extensions;
 
 [TestFixture]
 [Parallelizable(ParallelScope.All)]
@@ -23,7 +23,7 @@ public class H3GeometryExtensionsTests {
     };
 
     private static readonly double[] CellAreasInKm2 = {
-        2.562182162955496e+06, 4.476842018179411e+05, 6.596162242711056e+04,
+        2.562182162955496e+06, 4.476842017201860e+05, 6.596162242711056e+04,
         9.228872919002590e+03, 1.318694490797110e+03, 1.879593512281298e+02,
         2.687164354763186e+01, 3.840848847060638e+00, 5.486939641329893e-01,
         7.838600808637444e-02, 1.119834221989390e-02, 1.599777169186614e-03,
@@ -74,11 +74,11 @@ public class H3GeometryExtensionsTests {
 
                 List<(H3Index, LatLng[])> data = new();
                 string line;
-                H3Index index = null;
+                H3Index index = H3Index.Invalid;
                 List<LatLng> coords = null;
 
                 while ((line = reader.ReadLine()) != null) {
-                    if (index == null) {
+                    if (index == H3Index.Invalid) {
                         index = new H3Index(line);
                         continue;
                     }
@@ -88,7 +88,7 @@ public class H3GeometryExtensionsTests {
                             continue;
                         case "}":
                             data.Add((index, coords!.ToArray()));
-                            index = null;
+                            index = 0;
                             coords = null;
                             continue;
                     }
@@ -166,6 +166,7 @@ public class H3GeometryExtensionsTests {
                 var av = actualVerts[i];
                 if (Math.Abs(ev.Latitude - av.Latitude) > 0.000001 ||
                     Math.Abs(ev.Longitude - av.Longitude) > 0.000001) {
+                    Assert.Fail($"expected: {ev.Latitude},{ev.Longitude} actual: {av.Latitude},{av.Longitude} delta: {Math.Abs(ev.Latitude-av.Latitude)},{Math.Abs(ev.Longitude-av.Longitude)}");
                     return false;
                 }
             }

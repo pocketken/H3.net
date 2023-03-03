@@ -2,9 +2,9 @@
 
 #nullable enable
 
-namespace H3.Model; 
+namespace H3.Model;
 
-public sealed class CoordIJ {
+public struct CoordIJ {
 
     public int I { get; set; }
     public int J { get; set; }

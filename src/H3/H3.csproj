@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageVersion>4.0.0</PackageVersion>
+    <PackageVersion>4.1.0</PackageVersion>
     <AssemblyName>pocketken.H3</AssemblyName>
-    <TargetFrameworks>net6.0;netstandard2.1;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net7.0;net6.0;netstandard2.1;netstandard2.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <PackOnBuild>true</PackOnBuild>
     <PackageId>pocketken.H3</PackageId>
@@ -27,8 +27,12 @@
     <PackageReference Include="NetTopologySuite" Version="2.5.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework.Contains(`netstandard`))' == 'true'">
-    <PackageReference Include="System.Text.Json" Version="6.0.6" />
+  <ItemGroup Condition="'$(TargetFramework)' != 'net7.0'">
+    <PackageReference Include="System.Text.Json" Version="6.0.7" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+    <PackageReference Include="System.Text.Json" Version="7.0.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
@@ -36,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="IsExternalInit.cs" Condition="'$(TargetFramework)' == 'net5.0' Or '$(TargetFramework)' == 'net6.0'" />
+    <Compile Remove="IsExternalInit.cs" Condition="'$(TargetFramework.Contains(`netstandard`))' == 'false'" />
   </ItemGroup>
 
   <ItemGroup>

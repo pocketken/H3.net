@@ -6,7 +6,7 @@ using static H3.Utils;
 
 #nullable enable
 
-namespace H3.Model; 
+namespace H3.Model;
 
 public sealed class FaceIJK {
 
@@ -233,9 +233,10 @@ public sealed class FaceIJK {
             Vec2d v2 = new();
             Vec2d orig2d0 = new();
             Vec2d orig2d1 = new();
+            var intersection = new Vec2d();
 
             var fijk = new FaceIJK();
-            FaceIJK lastFijk = new();
+            var lastFijk = new FaceIJK();
 
             for (var vert = start; vert < start + length + additionalIteration; vert += 1) {
                 var v = vert % NUM_PENT_VERTS;
@@ -252,7 +253,7 @@ public sealed class FaceIJK {
                 if (IsResolutionClass3(resolution) && vert > start) {
                     // find hex2d of the two vertexes on the last face
                     FaceIJK tmpFijk = new(fijk);
-                    lastFijk.Coord.ToVec2d(orig2d0);
+                    lastFijk.Coord.ToVec2d(ref orig2d0);
 
                     var currentToLastDir = LookupTables.AdjacentFaceDirections[tmpFijk.Face, lastFijk.Face];
 
@@ -268,8 +269,7 @@ public sealed class FaceIJK {
                     ijk.J += fijkOrient.Translate.J * scale;
                     ijk.K += fijkOrient.Translate.K * scale;
                     ijk.Normalize();
-
-                    ijk.ToVec2d(orig2d1);
+                    ijk.ToVec2d(ref orig2d1);
 
                     // find the appropriate icosa face edge vertexes
                     var maxDist = LookupTables.MaxDistanceByClass2Res[adjustedResolution];
@@ -281,28 +281,18 @@ public sealed class FaceIJK {
                     v2.X = v1.X;
                     v2.Y = -THREE_M_SQRT32 * maxDist;
 
-                    Vec2d intersection;
-                    Vec2d edge0;
-                    Vec2d edge1;
-
                     var adjacentFace = LookupTables.AdjacentFaceDirections[tmpFijk.Face, fijk.Face];
                     switch (adjacentFace) {
                         case IJ:
-                            edge0 = v0;
-                            edge1 = v1;
-                            intersection = v2;
+                            Vec2d.Intersect(orig2d0, orig2d1, v0, v1, ref intersection);
                             break;
 
                         case JK:
-                            edge0 = v1;
-                            edge1 = v2;
-                            intersection = v0;
+                            Vec2d.Intersect(orig2d0, orig2d1, v1, v2, ref intersection);
                             break;
 
                         case KI:
-                            edge0 = v2;
-                            edge1 = v0;
-                            intersection = v1;
+                            Vec2d.Intersect(orig2d0, orig2d1, v2, v0, ref intersection);
                             break;
 
                         default:
@@ -310,7 +300,6 @@ public sealed class FaceIJK {
                     }
 
                     // find the intersection and add the lat/lon point to the result
-                    Vec2d.Intersect(orig2d0, orig2d1, edge0, edge1, intersection);
                     yield return intersection.ToFaceGeoCoord(tmpFijk.Face, adjustedResolution, true);
                 }
 
@@ -350,6 +339,7 @@ public sealed class FaceIJK {
             Vec2d v2 = new();
             Vec2d orig2d0 = new();
             Vec2d orig2d1 = new();
+            var intersection = new Vec2d();
 
             var fijk = new FaceIJK();
 
@@ -376,8 +366,8 @@ public sealed class FaceIJK {
                     lastOverage != Overage.FaceEdge) {
                     // find hex2d of the two vertexes on original face
                     var lastV = (v + 5) % NUM_HEX_VERTS;
-                    verts[lastV].Coord.ToVec2d(orig2d0);
-                    verts[v].Coord.ToVec2d(orig2d1);
+                    verts[lastV].Coord.ToVec2d(ref orig2d0);
+                    verts[v].Coord.ToVec2d(ref orig2d1);
 
                     // find the appropriate icosa face edge vertexes
                     var maxDist = LookupTables.MaxDistanceByClass2Res[adjustedResolution];
@@ -390,34 +380,23 @@ public sealed class FaceIJK {
 
                     var face2 = lastFace == centerIjk.Face ? fijk.Face : lastFace;
 
-                    Vec2d intersection;
-                    Vec2d edge0;
-                    Vec2d edge1;
-
                     switch (LookupTables.AdjacentFaceDirections[centerIjk.Face, face2]) {
                         case IJ:
-                            edge0 = v0;
-                            edge1 = v1;
-                            intersection = v2;
+                            Vec2d.Intersect(orig2d0, orig2d1, v0, v1, ref intersection);
                             break;
 
                         case JK:
-                            edge0 = v1;
-                            edge1 = v2;
-                            intersection = v0;
+                            Vec2d.Intersect(orig2d0, orig2d1, v1, v2, ref intersection);
                             break;
 
                         case KI:
-                            edge0 = v2;
-                            edge1 = v0;
-                            intersection = v1;
+                            Vec2d.Intersect(orig2d0, orig2d1, v2, v0, ref intersection);
                             break;
 
                         default:
                             throw new Exception("Unsupported direction");
                     }
 
-                    Vec2d.Intersect(orig2d0, orig2d1, edge0, edge1, intersection);
                     var atVertex = orig2d0 == intersection || orig2d1 == intersection;
                     if (!atVertex) {
                         yield return intersection.ToFaceGeoCoord(centerIjk.Face, adjustedResolution, true);

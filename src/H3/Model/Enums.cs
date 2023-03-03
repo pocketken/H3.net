@@ -2,7 +2,7 @@
 
 using System.Runtime.CompilerServices;
 
-namespace H3.Model; 
+namespace H3.Model;
 
 public enum Direction {
     Center = 0,

@@ -1,4 +1,4 @@
-﻿namespace H3; 
+﻿namespace H3;
 
 public class Constants {
     public const double M_PI = 3.14159265358979323846;
@@ -8,6 +8,7 @@ public class Constants {
     public const double M_PI_180 = 0.0174532925199432957692369076848861271111; // pi / 180
     public const double M_180_PI = 57.29577951308232087679815481410517033240547; // pi * 180
 
+    public const float FLT_EPSILON = 1.19209290E-07F;
     public const double EPSILON = 0.0000000000000001; // threshold epsilon
     public const double M_SQRT3_2 = 0.8660254037844386467637231707529361834714; // sqrt(3) / 2.0
     public const double M_SIN60 = M_SQRT3_2; // sin(60')

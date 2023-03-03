@@ -5,7 +5,9 @@ using static H3.Constants;
 
 #nullable enable
 
-namespace H3.Model; 
+namespace H3.Model;
+
+// TODO sealed class => struct
 
 public sealed class CoordIJK {
 
@@ -403,7 +405,7 @@ public sealed class CoordIJK {
         return new Vec2d(GetVec2dOrdinates());
     }
 
-    public Vec2d ToVec2d(Vec2d toUpdate) {
+    public Vec2d ToVec2d(ref Vec2d toUpdate) {
         var (x, y) = GetVec2dOrdinates();
         toUpdate.X = x;
         toUpdate.Y = y;

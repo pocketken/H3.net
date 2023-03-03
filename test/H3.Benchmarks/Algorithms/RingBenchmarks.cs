@@ -7,7 +7,7 @@ using H3.Extensions;
 using H3.Model;
 //using H3Lib.Extensions;
 
-namespace H3.Benchmarks.Algorithms; 
+namespace H3.Benchmarks.Algorithms;
 
 [Config(typeof(CompareVersionsBenchmarkConfig))]
 [MemoryDiagnoser]
@@ -27,19 +27,19 @@ public class RingBenchmarks {
     }
 
     [Benchmark(Description = "pocketken.H3.GetKRing(hex, k = 50)")]
-    public List<RingCell> GetKRingHex() => TestIndex.GetKRing(K).ToList();
+    public List<RingCell> GetKRingHex() => TestIndex.GridDiskDistances(K).ToList();
 
     [Benchmark(Description = "pocketken.H3.GetKRingFast(hex, k = 50)")]
-    public List<RingCell> GetKRingHexFast() => TestIndex.GetKRingFast(K).ToList();
+    public List<RingCell> GetKRingHexFast() => TestIndex.GridDiskDistancesUnsafe(K).ToList();
 
     [Benchmark(Description = "pocketken.H3.GetKRingSlow(hex, k = 50)")]
-    public List<RingCell> GetKRingHexSlow() => TestPentagonIndex.GetKRingSlow(K).ToList();
+    public List<RingCell> GetKRingHexSlow() => TestPentagonIndex.GridDiskDistancesSafe(K).ToList();
 
     [Benchmark(Description = "pocketken.H3.GetKRing(pent, k = 50)")]
-    public List<RingCell> GetKRingPent() => TestPentagonIndex.GetKRing(K).ToList();
+    public List<RingCell> GetKRingPent() => TestPentagonIndex.GridDiskDistances(K).ToList();
 
     [Benchmark(Description = "pocketken.H3.GetKRingSlow(pent, k = 50)")]
-    public List<RingCell> GetKRingPentSlow() => TestPentagonIndex.GetKRingSlow(K).ToList();
+    public List<RingCell> GetKRingPentSlow() => TestPentagonIndex.GridDiskDistancesSafe(K).ToList();
 
     //[Benchmark(Description = "H3Lib.KRingDistances(hex, k = 50)")]
     //public Dictionary<H3Lib.H3Index, int> H3Lib_KRingDistancesHex() => TestH3LibIndex.KRingDistances(K);

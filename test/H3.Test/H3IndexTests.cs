@@ -10,7 +10,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 
-namespace H3.Test; 
+namespace H3.Test;
 
 [TestFixture]
 [Parallelizable(ParallelScope.All)]

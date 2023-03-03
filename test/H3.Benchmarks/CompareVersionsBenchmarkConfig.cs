@@ -24,7 +24,7 @@ public class CompareVersionsBenchmarkConfig : H3BenchmarkConfig {
     public CompareVersionsBenchmarkConfig() {
         var packagePath = GetDevPackagePath();
         Console.WriteLine($" * using local package path: {packagePath}");
-        foreach (var job in GetJobs(/*"3.7.2.1",*/ "3.9.9-dev")) {
+        foreach (var job in GetJobs("4.0.0", "4.1.0-preview")) {
             AddJob(job);
         }
     }
@@ -34,10 +34,8 @@ public class CompareVersionsBenchmarkConfig : H3BenchmarkConfig {
         for (var v = 0; v < versions.Length; v += 1) {
             var version = versions[v];
             var baseJob = Job.MediumRun
-                .WithNuGet("pocketken.H3", version, version.Contains("-dev") ? packagePath : null);
-            yield return baseJob.WithRuntime(CoreRuntime.Core31).WithId(version);
-            yield return baseJob.WithRuntime(CoreRuntime.Core50).WithId(version);
-            yield return baseJob.WithRuntime(CoreRuntime.Core60).WithBaseline(v == 0).WithId(version);
+                .WithNuGet("pocketken.H3", version, version.Contains("-preview") ? packagePath : null);
+            yield return baseJob.WithRuntime(CoreRuntime.Core70).WithBaseline(v == 0).WithId(version);
         }
     }
 
@@ -49,9 +47,9 @@ public class LatestVersionBenchmarkConfig : H3BenchmarkConfig {
         var packagePath = new Uri(GetDevPackagePath());
         Console.WriteLine($" * using local package path: {packagePath}");
         AddJob(Job.MediumRun
-            .WithNuGet("pocketken.H3", "3.9.9-dev", packagePath)
-            .WithRuntime(CoreRuntime.Core60)
-            .WithId("3.9.9-dev"));
+            .WithNuGet("pocketken.H3", "4.1.0-preview", packagePath)
+            .WithRuntime(CoreRuntime.Core70)
+            .WithId("4.1.0-preview"));
     }
 
 }

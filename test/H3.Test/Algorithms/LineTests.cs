@@ -4,7 +4,7 @@ using H3.Extensions;
 using NetTopologySuite.Geometries;
 using NUnit.Framework;
 
-namespace H3.Test.Algorithms; 
+namespace H3.Test.Algorithms;
 
 [TestFixture]
 [Parallelizable(ParallelScope.All)]
@@ -84,8 +84,8 @@ public class LineTests {
         foreach (var (Start, End, Distance, Line) in lines) {
             if (Distance >= 0) {
                 var i = 0;
-                H3Index lastIndex = null;
-                H3Index previousLastIndex = null;
+                H3Index lastIndex = H3Index.Invalid;
+                H3Index previousLastIndex = H3Index.Invalid;
 
                 foreach (var index in Line) {
                     if (i == 0) {
@@ -93,11 +93,11 @@ public class LineTests {
                     }
 
                     Assert.IsTrue(index.IsValidCell, $"{index} should be valid");
-                    if (lastIndex != null) {
+                    if (lastIndex != H3Index.Invalid) {
                         Assert.IsTrue(index.IsNeighbour(lastIndex), $"{index} should be neighbours with previous index {lastIndex}");
                     }
 
-                    if (previousLastIndex != null) {
+                    if (previousLastIndex != H3Index.Invalid) {
                         Assert.IsFalse(index.IsNeighbour(previousLastIndex), $"{index} should not be neighbours with index before previous {previousLastIndex}");
                     }
 

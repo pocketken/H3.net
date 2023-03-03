@@ -36,6 +36,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
 
     private const ulong LO_MAGIC = 0x492_4924_9249;
     private const ulong HI_MAGIC = 0x1249_2492_4924;
+    private const int LNZ_OFFSET = 19;
 
     /// <summary>
     /// H3 index with mode 0, res 0, base cell 0, and 7 for all index digits.
@@ -172,14 +173,10 @@ public sealed partial class H3Index : IComparable<H3Index> {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get {
             var resolution = Resolution;
-            for (var r = 1; r <= resolution; r += 1) {
-                var idx = GetDirectionForResolution(r);
-                if (idx != Direction.Center) {
-                    return idx;
-                }
-            }
-
-            return Direction.Center;
+            if (resolution == 0) return Direction.Center;
+            var idx = (Value << LNZ_OFFSET).LeadingZeros();
+            var lnzResolution = idx / H3_PER_DIGIT_OFFSET + 1;
+            return GetDirectionForResolution(lnzResolution < resolution ? lnzResolution : resolution);
         }
     }
 
@@ -315,26 +312,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RotatePentagonCounterClockwise() {
-        var resolution = Resolution;
-        var foundFirstNonZeroDigit = false;
-
-        for (var r = 1; r <= resolution; r += 1) {
-            // rotate digit
-            SetDirectionForResolution(r, GetDirectionForResolution(r).RotateCounterClockwise());
-
-            // look for the first non-zero digit so we
-            // can adjust for deleted k-axes sequence
-            // if necessary
-            if (foundFirstNonZeroDigit || GetDirectionForResolution(r) == Direction.Center)
-                continue;
-
-            foundFirstNonZeroDigit = true;
-
-            // adjust for deleted k-axes sequence
-            if (LeadingNonZeroDirection == Direction.K) {
-                RotateCounterClockwise();
-            }
-        }
+        RotateCounterClockwise(LeadingNonZeroDirection == Direction.JK ? 2 : 1);
     }
 
     /// <summary>
@@ -342,26 +320,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RotatePentagonClockwise() {
-        var resolution = Resolution;
-        var foundFirstNonZeroDigit = false;
-
-        for (var r = 1; r <= resolution; r += 1) {
-            // rotate digit
-            SetDirectionForResolution(r, GetDirectionForResolution(r).RotateClockwise());
-
-            // look for the first non-zero digit so we
-            // can adjust for deleted k-axes sequence
-            // if necessary
-            if (foundFirstNonZeroDigit || GetDirectionForResolution(r) == Direction.Center)
-                continue;
-
-            foundFirstNonZeroDigit = true;
-
-            // adjust for deleted k-axes sequence
-            if (LeadingNonZeroDirection == Direction.K) {
-                RotateClockwise();
-            }
-        }
+        RotateClockwise(LeadingNonZeroDirection == Direction.IK ? 2 : 1);
     }
 
     #endregion manipulations
@@ -378,7 +337,8 @@ public sealed partial class H3Index : IComparable<H3Index> {
         var resolution = Resolution;
 
         // center base cell hierarchy is entirely on this face
-        var possibleOverage = !(!BaseCell.IsPentagon && (resolution == 0 || faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0));
+        var possibleOverage = BaseCell.IsPentagon || resolution != 0 ||
+                              (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0);
 
         for (var r = 1; r <= resolution; r += 1) {
             if (IsResolutionClass3(r)) {
