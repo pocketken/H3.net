@@ -31,17 +31,22 @@ public readonly struct RingCell {
 }
 
 /// <summary>
+/// Indicates that fast ("unsafe") k-ring traversal failed.
+/// </summary>
+public abstract class HexRingException : Exception { }
+
+/// <summary>
 /// Indicates that k-ring traversal failed due to the ring starting on
 /// a pentagon or due to encountering indexes within the pentagon distortion
 /// area.
 /// </summary>
-public class HexRingPentagonException : Exception { }
+public class HexRingPentagonException : HexRingException { }
 
 /// <summary>
 /// Indicates that k-ring traversal failed due to the ring encountering
 /// an index with deleted k-subsequence distortion.
 /// </summary>
-public class HexRingKSequenceException : Exception { }
+public class HexRingKSequenceException : HexRingException { }
 
 /// <summary>
 /// Extends the H3Index class with support for kRing and hex ring queries.
@@ -58,29 +63,79 @@ public static class Rings {
     /// <param name="origin"></param>
     /// <param name="k"></param>
     /// <returns></returns>
-    [Obsolete("as of 4.0: use GridRing instead")]
+    [Obsolete("as of 4.0: use GridRing (pentagon safe) or GridRingUnsafe instead")]
     public static IEnumerable<H3Index> GetHexRing(this H3Index origin, int k) {
-        return origin.GridRing(k);
+        return origin.GridRingUnsafe(k);
     }
 
     /// <summary>
     /// Returns the "hollow" ring of cells at exactly grid distance k from
     /// the origin cell. In particular, k=0 returns just the origin cell.
     ///
-    /// An exception may be thrown in some cases, for example if a pentagon is
-    /// encountered.
+    /// This function is pentagon safe: it first attempts the fast
+    /// <see cref="GridRingUnsafe"/> traversal and transparently falls back to
+    /// filtering <see cref="GridDiskDistancesSafe"/> when pentagonal distortion
+    /// is encountered.
+    ///
+    /// Results are provided in no particular order.
     /// </summary>
     /// <param name="origin"></param>
     /// <param name="k"></param>
     /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when k is negative.
+    /// </exception>
+    /// <exception cref="ArgumentException">Thrown when the origin is not a valid
+    /// cell index.</exception>
     public static IEnumerable<H3Index> GridRing(this H3Index origin, int k) {
+        if (k < 0) {
+            throw new ArgumentOutOfRangeException(nameof(k), k, "must be non-negative");
+        }
+
+        if (!origin.IsValidCell) {
+            throw new ArgumentException("must be a valid cell index", nameof(origin));
+        }
+
+        try {
+            List<H3Index> result = new(k == 0 ? 1 : 6 * k);
+            foreach (var index in origin.GridRingUnsafe(k)) {
+                result.Add(index);
+            }
+
+            return result;
+        } catch (HexRingException) {
+            return origin.GridDiskDistancesSafe(k)
+                .Where(cell => cell.Distance == k)
+                .Select(cell => cell.Index);
+        }
+    }
+
+    /// <summary>
+    /// Returns the "hollow" ring of cells at exactly grid distance k from
+    /// the origin cell. In particular, k=0 returns just the origin cell.
+    ///
+    /// This function is a lower-accuracy but faster version of
+    /// <see cref="GridRing"/>: a <see cref="HexRingPentagonException"/> or
+    /// <see cref="HexRingKSequenceException"/> is thrown if the origin is a
+    /// pentagon or pentagonal distortion is encountered during traversal.
+    /// </summary>
+    /// <param name="origin"></param>
+    /// <param name="k"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when k is negative.
+    /// </exception>
+    public static IEnumerable<H3Index> GridRingUnsafe(this H3Index origin, int k) {
+        if (k < 0) {
+            throw new ArgumentOutOfRangeException(nameof(k), k, "must be non-negative");
+        }
+
         // Identity short-circuit; return origin if k == 0
         if (k == 0) {
             yield return origin;
-            if (origin.IsPentagon) {
-                throw new HexRingPentagonException();
-            }
             yield break;
+        }
+
+        if (origin.IsPentagon) {
+            throw new HexRingPentagonException();
         }
 
         var index = origin;
@@ -149,8 +204,13 @@ public static class Rings {
     /// <returns></returns>
     public static IEnumerable<RingCell> GridDiskDistances(this H3Index origin, int k) {
         try {
-            return origin.GridDiskDistancesUnsafe(k).ToList();
-        } catch {
+            List<RingCell> result = new(3 * k * (k + 1) + 1);
+            foreach (var cell in origin.GridDiskDistancesUnsafe(k)) {
+                result.Add(cell);
+            }
+
+            return result;
+        } catch (HexRingException) {
             return origin.GridDiskDistancesSafe(k);
         }
     }
@@ -184,13 +244,28 @@ public static class Rings {
         // if not a valid index then nothing to do
         if (origin == H3Index.Invalid) yield break;
 
-        // since k >= 0, start with origin
-        Queue<RingCell> queue = new();
-        HashSet<ulong> searched = new();
-        queue.Enqueue(new RingCell(origin, 0));
+        // the number of cells within distance k of the origin is at most
+        // 3 * k * (k + 1) + 1 (and no more than the total number of cells at
+        // the origin's resolution), so each unique cell enters the
+        // breadth-first queue exactly once and the queue never needs to grow
+        var totalCells = 2L + 120L * Utils.IPow(7, origin.Resolution);
+        var maximumSize = (int)Math.Min(k < 1_000_000 ? 3L * k * (k + 1) + 1 : long.MaxValue, Math.Min(totalCells, 1 << 30));
+        var cells = new RingCell[maximumSize];
+        var count = 0;
 
-        while (queue.Count != 0) {
-            var cell = queue.Dequeue();
+        // cell values are never 0, so 0 can mark an empty slot in the
+        // open-addressed dedup table; the table always retains at least one
+        // empty slot as it holds at most maximumSize - 1 entries
+        var tableSize = 4;
+        while (tableSize < 1 << 30 && tableSize < maximumSize) tableSize <<= 1;
+        var searched = new ulong[tableSize];
+
+        // since k >= 0, start with origin
+        cells[count] = new RingCell(origin, 0);
+        count += 1;
+
+        for (var head = 0; head < count; head += 1) {
+            var cell = cells[head];
             yield return cell;
 
             var nextK = cell.Distance + 1;
@@ -203,13 +278,37 @@ public static class Rings {
                     continue;
                 }
 
-                if (searched.Contains(neighbour)) {
+                if (!TryAddToProbeTable(searched, neighbour)) {
                     continue;
                 }
 
-                searched.Add(neighbour);
-                queue.Enqueue(new RingCell(neighbour, nextK));
+                cells[count] = new RingCell(neighbour, nextK);
+                count += 1;
             }
+        }
+    }
+
+    /// <summary>
+    /// Adds a value to an open-addressed, linear-probed power-of-two-sized
+    /// table, returning false if the value was already present.  The value
+    /// must be non-zero; zero marks empty slots.
+    /// </summary>
+    private static bool TryAddToProbeTable(ulong[] table, ulong value) {
+        var mask = table.Length - 1;
+        var slot = (int)((value * 0x9E3779B97F4A7C15UL) >> 32) & mask;
+
+        while (true) {
+            var existing = table[slot];
+            if (existing == 0) {
+                table[slot] = value;
+                return true;
+            }
+
+            if (existing == value) {
+                return false;
+            }
+
+            slot = (slot + 1) & mask;
         }
     }
 

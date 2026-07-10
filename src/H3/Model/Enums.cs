@@ -2,7 +2,7 @@
 
 using System.Runtime.CompilerServices;
 
-namespace H3.Model; 
+namespace H3.Model;
 
 public enum Direction {
     Center = 0,
@@ -17,31 +17,35 @@ public enum Direction {
 
 public static class DirectionExtensions {
     /// <summary>
-    /// Clockwise rotation steps, by <see cref="Direction"/> and number of rotations from 0-5.
+    /// Clockwise rotation steps, indexed as [(int)direction * 6 + rotations]
+    /// for rotation counts from 0-5.  A single clockwise rotation of a valid
+    /// direction digit is multiplication by 3 modulo 7.
     /// </summary>
-    private static readonly Direction[,] Clockwise = {
-        { Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.Center },
-        { Direction.K, Direction.JK, Direction.J, Direction.IJ, Direction.I, Direction.IK },
-        { Direction.J, Direction.IJ, Direction.I, Direction.IK, Direction.K, Direction.JK },
-        { Direction.JK, Direction.J, Direction.IJ, Direction.I, Direction.IK, Direction.K },
-        { Direction.I, Direction.IK, Direction.K, Direction.JK, Direction.J, Direction.IJ },
-        { Direction.IK, Direction.K, Direction.JK, Direction.J, Direction.IJ, Direction.I },
-        { Direction.IJ, Direction.I, Direction.IK, Direction.K, Direction.JK, Direction.J },
-        { Direction.Invalid, Direction.Invalid, Direction.Invalid, Direction.Invalid, Direction.Invalid, Direction.Invalid }
+    private static readonly byte[] Clockwise = {
+        0, 0, 0, 0, 0, 0,
+        1, 3, 2, 6, 4, 5,
+        2, 6, 4, 5, 1, 3,
+        3, 2, 6, 4, 5, 1,
+        4, 5, 1, 3, 2, 6,
+        5, 1, 3, 2, 6, 4,
+        6, 4, 5, 1, 3, 2,
+        7, 7, 7, 7, 7, 7
     };
 
     /// <summary>
-    /// Counter-clockwise rotation steps, by <see cref="Direction"/> and number of rotations from 0-5.
+    /// Counter-clockwise rotation steps, indexed as [(int)direction * 6 + rotations]
+    /// for rotation counts from 0-5.  A single counter-clockwise rotation of a
+    /// valid direction digit is multiplication by 5 modulo 7.
     /// </summary>
-    private static readonly Direction[,] CounterClockwise = {
-        { Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.Center },
-        { Direction.K, Direction.IK, Direction.I, Direction.IJ, Direction.J, Direction.JK },
-        { Direction.J , Direction.JK, Direction.K, Direction.IK, Direction.I, Direction.IJ },
-        { Direction.JK, Direction.K, Direction.IK, Direction.I, Direction.IJ, Direction.J },
-        { Direction.I, Direction.IJ, Direction.J, Direction.JK, Direction.K, Direction.IK },
-        { Direction.IK, Direction.I, Direction.IJ, Direction.J, Direction.JK, Direction.K },
-        { Direction.IJ, Direction.J, Direction.JK, Direction.K, Direction.IK, Direction.I },
-        { Direction.Invalid, Direction.Invalid, Direction.Invalid, Direction.Invalid, Direction.Invalid, Direction.Invalid }
+    private static readonly byte[] CounterClockwise = {
+        0, 0, 0, 0, 0, 0,
+        1, 5, 4, 6, 2, 3,
+        2, 3, 1, 5, 4, 6,
+        3, 1, 5, 4, 6, 2,
+        4, 6, 2, 3, 1, 5,
+        5, 4, 6, 2, 3, 1,
+        6, 2, 3, 1, 5, 4,
+        7, 7, 7, 7, 7, 7
     };
 
     /// <summary>
@@ -51,9 +55,15 @@ public static class DirectionExtensions {
     /// <param name="direction"></param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Direction RotateClockwise(this Direction direction) {
-        return Clockwise[(int)direction, 1];
-    }
+    public static Direction RotateClockwise(this Direction direction) => direction switch {
+        Direction.K => Direction.JK,
+        Direction.J => Direction.IJ,
+        Direction.JK => Direction.J,
+        Direction.I => Direction.IK,
+        Direction.IK => Direction.K,
+        Direction.IJ => Direction.I,
+        _ => direction
+    };
 
     /// <summary>
     /// Returns the <see cref="Direction"/> that is 60 degrees clockwise to the current
@@ -64,7 +74,7 @@ public static class DirectionExtensions {
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Direction RotateClockwise(this Direction direction, int rotations) {
-        return Clockwise[(int)direction, rotations % 6];
+        return (Direction)Clockwise[(int)direction * 6 + rotations % 6];
     }
 
     /// <summary>
@@ -74,9 +84,15 @@ public static class DirectionExtensions {
     /// <param name="direction"></param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Direction RotateCounterClockwise(this Direction direction) {
-        return CounterClockwise[(int)direction, 1];
-    }
+    public static Direction RotateCounterClockwise(this Direction direction) => direction switch {
+        Direction.K => Direction.IK,
+        Direction.J => Direction.JK,
+        Direction.JK => Direction.K,
+        Direction.I => Direction.IJ,
+        Direction.IK => Direction.I,
+        Direction.IJ => Direction.J,
+        _ => direction
+    };
 
     /// <summary>
     /// Returns the <see cref="Direction"/> that is 60 degrees counter-clockwise to the current
@@ -87,7 +103,7 @@ public static class DirectionExtensions {
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Direction RotateCounterClockwise(this Direction direction, int rotations) {
-        return CounterClockwise[(int)direction, rotations % 6];
+        return (Direction)CounterClockwise[(int)direction * 6 + rotations % 6];
     }
 }
 

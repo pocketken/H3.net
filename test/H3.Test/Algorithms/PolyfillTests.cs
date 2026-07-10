@@ -1,5 +1,6 @@
-﻿using System.Linq;
+using System.Linq;
 using NUnit.Framework;
+
 using H3.Algorithms;
 using H3.Extensions;
 using H3.Model;
@@ -80,7 +81,7 @@ public class PolyfillTests {
         var filled = DefaultGeometryFactory.CreatePolygon().Fill(5);
 
         // Assert
-        Assert.IsEmpty(filled, "should be empty");
+        Assert.That(filled, Is.Empty, "should be empty");
     }
 
     [Test]
@@ -93,8 +94,8 @@ public class PolyfillTests {
         var filled = boundary.Fill(9).ToArray();
 
         // Assert
-        Assert.AreEqual(1, filled.Length, "should return 1 index");
-        Assert.IsTrue(index == filled[0], $"should be index {index} not {filled[0]}");
+        Assert.That(filled.Length, Is.EqualTo(1), "should return 1 index");
+        Assert.That(index == filled[0], Is.True, $"should be index {index} not {filled[0]}");
     }
 
     [Test]
@@ -107,9 +108,9 @@ public class PolyfillTests {
         var filled = boundary.Fill(15).ToArray();
 
         // Assert
-        Assert.AreEqual(KnownValuePolyfillAtRes15.Length, filled.Length, "should be same length");
+        Assert.That(filled.Length, Is.EqualTo(KnownValuePolyfillAtRes15.Length), "should be same length");
         for (var i = 0; i < KnownValuePolyfillAtRes15.Length; i += 1) {
-            Assert.Contains(KnownValuePolyfillAtRes15[i], filled, $"missing {KnownValuePolyfillAtRes15[i]}");
+            Assert.That(filled, Does.Contain(KnownValuePolyfillAtRes15[i]), $"missing {KnownValuePolyfillAtRes15[i]}");
         }
     }
 
@@ -122,7 +123,7 @@ public class PolyfillTests {
         var filledCount = polygon.Fill(9).Count();
 
         // Assert
-        Assert.AreEqual(1253, filledCount, "should return 1253 indicies");
+        Assert.That(filledCount, Is.EqualTo(1253), "should return 1253 indicies");
     }
 
     [Test]
@@ -134,7 +135,7 @@ public class PolyfillTests {
         var filledCount = polygon.Fill(9, VertexTestMode.Any).Count();
 
         // Assert
-        Assert.AreEqual(1334, filledCount, "should return 1334 indicies");
+        Assert.That(filledCount, Is.EqualTo(1334), "should return 1334 indicies");
     }
 
     [Test]
@@ -146,7 +147,7 @@ public class PolyfillTests {
         var filledCount = polygon.Fill(9, VertexTestMode.All).Count();
 
         // Assert
-        Assert.AreEqual(1175, filledCount, "should return 1175 indicies");
+        Assert.That(filledCount, Is.EqualTo(1175), "should return 1175 indicies");
     }
 
     [Test]
@@ -158,7 +159,7 @@ public class PolyfillTests {
         var filledCount = polygon.Fill(7).Count();
 
         // Assert
-        Assert.AreEqual(4228, filledCount, "should return 4228 indicies");
+        Assert.That(filledCount, Is.EqualTo(4228), "should return 4228 indicies");
     }
 
     [Test]
@@ -170,7 +171,7 @@ public class PolyfillTests {
         var filledCount = polygon.Fill(7).Count();
 
         // Assert
-        Assert.AreEqual(4238, filledCount, "should return 4328 indicies");
+        Assert.That(filledCount, Is.EqualTo(4238), "should return 4328 indicies");
     }
 
     [Test]
@@ -182,7 +183,7 @@ public class PolyfillTests {
         var filledCount = polygon.Fill(7).Count();
 
         // Assert
-        Assert.AreEqual(3176, filledCount, "should return 3176 indicies");
+        Assert.That(filledCount, Is.EqualTo(3176), "should return 3176 indicies");
     }
 
     [Test]
@@ -194,7 +195,7 @@ public class PolyfillTests {
         var filledCount = polygon.Fill(4).Count();
 
         // Assert
-        Assert.AreEqual(1204, filledCount, "should return 1204 indicies");
+        Assert.That(filledCount, Is.EqualTo(1204), "should return 1204 indicies");
     }
 
     private const double EdgeLength2 = 0.001 * M_PI_180;
@@ -226,8 +227,8 @@ public class PolyfillTests {
         var filled = polygon.Fill(9).ToArray();
 
         // Assert
-        Assert.AreEqual(1, filled.Length, "should return 1 index");
-        Assert.IsTrue(filled[0].IsPentagon, "should be a pentagon index");
+        Assert.That(filled.Length, Is.EqualTo(1), "should return 1 index");
+        Assert.That(filled[0].IsPentagon, Is.True, "should be a pentagon index");
     }
 
     [Test]
@@ -244,7 +245,7 @@ public class PolyfillTests {
         var filled = polygon.Fill(resolution).Count();
 
         // Assert
-        Assert.AreEqual(expectedCount, filled, $"should have filled {expectedCount}");
+        Assert.That(filled, Is.EqualTo(expectedCount), $"should have filled {expectedCount}");
     }
 
     [Test]
@@ -267,7 +268,7 @@ public class PolyfillTests {
         var filled = polygon.Fill(7).Count();
 
         // Arrange
-        Assert.AreEqual(4499, filled, "should have filled 4499");
+        Assert.That(filled, Is.EqualTo(4499), "should have filled 4499");
     }
 
     [Test]
@@ -290,7 +291,7 @@ public class PolyfillTests {
         var filled = polygon.Fill(7).Count();
 
         // Arrange
-        Assert.AreEqual(4609, filled, "should have filled 4499");
+        Assert.That(filled, Is.EqualTo(4609), "should have filled 4499");
     }
 
     [Test]
@@ -309,7 +310,7 @@ public class PolyfillTests {
         var filled = polygon.Fill(13).Count();
 
         // Arrange
-        Assert.AreEqual(4353, filled, "should have filled 4353");
+        Assert.That(filled, Is.EqualTo(4353), "should have filled 4353");
     }
 
     [Test]
@@ -362,7 +363,7 @@ public class PolyfillTests {
         var filled = polygon.Fill(10).ToList();
 
         // Assert
-        Assert.Contains(expectedCenter, filled, "should contain polygon centroid");
+        Assert.That(filled, Does.Contain(expectedCenter), "should contain polygon centroid");
     }
 
     [Test]
@@ -415,8 +416,85 @@ public class PolyfillTests {
         var filled = polygon.Fill(9).ToList();
 
         // Assert
-        Assert.Contains(expectedCenter, filled, "should contain polygon centroid");
-        Assert.AreEqual(77, filled.Count, "should have 77 cells");
+        Assert.That(filled, Does.Contain(expectedCenter), "should contain polygon centroid");
+        Assert.That(filled.Count, Is.EqualTo(77), "should have 77 cells");
+    }
+
+    [Test]
+    public void Test_GH53_Polyfill_DisjointMultiPolygon_FillsAllComponents() {
+        // Arrange
+        var sf = CreatePolygon(UberSfTestPoly);
+        var eq = H3Index.FromLatLng((1, 2), 9).GetCellBoundary();
+        var multi = DefaultGeometryFactory.CreateMultiPolygon(new[] { sf, eq });
+        var expected = sf.Fill(9).Concat(eq.Fill(9)).Distinct().ToHashSet();
+
+        // Act
+        var filled = multi.Fill(9).ToHashSet();
+
+        // Assert
+        Assert.That(filled, Is.EquivalentTo(expected), "should fill every disjoint component");
+    }
+
+    [Test]
+    public void Test_GH53_Polyfill_GeometryCollection() {
+        // Arrange
+        var polygon = CreatePolygon(UberSfTestPoly);
+        var point = H3Index.FromLatLng((1, 2), 9).ToPoint();
+        var collection = DefaultGeometryFactory.CreateGeometryCollection(new Geometry[] { polygon, point });
+        var expected = polygon.Fill(9).Concat(point.Fill(9)).Distinct().ToHashSet();
+
+        // Act
+        var filled = collection.Fill(9).ToHashSet();
+
+        // Assert
+        Assert.That(filled, Is.EquivalentTo(expected), "should fill union of collection members");
+    }
+
+    [Test]
+    public void Test_GH53_Polyfill_Point() {
+        // Arrange
+        var index = H3Index.FromLatLng((1, 2), 9);
+
+        // Act
+        var filled = index.ToPoint().Fill(9).ToArray();
+
+        // Assert
+        Assert.That(filled, Is.EqualTo(new[] { index }), "should fill to the containing cell");
+    }
+
+    [Test]
+    public void Test_GH53_Polyfill_PredicateOverload_MatchesCenterMode() {
+        // Arrange
+        var polygon = CreatePolygon(UberSfTestPoly);
+        var locator = new NetTopologySuite.Algorithm.Locate.IndexedPointInAreaLocator(polygon);
+        var expected = polygon.Fill(9).ToHashSet();
+
+        // Act
+        var filled = polygon.Fill(9, index => locator.Locate(index.ToCoordinate()) == Location.Interior).ToHashSet();
+
+        // Assert
+        Assert.That(filled, Is.EquivalentTo(expected), "predicate fill should match center vertex mode");
+    }
+
+    [Test]
+    public void Test_GH53_Upstream521_VertexLatitudeMatchesCellCenter() {
+        // Arrange
+        var index = H3Index.FromLatLng((0.659966917655, -2.1364398519396), 9);
+        var center = index.ToLatLng();
+        LatLng[] verts = {
+            (center.Latitude, center.Longitude - 0.001),
+            (center.Latitude + 0.001, center.Longitude),
+            (center.Latitude, center.Longitude + 0.001),
+            (center.Latitude - 0.001, center.Longitude),
+            (center.Latitude, center.Longitude - 0.001)
+        };
+        var polygon = CreatePolygon(verts);
+
+        // Act
+        var filled = polygon.Fill(9).ToList();
+
+        // Assert
+        Assert.That(filled, Does.Contain(index), "should contain the cell whose center latitude matches polygon vertices");
     }
 
     /// <summary>

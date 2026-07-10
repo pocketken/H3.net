@@ -6,20 +6,20 @@ using static H3.Utils;
 
 #nullable enable
 
-namespace H3.Model; 
+namespace H3.Model;
 
-public sealed class FaceIJK {
+public struct FaceIJK : IEquatable<FaceIJK> {
 
     private const double THREE_M_SQRT32 = 3.0 * M_SQRT3_2;
 
     public int Face { get; set; }
-    public CoordIJK Coord { get; set; } = new(0, 0, 0);
+    public CoordIJK Coord;
 
     public const int IJ = 1;
     public const int KI = 2;
     public const int JK = 3;
 
-    public BaseCellRotation? BaseCellRotation {
+    public readonly BaseCellRotation? BaseCellRotation {
         get {
             if (Coord.I > MAX_FACE_COORD || Coord.J > MAX_FACE_COORD || Coord.K > MAX_FACE_COORD) return null;
             return LookupTables.FaceIjkBaseCells[Face, Coord.I, Coord.J, Coord.K];
@@ -31,19 +31,18 @@ public sealed class FaceIJK {
 
     public FaceIJK(FaceIJK other) {
         Face = other.Face;
-        Coord = new CoordIJK(other.Coord);
+        Coord = other.Coord;
     }
 
     public FaceIJK(int face, CoordIJK coord) {
         Face = face;
-        Coord = new CoordIJK(coord);
+        Coord = coord;
     }
 
-    public static FaceIJK FromGeoCoord(double longitudeRadians, double latitudeRadians, int resolution,
-        FaceIJK? toUpdate = default, Vec3d? workVec3d = default) {
+    public static FaceIJK FromLatLng(double longitudeRadians, double latitudeRadians, int resolution) {
         unchecked {
-            var v3d = Vec3d.FromLonLat(longitudeRadians, latitudeRadians, workVec3d);
-            var result = toUpdate ?? new FaceIJK();
+            var v3d = Vec3d.FromLonLat(longitudeRadians, latitudeRadians);
+            var result = new FaceIJK();
 
             result.Face = 0;
             result.Coord.I = 0;
@@ -79,7 +78,7 @@ public sealed class FaceIJK {
                 y = r * Math.Sin(theta);
             }
 
-            CoordIJK.FromVec2d(x, y, result.Coord);
+            result.Coord = CoordIJK.FromVec2d(x, y);
             return result;
         }
     }
@@ -233,9 +232,10 @@ public sealed class FaceIJK {
             Vec2d v2 = new();
             Vec2d orig2d0 = new();
             Vec2d orig2d1 = new();
+            var intersection = new Vec2d();
 
             var fijk = new FaceIJK();
-            FaceIJK lastFijk = new();
+            var lastFijk = new FaceIJK();
 
             for (var vert = start; vert < start + length + additionalIteration; vert += 1) {
                 var v = vert % NUM_PENT_VERTS;
@@ -252,7 +252,7 @@ public sealed class FaceIJK {
                 if (IsResolutionClass3(resolution) && vert > start) {
                     // find hex2d of the two vertexes on the last face
                     FaceIJK tmpFijk = new(fijk);
-                    lastFijk.Coord.ToVec2d(orig2d0);
+                    lastFijk.Coord.ToVec2d(ref orig2d0);
 
                     var currentToLastDir = LookupTables.AdjacentFaceDirections[tmpFijk.Face, lastFijk.Face];
 
@@ -268,8 +268,7 @@ public sealed class FaceIJK {
                     ijk.J += fijkOrient.Translate.J * scale;
                     ijk.K += fijkOrient.Translate.K * scale;
                     ijk.Normalize();
-
-                    ijk.ToVec2d(orig2d1);
+                    ijk.ToVec2d(ref orig2d1);
 
                     // find the appropriate icosa face edge vertexes
                     var maxDist = LookupTables.MaxDistanceByClass2Res[adjustedResolution];
@@ -281,28 +280,18 @@ public sealed class FaceIJK {
                     v2.X = v1.X;
                     v2.Y = -THREE_M_SQRT32 * maxDist;
 
-                    Vec2d intersection;
-                    Vec2d edge0;
-                    Vec2d edge1;
-
                     var adjacentFace = LookupTables.AdjacentFaceDirections[tmpFijk.Face, fijk.Face];
                     switch (adjacentFace) {
                         case IJ:
-                            edge0 = v0;
-                            edge1 = v1;
-                            intersection = v2;
+                            Vec2d.Intersect(orig2d0, orig2d1, v0, v1, ref intersection);
                             break;
 
                         case JK:
-                            edge0 = v1;
-                            edge1 = v2;
-                            intersection = v0;
+                            Vec2d.Intersect(orig2d0, orig2d1, v1, v2, ref intersection);
                             break;
 
                         case KI:
-                            edge0 = v2;
-                            edge1 = v0;
-                            intersection = v1;
+                            Vec2d.Intersect(orig2d0, orig2d1, v2, v0, ref intersection);
                             break;
 
                         default:
@@ -310,12 +299,11 @@ public sealed class FaceIJK {
                     }
 
                     // find the intersection and add the lat/lon point to the result
-                    Vec2d.Intersect(orig2d0, orig2d1, edge0, edge1, intersection);
-                    yield return intersection.ToFaceGeoCoord(tmpFijk.Face, adjustedResolution, true);
+                    yield return intersection.ToFaceLatLng(tmpFijk.Face, adjustedResolution, true);
                 }
 
                 if (vert < start + NUM_PENT_VERTS) {
-                    yield return fijk.ToFaceGeoCoord(adjustedResolution, true);
+                    yield return fijk.ToFaceLatLng(adjustedResolution, true);
                 }
 
                 lastFijk.Face = fijk.Face;
@@ -350,6 +338,7 @@ public sealed class FaceIJK {
             Vec2d v2 = new();
             Vec2d orig2d0 = new();
             Vec2d orig2d1 = new();
+            var intersection = new Vec2d();
 
             var fijk = new FaceIJK();
 
@@ -376,8 +365,8 @@ public sealed class FaceIJK {
                     lastOverage != Overage.FaceEdge) {
                     // find hex2d of the two vertexes on original face
                     var lastV = (v + 5) % NUM_HEX_VERTS;
-                    verts[lastV].Coord.ToVec2d(orig2d0);
-                    verts[v].Coord.ToVec2d(orig2d1);
+                    verts[lastV].Coord.ToVec2d(ref orig2d0);
+                    verts[v].Coord.ToVec2d(ref orig2d1);
 
                     // find the appropriate icosa face edge vertexes
                     var maxDist = LookupTables.MaxDistanceByClass2Res[adjustedResolution];
@@ -390,37 +379,26 @@ public sealed class FaceIJK {
 
                     var face2 = lastFace == centerIjk.Face ? fijk.Face : lastFace;
 
-                    Vec2d intersection;
-                    Vec2d edge0;
-                    Vec2d edge1;
-
                     switch (LookupTables.AdjacentFaceDirections[centerIjk.Face, face2]) {
                         case IJ:
-                            edge0 = v0;
-                            edge1 = v1;
-                            intersection = v2;
+                            Vec2d.Intersect(orig2d0, orig2d1, v0, v1, ref intersection);
                             break;
 
                         case JK:
-                            edge0 = v1;
-                            edge1 = v2;
-                            intersection = v0;
+                            Vec2d.Intersect(orig2d0, orig2d1, v1, v2, ref intersection);
                             break;
 
                         case KI:
-                            edge0 = v2;
-                            edge1 = v0;
-                            intersection = v1;
+                            Vec2d.Intersect(orig2d0, orig2d1, v2, v0, ref intersection);
                             break;
 
                         default:
                             throw new Exception("Unsupported direction");
                     }
 
-                    Vec2d.Intersect(orig2d0, orig2d1, edge0, edge1, intersection);
                     var atVertex = orig2d0 == intersection || orig2d1 == intersection;
                     if (!atVertex) {
-                        yield return intersection.ToFaceGeoCoord(centerIjk.Face, adjustedResolution, true);
+                        yield return intersection.ToFaceLatLng(centerIjk.Face, adjustedResolution, true);
                     }
                 }
 
@@ -428,7 +406,7 @@ public sealed class FaceIJK {
                 // vert == start + NUM_HEX_VERTS is only used to test for possible
                 // intersection on last edge
                 if (vert < start + NUM_HEX_VERTS) {
-                    yield return fijk.ToFaceGeoCoord(adjustedResolution, true);
+                    yield return fijk.ToFaceLatLng(adjustedResolution, true);
                 }
 
                 lastFace = fijk.Face;
@@ -437,16 +415,16 @@ public sealed class FaceIJK {
         }
     }
 
-    public LatLng ToGeoCoord(int resolution) {
-        return ToFaceGeoCoord(resolution, false);
+    public readonly LatLng ToLatLng(int resolution) {
+        return ToFaceLatLng(resolution, false);
     }
 
-    public LatLng ToFaceGeoCoord(int resolution, bool isSubstrate) {
+    public readonly LatLng ToFaceLatLng(int resolution, bool isSubstrate) {
         var (x, y) = Coord.GetVec2dOrdinates();
-        return ToFaceGeoCoord(x, y, Face, resolution, isSubstrate);
+        return ToFaceLatLng(x, y, Face, resolution, isSubstrate);
     }
 
-    public static LatLng ToFaceGeoCoord(double x, double y, int face, int resolution, bool isSubstrate) {
+    public static LatLng ToFaceLatLng(double x, double y, int face, int resolution, bool isSubstrate) {
         unchecked {
             var r = Math.Sqrt(x * x + y * y);
             if (r < EPSILON) {
@@ -472,21 +450,18 @@ public sealed class FaceIJK {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(FaceIJK? a, FaceIJK? b) {
-        if (a is null) return b is null;
-        if (b is null) return false;
-        return a.Face == b.Face && a.Coord == b.Coord;
-    }
+    public readonly bool Equals(FaceIJK other) => Face == other.Face && Coord == other.Coord;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(FaceIJK? a, FaceIJK? b) {
-        if (a is null) return b is not null;
-        if (b is null) return true;
-        return a.Face != b.Face || a.Coord != b.Coord;
-    }
+    public static bool operator ==(FaceIJK a, FaceIJK b) =>
+        a.Face == b.Face && a.Coord == b.Coord;
 
-    public override bool Equals(object? other) => other is FaceIJK f && this == f;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator !=(FaceIJK a, FaceIJK b) =>
+        a.Face != b.Face || a.Coord != b.Coord;
 
-    public override int GetHashCode() => HashCode.Combine(Face, Coord);
+    public override readonly bool Equals(object? other) => other is FaceIJK f && this == f;
+
+    public override readonly int GetHashCode() => HashCode.Combine(Face, Coord);
 
 }

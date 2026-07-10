@@ -6,9 +6,9 @@ using static H3.Utils;
 
 #nullable enable
 
-namespace H3.Model; 
+namespace H3.Model;
 
-public sealed class Vec3d {
+public struct Vec3d {
 
     public double X { get; set; }
     public double Y { get; set; }
@@ -32,22 +32,22 @@ public sealed class Vec3d {
     public double PointSquareDistance(Vec3d v2) =>
         Square(X - v2.X) + Square(Y - v2.Y) + Square(Z - v2.Z);
 
-    public static Vec3d FromGeoCoord(LatLng coord, Vec3d? result = default) {
-        return FromLonLat(coord.Longitude, coord.Latitude, result);
+    public static Vec3d FromLatLng(LatLng coord) {
+        return FromLonLat(coord.Longitude, coord.Latitude);
     }
 
-    public static Vec3d FromLonLat(double longitudeRadians, double latitudeRadians, Vec3d? result = default) {
+    public static Vec3d FromLonLat(double longitudeRadians, double latitudeRadians) {
         unchecked {
-            var ret = result ?? new Vec3d();
             var r = Math.Cos(latitudeRadians);
-            ret.X = Math.Cos(longitudeRadians) * r;
-            ret.Y = Math.Sin(longitudeRadians) * r;
-            ret.Z = Math.Sin(latitudeRadians);
-            return ret;
+            return new Vec3d(
+                Math.Cos(longitudeRadians) * r,
+                Math.Sin(longitudeRadians) * r,
+                Math.Sin(latitudeRadians)
+            );
         }
     }
 
-    public static Vec3d FromPoint(Point point) => FromGeoCoord(LatLng.FromPoint(point));
+    public static Vec3d FromPoint(Point point) => FromLatLng(LatLng.FromPoint(point));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(Vec3d a, Vec3d b) => Math.Abs(a.X - b.X) < EPSILON && Math.Abs(a.Y - b.Y) < EPSILON && Math.Abs(a.Z - b.Z) < EPSILON;

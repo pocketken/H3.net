@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+
 using H3.Algorithms;
 using H3.Extensions;
 using System.Linq;
@@ -121,7 +122,7 @@ public class H3SetExtensionsTests {
         var actual = sunnyvaleExpanded.CompactCells().ToList();
 
         // Assert
-        Assert.AreEqual(73, actual.Count, "should reduce to 73 indexes");
+        Assert.That(actual.Count, Is.EqualTo(73), "should reduce to 73 indexes");
     }
 
     [Test]
@@ -140,7 +141,108 @@ public class H3SetExtensionsTests {
             .ToList();
 
         // Assert
-        Assert.AreEqual(expectedCount, actual.Count, $"should return {expectedCount}");
+        Assert.That(actual.Count, Is.EqualTo(expectedCount), $"should return {expectedCount}");
+    }
+
+    [Test]
+    public void Test_Upstream_919_Compact_AllRes1Cells() {
+        // Arrange
+        var allRes1 = H3Index.GetRes0Cells()
+            .SelectMany(cell => cell.GetChildrenForResolution(1))
+            .ToList();
+
+        // Act
+        var actual = allRes1.CompactCells();
+
+        // Assert
+        Assert.That(allRes1.Count, Is.EqualTo(842), "should start with 842 res 1 cells");
+        Assert.That(actual.Count, Is.EqualTo(122), "should compact to the 122 res 0 cells");
+        Assert.That(actual.All(cell => cell.Resolution == 0), Is.True, "all results should be res 0");
+    }
+
+    [Test]
+    public void Test_Upstream_679_Compact_AllChildrenOfRes0Cell() {
+        // Arrange
+        var parent = H3Index.Create(0, 0, 0);
+        var children = parent.GetChildrenForResolution(1).ToList();
+
+        // Act
+        var actual = children.CompactCells();
+
+        // Assert
+        Assert.That(actual, Is.EqualTo(new List<H3Index> { parent }), "should compact to the res 0 parent");
+    }
+
+    [Test]
+    public void Test_GH61_CanonicalizeCells_SortsAndDeduplicates() {
+        // Arrange
+        var cells = TestHelpers.SfIndex.GridDiskDistances(2)
+            .Select(cell => cell.Index)
+            .Concat(new[] { TestHelpers.SfIndex, H3Index.Invalid })
+            .Reverse()
+            .ToList();
+        var expected = cells.Where(cell => cell != H3Index.Invalid).Distinct().OrderBy(cell => (ulong)cell).ToList();
+
+        // Act
+        var canonical = cells.CanonicalizeCells();
+
+        // Assert
+        Assert.That(canonical, Is.EqualTo(expected), "should be sorted ascending and unique without H3_NULL");
+    }
+
+    [Test]
+    public void Test_GH61_IsCanonicalCells() {
+        // Arrange
+        var canonical = TestHelpers.SfIndex.GridDiskDistances(2)
+            .Select(cell => cell.Index)
+            .CanonicalizeCells();
+
+        // Act
+        var actual = canonical.IsCanonicalCells();
+
+        // Assert
+        Assert.That(actual, Is.True, "canonicalized set should be canonical");
+        Assert.That(new List<H3Index> { canonical[1], canonical[0] }.IsCanonicalCells(), Is.False, "unsorted set should not be canonical");
+        Assert.That(new List<H3Index> { canonical[0], canonical[0] }.IsCanonicalCells(), Is.False, "duplicated set should not be canonical");
+        Assert.That(new List<H3Index> { H3Index.Invalid }.IsCanonicalCells(), Is.False, "set containing H3_NULL should not be canonical");
+    }
+
+    [Test]
+    public void Test_GH61_CanonicalCellsContain_SameResolution() {
+        // Arrange
+        var disk = TestHelpers.SfIndex.GridDiskDistances(2).Select(cell => cell.Index).ToList();
+        var canonical = disk.CanonicalizeCells();
+        var outside = TestHelpers.SfIndex.GridDiskDistances(3)
+            .Where(cell => cell.Distance == 3)
+            .Select(cell => cell.Index);
+
+        // Assert
+        foreach (var cell in disk) {
+            Assert.That(canonical.CanonicalCellsContain(cell), Is.True, $"should contain {cell}");
+        }
+
+        foreach (var cell in outside) {
+            Assert.That(canonical.CanonicalCellsContain(cell), Is.False, $"should not contain {cell}");
+        }
+    }
+
+    [Test]
+    public void Test_GH61_CanonicalCellsContain_CompactedMixedResolutions() {
+        // Arrange
+        var expanded = Sunnyvale.GridDiskDistances(9).Select(cell => cell.Index).ToList();
+        var canonical = expanded.CompactCells().CanonicalizeCells();
+
+        // Assert
+        foreach (var cell in expanded) {
+            Assert.That(canonical.CanonicalCellsContain(cell), Is.True, $"compacted coverage should contain {cell}");
+        }
+
+        foreach (var child in expanded[0].GetChildrenForResolution(expanded[0].Resolution + 1)) {
+            Assert.That(canonical.CanonicalCellsContain(child), Is.True, $"compacted coverage should contain descendant {child}");
+        }
+
+        Assert.That(canonical.CanonicalCellsContain(H3Index.Invalid), Is.False, "should not contain H3_NULL");
+        Assert.That(canonical.CanonicalCellsContain(H3Index.Create(0, 4, 0)), Is.False, "should not contain a cell outside of the coverage");
     }
 
     [Test]
@@ -149,7 +251,7 @@ public class H3SetExtensionsTests {
         var actual = Uncompactable.CompactCells().ToList();
 
         // Assert
-        Assert.AreEqual(Uncompactable, actual, "should return original input");
+        Assert.That(actual, Is.EquivalentTo(Uncompactable), "should return original input");
     }
 
     [Test]
@@ -161,7 +263,7 @@ public class H3SetExtensionsTests {
         var actual = UncompactableWithZero.CompactCells().ToList();
 
         // Assert
-        Assert.AreEqual(expected, actual, "should return original input without H3_NULL");
+        Assert.That(actual, Is.EquivalentTo(expected), "should return original input without H3_NULL");
     }
 
     [Test]
@@ -173,7 +275,7 @@ public class H3SetExtensionsTests {
         var exception = Assert.Throws<ArgumentException>(() => UncompactSomeHexagons.UncompactCells(resolution).ToList());
 
         // Assert
-        Assert.AreEqual("set contains cell smaller than target resolution", exception.Message, "expected message");
+        Assert.That(exception.Message, Is.EqualTo("set contains cell smaller than target resolution"), "expected message");
     }
 
     [Test]
@@ -189,7 +291,7 @@ public class H3SetExtensionsTests {
         var actual = indexes.UncompactCells(2);
 
         // Assert
-        Assert.AreEqual(expectedChildren, actual, "should be equal");
+        Assert.That(actual, Is.EqualTo(expectedChildren), "should be equal");
     }
 
     [Test]
@@ -205,7 +307,7 @@ public class H3SetExtensionsTests {
         var actual = children.CompactCells();
 
         // Assert
-        Assert.AreEqual(expectedIndexes, actual, "should be equal");
+        Assert.That(actual, Is.EqualTo(expectedIndexes), "should be equal");
     }
 
     //[Test]

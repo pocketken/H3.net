@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageVersion>4.0.0</PackageVersion>
+    <PackageVersion>4.5.0</PackageVersion>
     <AssemblyName>pocketken.H3</AssemblyName>
-    <TargetFrameworks>net6.0;netstandard2.1;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net10.0;net8.0;netstandard2.1;netstandard2.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <PackOnBuild>true</PackOnBuild>
     <PackageId>pocketken.H3</PackageId>
@@ -17,26 +17,24 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Version>$(PackageVersion)</Version>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>pocketken.H3.$(PackageVersion).xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591 (missing XML docs) tracked by GH-44 -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetTopologySuite" Version="2.5.0" />
+    <PackageReference Include="NetTopologySuite" Version="2.6.0" />
   </ItemGroup>
 
+  <!-- the netstandard targets deliberately carry no System.Text.Json dependency so that
+       the assembly is consumable from Unity and .NET Framework without the STJ dependency
+       chain; the H3IndexJsonConverter is only available on net8.0+ where STJ is in-box -->
   <ItemGroup Condition="'$(TargetFramework.Contains(`netstandard`))' == 'true'">
-    <PackageReference Include="System.Text.Json" Version="6.0.6" />
+    <PackageReference Include="Polyfill" Version="10.11.2" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="IsExternalInit.cs" Condition="'$(TargetFramework)' == 'net5.0' Or '$(TargetFramework)' == 'net6.0'" />
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -57,14 +55,4 @@
     </None>
   </ItemGroup>
 
-  <ProjectExtensions>
-    <MonoDevelop>
-      <Properties>
-        <Policies>
-          <TextStylePolicy inheritsSet="null" scope="text/x-csharp" />
-          <CSharpFormattingPolicy IndentBlock="True" IndentBraces="False" IndentSwitchSection="True" IndentSwitchCaseSection="True" LabelPositioning="OneLess" NewLineForMembersInObjectInit="True" NewLineForMembersInAnonymousTypes="True" NewLineForClausesInQuery="True" SpacingAfterMethodDeclarationName="False" SpaceWithinMethodDeclarationParenthesis="False" SpaceBetweenEmptyMethodDeclarationParentheses="False" SpaceAfterMethodCallName="False" SpaceWithinMethodCallParentheses="False" SpaceBetweenEmptyMethodCallParentheses="False" SpaceAfterControlFlowStatementKeyword="True" SpaceWithinExpressionParentheses="False" SpaceWithinCastParentheses="False" SpaceWithinOtherParentheses="False" SpaceAfterCast="False" SpacesIgnoreAroundVariableDeclaration="False" SpaceBeforeOpenSquareBracket="False" SpaceBetweenEmptySquareBrackets="False" SpaceWithinSquareBrackets="False" SpaceAfterColonInBaseTypeDeclaration="True" SpaceAfterComma="True" SpaceAfterDot="False" SpaceAfterSemicolonsInForStatement="True" SpaceBeforeColonInBaseTypeDeclaration="True" SpaceBeforeComma="False" SpaceBeforeDot="False" SpaceBeforeSemicolonsInForStatement="False" SpacingAroundBinaryOperator="Single" WrappingPreserveSingleLine="True" WrappingKeepStatementsOnSingleLine="True" NewLinesForBracesInTypes="False" NewLinesForBracesInMethods="False" NewLinesForBracesInProperties="False" NewLinesForBracesInAccessors="False" NewLinesForBracesInAnonymousMethods="False" NewLinesForBracesInControlBlocks="False" NewLinesForBracesInAnonymousTypes="False" NewLinesForBracesInObjectCollectionArrayInitializers="False" NewLinesForBracesInLambdaExpressionBody="False" NewLineForElse="False" NewLineForCatch="False" NewLineForFinally="False" scope="text/x-csharp" />
-        </Policies>
-      </Properties>
-    </MonoDevelop>
-  </ProjectExtensions>
 </Project>

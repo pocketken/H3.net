@@ -1,16 +1,18 @@
-﻿using System;
+using System;
 using System.Linq;
+using H3.Algorithms;
 using H3.Extensions;
 using H3.Model;
 using static H3.Constants;
 using NUnit.Framework;
+
 using NetTopologySuite.Geometries;
 using System.Collections.Generic;
 using System.Reflection;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace H3.Test.Extensions; 
+namespace H3.Test.Extensions;
 
 [TestFixture]
 [Parallelizable(ParallelScope.All)]
@@ -23,7 +25,7 @@ public class H3GeometryExtensionsTests {
     };
 
     private static readonly double[] CellAreasInKm2 = {
-        2.562182162955496e+06, 4.476842018179411e+05, 6.596162242711056e+04,
+        2.562182162955496e+06, 4.476842017201860e+05, 6.596162242711056e+04,
         9.228872919002590e+03, 1.318694490797110e+03, 1.879593512281298e+02,
         2.687164354763186e+01, 3.840848847060638e+00, 5.486939641329893e-01,
         7.838600808637444e-02, 1.119834221989390e-02, 1.599777169186614e-03,
@@ -74,11 +76,11 @@ public class H3GeometryExtensionsTests {
 
                 List<(H3Index, LatLng[])> data = new();
                 string line;
-                H3Index index = null;
+                H3Index index = H3Index.Invalid;
                 List<LatLng> coords = null;
 
                 while ((line = reader.ReadLine()) != null) {
-                    if (index == null) {
+                    if (index == H3Index.Invalid) {
                         index = new H3Index(line);
                         continue;
                     }
@@ -88,7 +90,7 @@ public class H3GeometryExtensionsTests {
                             continue;
                         case "}":
                             data.Add((index, coords!.ToArray()));
-                            index = null;
+                            index = 0;
                             coords = null;
                             continue;
                     }
@@ -139,8 +141,8 @@ public class H3GeometryExtensionsTests {
         var polygon = new H3Index(TestHelpers.TestIndexValue).GetCellBoundary(geomFactory);
 
         // Assert
-        Assert.AreEqual(geomFactory, polygon.Factory, "should be using geomFactory not DefaultGeometryFactory");
-        Assert.AreEqual(TestPointBoundaryPolygonWkt, polygon.ToString(), "should be equal");
+        Assert.That(polygon.Factory, Is.EqualTo(geomFactory), "should be using geomFactory not DefaultGeometryFactory");
+        Assert.That(polygon.ToString(), Is.EqualTo(TestPointBoundaryPolygonWkt), "should be equal");
     }
 
     [Test]
@@ -166,6 +168,7 @@ public class H3GeometryExtensionsTests {
                 var av = actualVerts[i];
                 if (Math.Abs(ev.Latitude - av.Latitude) > 0.000001 ||
                     Math.Abs(ev.Longitude - av.Longitude) > 0.000001) {
+                    Assert.Fail($"expected: {ev.Latitude},{ev.Longitude} actual: {av.Latitude},{av.Longitude} delta: {Math.Abs(ev.Latitude-av.Latitude)},{Math.Abs(ev.Longitude-av.Longitude)}");
                     return false;
                 }
             }
@@ -186,8 +189,118 @@ public class H3GeometryExtensionsTests {
 
         // Assert
         for (var i = 0; i < CellAreasInKm2.Length; i += 1) {
-            Assert.IsTrue(Math.Abs(areas[i] - CellAreasInKm2[i]) < 1e-8, $"{indexes[i]} should be {CellAreasInKm2[i]} not {areas[i]}");
+            Assert.That(Math.Abs(areas[i] - CellAreasInKm2[i]) < 1e-8, Is.True, $"{indexes[i]} should be {CellAreasInKm2[i]} not {areas[i]}");
         }
+    }
+
+    [Test]
+    public void Test_CellsToMultiPolygon_DissolvesContiguousCells() {
+        // Arrange
+        var disk = TestHelpers.SfIndex.GridDiskDistances(1).Select(cell => cell.Index).ToList();
+
+        // Act
+        var actual = disk.CellsToMultiPolygon();
+
+        // Assert
+        Assert.That(actual.NumGeometries, Is.EqualTo(1), "should dissolve to a single polygon");
+        Assert.That(((Polygon)actual.GetGeometryN(0)).NumInteriorRings, Is.EqualTo(0), "should have no holes");
+        Assert.That(((Polygon)actual.GetGeometryN(0)).Shell.NumPoints - 1, Is.EqualTo(18), "outline should have 18 vertices");
+    }
+
+    [Test]
+    public void Test_CellsToMultiPolygon_PreservesHoles() {
+        // Arrange
+        var donut = TestHelpers.SfIndex.GridDiskDistances(1)
+            .Where(cell => cell.Distance == 1)
+            .Select(cell => cell.Index)
+            .ToList();
+
+        // Act
+        var actual = donut.CellsToMultiPolygon();
+
+        // Assert
+        Assert.That(actual.NumGeometries, Is.EqualTo(1), "should dissolve to a single polygon");
+        Assert.That(((Polygon)actual.GetGeometryN(0)).NumInteriorRings, Is.EqualTo(1), "should have one hole");
+    }
+
+    [Test]
+    public void Test_CellsToMultiPolygon_SeparatesDisjointCells() {
+        // Arrange
+        var cells = new[] { TestHelpers.SfIndex, H3Index.FromLatLng(new LatLng(0, 0), 9) };
+
+        // Act
+        var actual = cells.CellsToMultiPolygon();
+
+        // Assert
+        Assert.That(actual.NumGeometries, Is.EqualTo(2), "should produce two disjoint polygons");
+    }
+
+    [Test]
+    public void Test_CellsToMultiPolygon_EmptyInput() {
+        // Act
+        var actual = Enumerable.Empty<H3Index>().CellsToMultiPolygon();
+
+        // Assert
+        Assert.That(actual.IsEmpty, Is.True, "should be empty");
+    }
+
+    [Test]
+    public void Test_CellsToMultiPolygon_ThrowsOnInvalidCell() {
+        // Arrange
+        var cells = new[] { TestHelpers.SfIndex, H3Index.Invalid };
+
+        // Act
+        Action actual = () => cells.CellsToMultiPolygon();
+
+        // Assert
+        Assert.Throws<ArgumentException>(actual, "should throw for invalid cell");
+    }
+
+    [Test]
+    public void Test_CellsToMultiPolygon_ThrowsOnMixedResolutions() {
+        // Arrange
+        var cells = new[] { TestHelpers.SfIndex, TestHelpers.SfIndex.GetParentForResolution(8) };
+
+        // Act
+        Action actual = () => cells.CellsToMultiPolygon();
+
+        // Assert
+        Assert.Throws<ArgumentException>(actual, "should throw for mixed resolutions");
+    }
+
+    [Test]
+    public void Test_CellsToMultiPolygon_ThrowsOnDuplicates() {
+        // Arrange
+        var cells = new[] { TestHelpers.SfIndex, TestHelpers.SfIndex };
+
+        // Act
+        Action actual = () => cells.CellsToMultiPolygon();
+
+        // Assert
+        Assert.Throws<ArgumentException>(actual, "should throw for duplicate cells");
+    }
+
+    [Test]
+    [TestCase(0)]
+    [TestCase(1)]
+    [TestCase(2)]
+    public void Test_Upstream_CellAreas_SumToSphereArea(int resolution) {
+        // Arrange
+        var cells = H3Index.GetRes0Cells()
+            .SelectMany(cell => cell.GetChildrenForResolution(resolution));
+
+        // Act
+        var sum = 0.0;
+        var compensation = 0.0;
+        foreach (var cell in cells) {
+            var value = cell.CellAreaInRadiansSquared() - compensation;
+            var t = sum + value;
+            compensation = (t - sum) - value;
+            sum = t;
+        }
+
+        // Assert
+        Assert.That(sum, Is.EqualTo(4.0 * M_PI).Within(1e-14), "cell areas should sum to the area of the sphere");
     }
 
     [Test]
@@ -200,7 +313,7 @@ public class H3GeometryExtensionsTests {
         var faces = index.GetFaces();
 
         // Assert
-        Assert.AreEqual(1, CountValidFaces(faces), "should have 1 face");
+        Assert.That(CountValidFaces(faces), Is.EqualTo(1), "should have 1 face");
     }
 
     [Test]
@@ -214,7 +327,7 @@ public class H3GeometryExtensionsTests {
         var faces = h3.GetFaces();
 
         // Assert
-        Assert.AreEqual(2, CountValidFaces(faces), "should have 2 faces");
+        Assert.That(CountValidFaces(faces), Is.EqualTo(2), "should have 2 faces");
     }
 
     [Test]
@@ -227,18 +340,18 @@ public class H3GeometryExtensionsTests {
         var faces = h3.GetFaces();
 
         // Assert
-        Assert.IsTrue(h3.IsPentagon, "should be a pentagon");
-        Assert.AreEqual(5, CountValidFaces(faces), "should have 5 faces");
+        Assert.That(h3.IsPentagon, Is.True, "should be a pentagon");
+        Assert.That(CountValidFaces(faces), Is.EqualTo(5), "should have 5 faces");
     }
 
     private static int CountValidFaces(int[] faces) => faces.Count(face => face is >= 0 and <= 19);
 
     private static void AssertCellBoundaryVertices(Point[] expected, LatLng[] actual) {
-        Assert.AreEqual(expected.Length, actual.Length, "should be same length");
+        Assert.That(actual.Length, Is.EqualTo(expected.Length), "should be same length");
         for (var i = 0; i < expected.Length; i += 1) {
             var p = expected[i];
-            Assert.IsTrue(Math.Abs(p.X - actual[i].LongitudeDegrees) < EPSILON_DEG, $"longitude {i} should be {p.X} not {actual[i].LongitudeDegrees}");
-            Assert.IsTrue(Math.Abs(p.Y - actual[i].LatitudeDegrees) < EPSILON_DEG, $"latitude {i} should be {p.X} not {actual[i].LongitudeDegrees}");
+            Assert.That(Math.Abs(p.X - actual[i].LongitudeDegrees) < EPSILON_DEG, Is.True, $"longitude {i} should be {p.X} not {actual[i].LongitudeDegrees}");
+            Assert.That(Math.Abs(p.Y - actual[i].LatitudeDegrees) < EPSILON_DEG, Is.True, $"latitude {i} should be {p.X} not {actual[i].LongitudeDegrees}");
         }
 
     }

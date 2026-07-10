@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using H3.Extensions;
 using NetTopologySuite.Geometries;
 using static H3.Constants;
@@ -8,33 +9,12 @@ using static H3.Utils;
 
 namespace H3.Model;
 
-[Obsolete("GeoCoord is now LatLng in H3 4.x+")]
-public class GeoCoord : LatLng {
-
-    public GeoCoord() { }
-
-    public GeoCoord(double latitude, double longitude) {
-        Latitude = latitude;
-        Longitude = longitude;
-    }
-
-    public GeoCoord(GeoCoord source) {
-        Latitude = source.Latitude;
-        Longitude = source.Longitude;
-    }
-
-    public GeoCoord(LatLng source) {
-        Latitude = source.Latitude;
-        Longitude = source.Longitude;
-    }
-}
-
-public class LatLng {
+public struct LatLng : IEquatable<LatLng> {
 
     public double Latitude { get; set; }
     public double Longitude { get; set; }
-    public double LatitudeDegrees => Latitude * M_180_PI;
-    public double LongitudeDegrees => Longitude * M_180_PI;
+    public readonly double LatitudeDegrees => Latitude * M_180_PI;
+    public readonly double LongitudeDegrees => Longitude * M_180_PI;
 
     public LatLng() {
     }
@@ -155,11 +135,69 @@ public class LatLng {
         );
 
     /// <summary>
+    /// Compute the spherical surface area of a closed polygon loop, in
+    /// radians^2, given its vertices.  The loop is closed implicitly, i.e. the
+    /// last vertex does not need to repeat the first.  The area is always in
+    /// the range [0, 4 * pi].
+    /// </summary>
+    /// <param name="loop">Vertices of the loop</param>
+    /// <returns>Area of the loop on the unit sphere, in radians^2</returns>
+    public static double GetLoopAreaInRadiansSquared(IReadOnlyList<LatLng> loop) {
+        var sum = 0.0;
+        var compensation = 0.0;
+
+        for (var i = 0; i < loop.Count; i += 1) {
+            var j = (i + 1) % loop.Count;
+            KahanAdd(ref sum, ref compensation, GetCagnoliAreaTerm(loop[i], loop[j]));
+        }
+
+        // the Cagnoli sum yields a signed area, with the sign switching with the
+        // orientation of the vertices; normalize into [0, 4 * pi] by adding
+        // 4 * pi when the signed area is negative
+        if (sum < 0.0) {
+            KahanAdd(ref sum, ref compensation, 4.0 * M_PI);
+        }
+
+        return sum;
+    }
+
+    /// <summary>
+    /// The per-edge term of the Cagnoli spherical area formula.
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns></returns>
+    private static double GetCagnoliAreaTerm(LatLng a, LatLng b) {
+        var aLat = a.Latitude / 2.0 + M_PI / 4.0;
+        var bLat = b.Latitude / 2.0 + M_PI / 4.0;
+
+        var sa = Math.Sin(aLat) * Math.Sin(bLat);
+        var ca = Math.Cos(aLat) * Math.Cos(bLat);
+
+        var d = b.Longitude - a.Longitude;
+        return -2.0 * Math.Atan2(sa * Math.Sin(d), sa * Math.Cos(d) + ca);
+    }
+
+    /// <summary>
+    /// Kahan compensated summation, improving the numerical accuracy of the
+    /// sum of many small floating point terms.
+    /// </summary>
+    /// <param name="sum"></param>
+    /// <param name="compensation"></param>
+    /// <param name="value"></param>
+    private static void KahanAdd(ref double sum, ref double compensation, double value) {
+        var y = value - compensation;
+        var t = sum + y;
+        compensation = (t - sum) - y;
+        sum = t;
+    }
+
+    /// <summary>
     /// Return the NTS <see cref="Point"/> representation of this coordinate.
     /// </summary>
     /// <param name="geometryFactory"></param>
     /// <returns></returns>
-    public Point ToPoint(GeometryFactory? geometryFactory = null) {
+    public readonly Point ToPoint(GeometryFactory? geometryFactory = null) {
         var gf = geometryFactory ?? DefaultGeometryFactory;
         return gf.CreatePoint(new Coordinate(LongitudeDegrees, LatitudeDegrees));
     }
@@ -170,7 +208,7 @@ public class LatLng {
     /// <param name="retCoordinate">optional coordinate to update and return;
     /// defaults to allocating a new coordinate</param>
     /// <returns></returns>
-    public Coordinate ToCoordinate(Coordinate? retCoordinate) {
+    public readonly Coordinate ToCoordinate(Coordinate? retCoordinate) {
         var coordinate = retCoordinate ?? new Coordinate();
         coordinate.X = LongitudeDegrees;
         coordinate.Y = LatitudeDegrees;
@@ -181,7 +219,7 @@ public class LatLng {
     /// Return the NTS <see cref="Coordinate"/> representation of this coordinate.
     /// </summary>
     /// <returns></returns>
-    public Coordinate ToCoordinate() {
+    public readonly Coordinate ToCoordinate() {
         return ToCoordinate(new Coordinate());
     }
 
@@ -190,7 +228,7 @@ public class LatLng {
     /// </summary>
     /// <param name="p2">Destination spherical coordinate</param>
     /// <returns>The azimuth in radians from this to p2</returns>
-    public double GetAzimuthInRadians(LatLng p2) {
+    public readonly double GetAzimuthInRadians(LatLng p2) {
         return AzimuthInRadians(Longitude, Latitude, p2.Longitude, p2.Latitude);
     }
 
@@ -205,7 +243,7 @@ public class LatLng {
     /// <param name="p2">Destination coordinate</param>
     /// <returns>The great circle distance in radians between this coordinate
     /// and the destination coordinate.</returns>
-    public double GetGreatCircleDistanceInRadians(LatLng p2) {
+    public readonly double GetGreatCircleDistanceInRadians(LatLng p2) {
         return GreatCircleDistanceInRadians(Longitude, Latitude, p2.Longitude, p2.Latitude);
     }
 
@@ -221,7 +259,7 @@ public class LatLng {
     /// <returns>The great circle distance in radians between this coordinate
     /// and the destination coordinate.</returns>
     [Obsolete("as of 4.0: Use GetGreatCircleDistanceInRadians instead")]
-    public double GetPointDistanceInRadians(LatLng p2) {
+    public readonly double GetPointDistanceInRadians(LatLng p2) {
         return GetGreatCircleDistanceInRadians(p2);
     }
 
@@ -231,7 +269,7 @@ public class LatLng {
     /// <param name="p2">Destination coordinate</param>
     /// <returns>The great circle distance in kilometers between this coordinate
     /// and the destination coordinate.</returns>
-    public double GetGreatCircleDistanceInKm(LatLng p2) {
+    public readonly double GetGreatCircleDistanceInKm(LatLng p2) {
         return GreatCircleDistanceInRadians(Longitude, Latitude, p2.Longitude, p2.Latitude) * EARTH_RADIUS_KM;
     }
 
@@ -242,7 +280,7 @@ public class LatLng {
     /// <returns>The great circle distance in kilometers between this coordinate
     /// and the destination coordinate.</returns>
     [Obsolete("as of 4.0: Use GetGreatCircleDistanceInKm instead")]
-    public double GetPointDistanceInKm(LatLng p2) {
+    public readonly double GetPointDistanceInKm(LatLng p2) {
         return GetGreatCircleDistanceInKm(p2);
     }
 
@@ -252,7 +290,7 @@ public class LatLng {
     /// <param name="p2">Destination coordinate</param>
     /// <returns>The great circle distance in meters between this coordinate
     /// and the destination coordinate.</returns>
-    public double GetGreatCircleDistanceInMeters(LatLng p2) => GetGreatCircleDistanceInKm(p2) * 1000.0;
+    public readonly double GetGreatCircleDistanceInMeters(LatLng p2) => GetGreatCircleDistanceInKm(p2) * 1000.0;
 
     /// <summary>
     /// The great circle distance in meters between two spherical coordinates.
@@ -261,7 +299,7 @@ public class LatLng {
     /// <returns>The great circle distance in meters between this coordinate
     /// and the destination coordinate.</returns>
     [Obsolete("as of 4.0: Use GetGreatCircleDistanceInMeters instead")]
-    public double GetPointDistanceInMeters(LatLng p2) => GetGreatCircleDistanceInMeters(p2);
+    public readonly double GetPointDistanceInMeters(LatLng p2) => GetGreatCircleDistanceInMeters(p2);
 
     /// <summary>
     /// Returns an estimated number of cells that trace the cartesian-projected
@@ -270,19 +308,39 @@ public class LatLng {
     /// <param name="other">Destination coordinates</param>
     /// <param name="resolution">H3 resolution used to trace the line</param>
     /// <returns>Estimated number of cells required to trace the line</returns>
-    public int LineHexEstimate(LatLng other, int resolution) {
+    public readonly int LineHexEstimate(LatLng other, int resolution) {
         // Get the area of the pentagon as the maximally-distorted area possible
-        var firstPentagon = LookupTables.PentagonIndexesPerResolution[resolution][0];
-        var pentagonRadiusKm = firstPentagon.GetRadiusInKm();
+        var pentagonRadiusKm = PentagonRadiusKmPerResolution[resolution];
         var dist = GetGreatCircleDistanceInKm(other);
         var estimate = (int)Math.Ceiling(dist / (2 * pentagonRadiusKm));
         return estimate == 0 ? 1 : estimate;
     }
 
-    public bool AlmostEqualsThreshold(LatLng p2, double threshold) =>
+    private static double[]? _pentagonRadiusKmPerResolution;
+
+    /// <summary>
+    /// The radius of the first pentagon at each resolution, in km; pentagons
+    /// are the maximally-distorted cells.
+    /// </summary>
+    private static double[] PentagonRadiusKmPerResolution {
+        get {
+            var cache = _pentagonRadiusKmPerResolution;
+            if (cache != null) return cache;
+
+            cache = new double[MAX_H3_RES + 1];
+            for (var resolution = 0; resolution <= MAX_H3_RES; resolution += 1) {
+                cache[resolution] = LookupTables.PentagonIndexesPerResolution[resolution][0].GetRadiusInKm();
+            }
+
+            _pentagonRadiusKmPerResolution = cache;
+            return cache;
+        }
+    }
+
+    public readonly bool AlmostEqualsThreshold(LatLng p2, double threshold) =>
         Math.Abs(Latitude - p2.Latitude) < threshold && Math.Abs(Longitude - p2.Longitude) < threshold;
 
-    public bool AlmostEquals(LatLng p2) => AlmostEqualsThreshold(p2, EPSILON_RAD);
+    public readonly bool AlmostEquals(LatLng p2) => AlmostEqualsThreshold(p2, EPSILON_RAD);
 
     public static implicit operator LatLng((double, double) c) => new(c.Item1, c.Item2);
 
@@ -292,11 +350,13 @@ public class LatLng {
     public static bool operator !=(LatLng a, LatLng b) => Math.Abs(a.Latitude - b.Latitude) >= EPSILON_RAD ||
                                                               Math.Abs(a.Longitude - b.Longitude) >= EPSILON_RAD;
 
-    public override bool Equals(object? other) {
+    public readonly bool Equals(LatLng other) => this == other;
+
+    public override readonly bool Equals(object? other) {
         return other is LatLng c && this == c;
     }
 
-    public override int GetHashCode() {
+    public override readonly int GetHashCode() {
         return HashCode.Combine(Latitude, Longitude);
     }
 

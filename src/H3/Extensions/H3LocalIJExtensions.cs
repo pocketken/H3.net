@@ -216,7 +216,7 @@ public static class LocalCoordIJK {
         if (dir != Direction.Center) {
             // Rotate index into the orientation of the origin base cell.
             // cw because we are undoing the rotation into that base cell.
-            var baseCellRotations = originBaseCell.NeighbourRotations[(int)dir];
+            var baseCellRotations = BaseCells.GetNeighbourCounterClockwiseRotations(originBaseCell.Cell, dir);
             if (indexOnPent) {
                 for (var i = 0; i < baseCellRotations; i += 1) {
                     index.RotatePentagonClockwise();
@@ -230,7 +230,7 @@ public static class LocalCoordIJK {
         }
 
         var indexFijk = new FaceIJK();
-        index.ToFaceWithInitializedFijk(indexFijk);
+        index.ToFaceWithInitializedFijk(ref indexFijk);
 
         if (dir != Direction.Center) {
             if (originBaseCell == baseCell) throw new Exception("assertion failed; origin should not equal index cell");
@@ -316,7 +316,7 @@ public static class LocalCoordIJK {
     /// <param name="origin"></param>
     /// <param name="ijk"></param>
     /// <returns></returns>
-    public static H3Index ToH3Index(H3Index origin, CoordIJK ijk, CoordIJK? workIjk1 = default, CoordIJK? workIjk2 = default, CoordIJK? workIjk3 = default) {
+    public static H3Index ToH3Index(H3Index origin, CoordIJK ijk) {
         var resolution = origin.Resolution;
         var originBaseCell = origin.BaseCell;
         if (originBaseCell == null) throw new Exception("origin is not a valid base cell");
@@ -330,7 +330,7 @@ public static class LocalCoordIJK {
         if (resolution == 0) {
             if (ijk.I > 1 || ijk.J > 1 || ijk.K > 1) throw new Exception("input coordinates out of range");
 
-            var newBaseCell = originBaseCell.NeighbouringCells[(sbyte)(Direction)ijk];
+            var newBaseCell = BaseCells.GetNeighbouringCellNumber(originBaseCell.Cell, ijk);
             if (newBaseCell == LookupTables.INVALID_BASE_CELL) throw new Exception("moved in invalid direction off pentagon");
 
             index.BaseCellNumber = newBaseCell;
@@ -340,34 +340,24 @@ public static class LocalCoordIJK {
         // we need to find the correct base cell offset (if any) for this H3 index;
         // start with the passed in base cell and resolution res ijk coordinates
         // in that base cell's coordinate system
-        var ijkCopy = workIjk1 ?? new CoordIJK();
-        ijkCopy.I = ijk.I;
-        ijkCopy.J = ijk.J;
-        ijkCopy.K = ijk.K;
+        var ijkCopy = ijk;
 
         // build the H3Index from finest res up
         // adjust r for the fact that the res 0 base cell offsets the indexing
         // digits
-        var lastIJK = workIjk2 ?? new CoordIJK();
-        var lastCenter = workIjk3 ?? new CoordIJK();
         for (var r = resolution - 1; r >= 0; r -= 1) {
-            lastIJK.I = ijkCopy.I;
-            lastIJK.J = ijkCopy.J;
-            lastIJK.K = ijkCopy.K;
+            var lastIJK = ijkCopy;
+            CoordIJK lastCenter;
 
             if (IsResolutionClass3(r + 1)) {
                 // rotate ccw
-                ijkCopy.UpAperture7CounterClockwise();
-                lastCenter.I = ijkCopy.I;
-                lastCenter.J = ijkCopy.J;
-                lastCenter.K = ijkCopy.K;
+                ijkCopy.UpAperture7CounterClockwiseChecked();
+                lastCenter = ijkCopy;
                 lastCenter.DownAperture7CounterClockwise();
             } else {
                 // rotate cw
-                ijkCopy.UpAperture7Clockwise();
-                lastCenter.I = ijkCopy.I;
-                lastCenter.J = ijkCopy.J;
-                lastCenter.K = ijkCopy.K;
+                ijkCopy.UpAperture7ClockwiseChecked();
+                lastCenter = ijkCopy;
                 lastCenter.DownAperture7Clockwise();
             }
 
@@ -420,7 +410,7 @@ public static class LocalCoordIJK {
 
             // Now we can determine the relation between the origin and target base
             // cell.
-            var baseCellRotations = originBaseCell.NeighbourRotations[(sbyte)dir];
+            var baseCellRotations = BaseCells.GetNeighbourCounterClockwiseRotations(originBaseCell.Cell, dir);
             if (baseCellRotations < 0) throw new Exception("invalid number of base cell rotations");
 
             // Adjust for pentagon warping within the base cell. The base cell

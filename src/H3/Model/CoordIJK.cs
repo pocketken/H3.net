@@ -5,14 +5,14 @@ using static H3.Constants;
 
 #nullable enable
 
-namespace H3.Model; 
+namespace H3.Model;
 
-public sealed class CoordIJK {
+public struct CoordIJK : IEquatable<CoordIJK> {
 
     public int I { get; set; }
     public int J { get; set; }
     public int K { get; set; }
-    public bool IsValid => this != InvalidIJKCoordinate;
+    public readonly bool IsValid => this != InvalidIJKCoordinate;
 
     public static readonly CoordIJK InvalidIJKCoordinate = new(-int.MaxValue, -int.MaxValue, -int.MaxValue);
 
@@ -31,9 +31,9 @@ public sealed class CoordIJK {
         K = source.K;
     }
 
-    public static CoordIJK FromVec2d(double x, double y, CoordIJK? destination = default) {
+    public static CoordIJK FromVec2d(double x, double y) {
         unchecked {
-            var h = destination ?? new CoordIJK();
+            var h = new CoordIJK();
 
             // quantize into the ij system and then normalize
             var a1 = Math.Abs(x);
@@ -223,6 +223,77 @@ public sealed class CoordIJK {
     }
 
     /// <summary>
+    /// Whether or not normalization of the provided i and j components (with a
+    /// zero k component) could produce intermediate values that overflow 32 bit
+    /// signed integers.
+    /// </summary>
+    /// <param name="i"></param>
+    /// <param name="j"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool NormalizeCouldOverflow(int i, int j) {
+        long max = Math.Max(i, j);
+        long min = Math.Min(i, j);
+
+        if (min >= 0) return false;
+
+        var sum = max + min;
+        return sum > int.MaxValue || sum < int.MinValue || -min > int.MaxValue || max - min > int.MaxValue;
+    }
+
+    /// <summary>
+    /// Find the normalized ijk coordinates of the indexing parent of a cell in a
+    /// counter-clockwise aperture 7 grid, validating that the operation does not
+    /// overflow.  Works in place.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="OverflowException">Thrown when the input coordinates are
+    /// too large to be transformed without overflowing.</exception>
+    internal CoordIJK UpAperture7CounterClockwiseChecked() {
+        var i = (long)I - K;
+        var j = (long)J - K;
+
+        var newI = (long)Utils.CRound((3 * i - j) / 7.0);
+        var newJ = (long)Utils.CRound((i + 2 * j) / 7.0);
+
+        if (newI is > int.MaxValue or < int.MinValue || newJ is > int.MaxValue or < int.MinValue || NormalizeCouldOverflow((int)newI, (int)newJ)) {
+            throw new OverflowException("ijk coordinates would overflow");
+        }
+
+        I = (int)newI;
+        J = (int)newJ;
+        K = 0;
+
+        return Normalize();
+    }
+
+    /// <summary>
+    /// Find the normalized ijk coordinates of the indexing parent of a cell in a
+    /// clockwise aperture 7 grid, validating that the operation does not
+    /// overflow.  Works in place.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="OverflowException">Thrown when the input coordinates are
+    /// too large to be transformed without overflowing.</exception>
+    internal CoordIJK UpAperture7ClockwiseChecked() {
+        var i = (long)I - K;
+        var j = (long)J - K;
+
+        var newI = (long)Utils.CRound((2 * i + j) / 7.0);
+        var newJ = (long)Utils.CRound((3 * j - i) / 7.0);
+
+        if (newI is > int.MaxValue or < int.MinValue || newJ is > int.MaxValue or < int.MinValue || NormalizeCouldOverflow((int)newI, (int)newJ)) {
+            throw new OverflowException("ijk coordinates would overflow");
+        }
+
+        I = (int)newI;
+        J = (int)newJ;
+        K = 0;
+
+        return Normalize();
+    }
+
+    /// <summary>
     /// Find the normalized ijk coordinates of the indexing parent of a cell in a
     /// counter-clockwise aperture 7 grid.  Works in place.
     /// </summary>
@@ -381,10 +452,12 @@ public sealed class CoordIJK {
             if (direction is <= Direction.Center or >= Direction.Invalid)
                 return this;
 
-            var unitVector = LookupTables.UnitVectors[(int)direction];
-            I += unitVector.I;
-            J += unitVector.J;
-            K += unitVector.K;
+            // the bits of a valid direction digit are its ijk unit vector,
+            // i.e. UnitVectors[d] == ((d >> 2) & 1, (d >> 1) & 1, d & 1)
+            var d = (int)direction;
+            I += (d >> 2) & 1;
+            J += (d >> 1) & 1;
+            K += d & 1;
             return Normalize();
         }
     }
@@ -394,16 +467,16 @@ public sealed class CoordIJK {
     /// </summary>
     /// <param name="h2"></param>
     /// <returns></returns>
-    public int GetDistanceTo(CoordIJK h2) {
+    public readonly int GetDistanceTo(CoordIJK h2) {
         var diff = new CoordIJK(I - h2.I, J - h2.J, K - h2.K).Normalize();
         return Math.Max(Math.Abs(diff.I), Math.Max(Math.Abs(diff.J), Math.Abs(diff.K)));
     }
 
-    public Vec2d ToVec2d() {
+    public readonly Vec2d ToVec2d() {
         return new Vec2d(GetVec2dOrdinates());
     }
 
-    public Vec2d ToVec2d(Vec2d toUpdate) {
+    public readonly Vec2d ToVec2d(ref Vec2d toUpdate) {
         var (x, y) = GetVec2dOrdinates();
         toUpdate.X = x;
         toUpdate.Y = y;
@@ -411,7 +484,7 @@ public sealed class CoordIJK {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (double, double) GetVec2dOrdinates() {
+    public readonly (double, double) GetVec2dOrdinates() {
         unchecked {
             var i = I - K;
             var j = J - K;
@@ -420,7 +493,7 @@ public sealed class CoordIJK {
         }
     }
 
-    public CoordIJ ToCoordIJ() => CoordIJ.FromCoordIJK(this);
+    public readonly CoordIJ ToCoordIJ() => CoordIJ.FromCoordIJK(this);
 
     public static CoordIJK Cube(CoordIJK source) =>
         new CoordIJK(source).Cube();
@@ -465,11 +538,9 @@ public sealed class CoordIJK {
     /// <param name="i"></param>
     /// <param name="j"></param>
     /// <param name="k"></param>
-    /// <param name="toUpdate">optional instance to update, returns a new
-    /// <see cref="CoordIJK"/> instance if not provided.</param>
     /// <returns></returns>
-    public static CoordIJK CubeRound(double i, double j, double k, CoordIJK? toUpdate = default) {
-        var coord = toUpdate ?? new CoordIJK();
+    public static CoordIJK CubeRound(double i, double j, double k) {
+        var coord = new CoordIJK();
 
         coord.I = (int)Utils.CRound(i);
         coord.J = (int)Utils.CRound(j);
@@ -502,16 +573,43 @@ public sealed class CoordIJK {
     /// Determines the H3 digit corresponding to a unit vector in ijk coordinates.
     /// </summary>
     /// <param name="h"></param>
-#if NETSTANDARD2_0
     public static implicit operator Direction(CoordIJK h) {
-        var unitVector = Normalize(h);
-        if (!LookupTables.UnitVectorToDirection.ContainsKey(unitVector)) return Direction.Invalid;
-        return LookupTables.UnitVectorToDirection[unitVector];
+        var i = h.I;
+        var j = h.J;
+        var k = h.K;
+
+        // normalize, without mutating the input or allocating a copy
+        if (i < 0) {
+            j -= i;
+            k -= i;
+            i = 0;
+        }
+
+        if (j < 0) {
+            i -= j;
+            k -= j;
+            j = 0;
+        }
+
+        if (k < 0) {
+            i -= k;
+            j -= k;
+            k = 0;
+        }
+
+        var min = Math.Min(i, Math.Min(j, k));
+        if (min > 0) {
+            i -= min;
+            j -= min;
+            k -= min;
+        }
+
+        // the components of a normalized unit vector map directly onto the
+        // Direction bits, i.e. (i << 2) | (j << 1) | k
+        return (uint)i > 1 || (uint)j > 1 || (uint)k > 1
+            ? Direction.Invalid
+            : (Direction)((i << 2) | (j << 1) | k);
     }
-#else
-    public static implicit operator Direction(CoordIJK h) =>
-        LookupTables.UnitVectorToDirection.GetValueOrDefault(Normalize(h), Direction.Invalid);
-#endif
 
     /// <summary>
     /// Returns a new ijk coordinate containing the sum of two ijk
@@ -559,26 +657,23 @@ public sealed class CoordIJK {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(CoordIJK? a, CoordIJK? b) {
-        if (a is null) return b is null;
-        if (b is null) return false;
-        return a.I == b.I && a.J == b.J && a.K == b.K;
-    }
+    public readonly bool Equals(CoordIJK other) => I == other.I && J == other.J && K == other.K;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(CoordIJK? a, CoordIJK? b) {
-        if (a is null) return b is not null;
-        if (b is null) return true;
-        return a.I != b.I || a.J != b.J || a.K != b.K;
-    }
+    public static bool operator ==(CoordIJK a, CoordIJK b) =>
+        a.I == b.I && a.J == b.J && a.K == b.K;
 
-    public override bool Equals(object? other) =>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator !=(CoordIJK a, CoordIJK b) =>
+        a.I != b.I || a.J != b.J || a.K != b.K;
+
+    public override readonly bool Equals(object? other) =>
         other is CoordIJK c && this == c;
 
-    public override string ToString() {
+    public override readonly string ToString() {
         return $"({I}, {J}, {K})";
     }
 
-    public override int GetHashCode() => HashCode.Combine(I, J, K);
+    public override readonly int GetHashCode() => HashCode.Combine(I, J, K);
 
 }

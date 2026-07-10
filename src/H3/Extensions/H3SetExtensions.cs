@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using static H3.Constants;
 using static H3.Utils;
 
 #nullable enable
@@ -44,7 +45,7 @@ public static class H3SetExtensions {
     /// <param name="indexEnumerable">set of cells to compact</param>
     /// <returns>set of compacted cells</returns>
     public static List<H3Index> CompactCells(this IEnumerable<H3Index> indexEnumerable) {
-        Dictionary<int, HashSet<H3Index>> indexes = new();
+        var byResolution = new List<H3Index>?[MAX_H3_RES + 1];
         var maxResolution = -1;
         var count = 0;
 
@@ -55,66 +56,67 @@ public static class H3SetExtensions {
             }
 
             var indexResolution = index.Resolution;
-            maxResolution = Math.Max(maxResolution, indexResolution);
+            if (indexResolution > maxResolution) maxResolution = indexResolution;
 
-            if (!indexes.ContainsKey(indexResolution)) {
-                indexes[indexResolution] = new HashSet<H3Index>();
-            }
-
-            indexes[indexResolution].Add(index);
+            (byResolution[indexResolution] ??= new List<H3Index>()).Add(index);
             count++;
         }
 
         // worst case, nothing gets compacted
         List<H3Index> results = new(count);
-        Dictionary<H3Index, List<H3Index>> parents = new();
 
-        // loop backward through each resolution, throwing any compacted parents into
-        // the resolution below us
+        // loop backward through each resolution, throwing any compacted parents
+        // into the resolution below us.  Cells that share a parent are adjacent
+        // once sorted, so complete sets of children (and duplicates) can be
+        // detected with a linear scan.
         for (var resolution = maxResolution; resolution > 0; resolution -= 1) {
-            if (!indexes.TryGetValue(resolution, out var toCompact))
+            var toCompact = byResolution[resolution];
+            if (toCompact == null)
                 continue;
 
+            toCompact.Sort();
             var parentResolution = resolution - 1;
+            var total = toCompact.Count;
+            var i = 0;
 
-            foreach (var index in toCompact) {
-                var parent = index.GetParentForResolution(parentResolution);
+            while (i < total) {
+                var parentValue = toCompact[i].GetParentValueForResolution(parentResolution);
 
-                if (!parents.ContainsKey(parent)) {
-                    parents[parent] = new List<H3Index>(7);
-                }
-
-                parents[parent].Add(index);
-            }
-
-            // any parent that has enough children should be added
-            // back in to be tested at the next lowest resolution.
-            // anything else is uncompactable.
-#if NETSTANDARD2_0
-                foreach (var item in parents) {
-                    var parent = item.Key;
-                    var children = item.Value;
-#else
-            foreach (var (parent, children) in parents) {
-#endif
-                if (children.Count >= (parent.IsPentagon ? 6 : 7)) {
-                    if (!indexes.ContainsKey(parentResolution)) {
-                        indexes[parentResolution] = new HashSet<H3Index>();
+                // count the distinct children sharing this parent
+                var runStart = i;
+                var childCount = 0;
+                var previous = H3Index.Invalid;
+                while (i < total && toCompact[i].GetParentValueForResolution(parentResolution) == parentValue) {
+                    if (toCompact[i] != previous) {
+                        childCount += 1;
+                        previous = toCompact[i];
                     }
-                    indexes[parentResolution].Add(parent);
-                } else {
-                    results.AddRange(children);
-                }
-            }
 
-            if (resolution > 1) {
-                parents.Clear();
+                    i += 1;
+                }
+
+                var parent = new H3Index(parentValue);
+                if (childCount >= (parent.IsPentagon ? 6 : 7)) {
+                    (byResolution[parentResolution] ??= new List<H3Index>()).Add(parent);
+                } else {
+                    previous = H3Index.Invalid;
+                    for (var j = runStart; j < i; j += 1) {
+                        if (toCompact[j] == previous) continue;
+                        results.Add(toCompact[j]);
+                        previous = toCompact[j];
+                    }
+                }
             }
         }
 
         // and lastly, add in any res 0
-        if (indexes.TryGetValue(0, out var zeroes)) {
-            results.AddRange(zeroes);
+        var zeroes = byResolution[0];
+        if (zeroes != null) {
+            zeroes.Sort();
+            for (var j = 0; j < zeroes.Count; j += 1) {
+                if (j != 0 && zeroes[j] == zeroes[j - 1]) continue;
+                results.Add(zeroes[j]);
+            }
         }
 
         return results;
@@ -173,6 +175,87 @@ public static class H3SetExtensions {
     /// <returns>expanded set ofindexes</returns>
     public static IEnumerable<H3Index> UncompactCellsToHighestResolution(this IEnumerable<H3Index> indexes) =>
         UncompactCells(indexes, indexes.Max(i => i.Resolution));
+
+    /// <summary>
+    /// Produces the canonical form of the provided set of cells: sorted
+    /// ascending by index value with duplicates and H3_NULL entries removed.
+    /// Canonical sets support fast binary-search based containment queries
+    /// via <see cref="CanonicalCellsContain"/>.
+    /// </summary>
+    /// <param name="cells">set of cells; may contain mixed resolutions, e.g.
+    /// the output of <see cref="CompactCells"/></param>
+    /// <returns>canonicalized set of cells</returns>
+    public static List<H3Index> CanonicalizeCells(this IEnumerable<H3Index> cells) {
+        List<H3Index> result = cells is IReadOnlyCollection<H3Index> collection ? new(collection.Count) : new();
+
+        foreach (var cell in cells) {
+            if (cell != H3Index.Invalid) result.Add(cell);
+        }
+
+        result.Sort();
+
+        var write = 0;
+        for (var read = 0; read < result.Count; read += 1) {
+            if (read != 0 && result[read] == result[write - 1]) continue;
+            result[write] = result[read];
+            write += 1;
+        }
+
+        result.RemoveRange(write, result.Count - write);
+        return result;
+    }
+
+    /// <summary>
+    /// Determines whether or not the provided set of cells is canonical, i.e.
+    /// sorted ascending by index value and free of duplicates and H3_NULL
+    /// entries.
+    /// </summary>
+    /// <param name="cells">set of cells</param>
+    /// <returns>true if the set is canonical</returns>
+    public static bool IsCanonicalCells(this IReadOnlyList<H3Index> cells) {
+        for (var i = 0; i < cells.Count; i += 1) {
+            if (cells[i] == H3Index.Invalid) return false;
+            if (i != 0 && cells[i - 1].CompareTo(cells[i]) >= 0) return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Determines whether or not the canonical set of cells contains the
+    /// provided cell, either exactly or via one of the cell's ancestors;
+    /// i.e. whether the area covered by the set contains the cell.  Performs
+    /// a binary search per resolution, i.e. O(res * log n), without
+    /// materializing the covered area.
+    /// </summary>
+    /// <param name="canonicalCells">canonical set of cells (see
+    /// <see cref="CanonicalizeCells"/>); may contain mixed resolutions, e.g.
+    /// the output of <see cref="CompactCells"/></param>
+    /// <param name="cell">cell to test</param>
+    /// <returns>true if the cell or one of its ancestors is present within
+    /// the set</returns>
+    public static bool CanonicalCellsContain(this IReadOnlyList<H3Index> canonicalCells, H3Index cell) {
+        if (canonicalCells.Count == 0 || cell == H3Index.Invalid) return false;
+
+        for (var resolution = cell.Resolution; resolution >= 0; resolution -= 1) {
+            var candidate = new H3Index(cell.GetParentValueForResolution(resolution));
+
+            var low = 0;
+            var high = canonicalCells.Count - 1;
+            while (low <= high) {
+                var mid = low + ((high - low) >> 1);
+                var comparison = canonicalCells[mid].CompareTo(candidate);
+                if (comparison == 0) return true;
+                if (comparison < 0) {
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// Determines whether or not all H3Index entries within the enumerable are

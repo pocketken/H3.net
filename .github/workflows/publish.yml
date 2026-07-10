@@ -11,26 +11,36 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Verify commit exists in origin/main
         run: |
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
           git branch --remote --contains | grep origin/main
 
-      - name: Setup .NET 6.0
-        uses: actions/setup-dotnet@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Set VERSION variable from tag
         run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
       - name: Pack
-        run: dotnet pack --configuration Release /p:PackageVersion=${VERSION} --output .
+        run: dotnet pack src/H3/H3.csproj --configuration Release /p:PackageVersion=${VERSION} --output .
+
+      - name: NuGet login (OIDC)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
 
       - name: Push
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
-        run: dotnet nuget push pocketken.H3.${VERSION}.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
+        run: dotnet nuget push pocketken.H3.${VERSION}.nupkg -k ${{ steps.login.outputs.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json

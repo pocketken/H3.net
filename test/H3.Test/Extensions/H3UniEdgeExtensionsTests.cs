@@ -1,9 +1,11 @@
-﻿using System.Linq;
+using System;
+using System.Linq;
 using H3.Algorithms;
 using H3.Extensions;
 using H3.Model;
 using static H3.Constants;
 using NUnit.Framework;
+
 using System.Collections.Generic;
 
 namespace H3.Test.Extensions; 
@@ -38,7 +40,7 @@ public class H3UniEdgeExtensionsTests {
         var actual = origin.ToDirectedEdge(destination);
 
         // Assert
-        Assert.AreEqual(pentagonEdge, actual, "should be equal");
+        Assert.That(actual, Is.EqualTo(pentagonEdge), "should be equal");
     }
 
     [Test]
@@ -53,7 +55,7 @@ public class H3UniEdgeExtensionsTests {
         var edge = TestHelpers.SfIndex.ToDirectedEdge(outerRingIndex);
 
         // Assert
-        Assert.AreEqual(H3Index.Invalid, edge, "should fail to create edge for non-neighbouring indicies");
+        Assert.That(edge, Is.EqualTo(H3Index.Invalid), "should fail to create edge for non-neighbouring indicies");
     }
 
     [Test]
@@ -68,7 +70,7 @@ public class H3UniEdgeExtensionsTests {
         var result = pentagonEdge.IsValidDirectedEdge();
 
         // Assert
-        Assert.IsTrue(result, "should be valid");
+        Assert.That(result, Is.True, "should be valid");
     }
 
     [Test]
@@ -77,7 +79,7 @@ public class H3UniEdgeExtensionsTests {
         var result = TestHelpers.SfIndex.IsValidDirectedEdge();
 
         // Assert
-        Assert.IsFalse(result, "should not be valid");
+        Assert.That(result, Is.False, "should not be valid");
     }
 
     [Test]
@@ -92,7 +94,7 @@ public class H3UniEdgeExtensionsTests {
         var result = edge.IsValidDirectedEdge();
 
         // Assert
-        Assert.IsFalse(result, "should not be valid");
+        Assert.That(result, Is.False, "should not be valid");
     }
 
     [Test]
@@ -107,7 +109,7 @@ public class H3UniEdgeExtensionsTests {
         var result = edge.IsValidDirectedEdge();
 
         // Assert
-        Assert.IsFalse(result, "should not be valid");
+        Assert.That(result, Is.False, "should not be valid");
     }
 
     [Test]
@@ -122,7 +124,7 @@ public class H3UniEdgeExtensionsTests {
         var result = pentagonEdge.IsValidDirectedEdge();
 
         // Assert
-        Assert.IsFalse(result, "should not be valid");
+        Assert.That(result, Is.False, "should not be valid");
     }
 
     [Test]
@@ -138,7 +140,7 @@ public class H3UniEdgeExtensionsTests {
         var result = pentagonEdge.IsValidDirectedEdge();
 
         // Assert
-        Assert.IsFalse(result, "should not be valid");
+        Assert.That(result, Is.False, "should not be valid");
     }
 
     [Test]
@@ -151,7 +153,7 @@ public class H3UniEdgeExtensionsTests {
         var origin = edge.GetDirectedEdgeOrigin();
 
         // Assert
-        Assert.AreEqual(TestHelpers.SfIndex, origin, "should be equal");
+        Assert.That(origin, Is.EqualTo(TestHelpers.SfIndex), "should be equal");
     }
 
     [Test]
@@ -160,7 +162,7 @@ public class H3UniEdgeExtensionsTests {
         var origin = H3Index.Invalid.GetDirectedEdgeOrigin();
 
         // Assert
-        Assert.AreEqual(H3Index.Invalid, origin, "should not be valid");
+        Assert.That(origin, Is.EqualTo(H3Index.Invalid), "should not be valid");
     }
 
     [Test]
@@ -169,7 +171,7 @@ public class H3UniEdgeExtensionsTests {
         var origin = TestHelpers.SfIndex.GetDirectedEdgeOrigin();
 
         // Assert
-        Assert.AreEqual(H3Index.Invalid, origin, "should not be valid");
+        Assert.That(origin, Is.EqualTo(H3Index.Invalid), "should not be valid");
     }
 
     [Test]
@@ -182,7 +184,7 @@ public class H3UniEdgeExtensionsTests {
         var destination = edge.GetDirectedEdgeDestination();
 
         // Assert
-        Assert.AreEqual(sf2, destination, "should be equal");
+        Assert.That(destination, Is.EqualTo(sf2), "should be equal");
     }
 
     [Test]
@@ -191,7 +193,7 @@ public class H3UniEdgeExtensionsTests {
         var destination = H3Index.Invalid.GetDirectedEdgeOrigin();
 
         // Assert
-        Assert.AreEqual(H3Index.Invalid, destination, "should not be valid");
+        Assert.That(destination, Is.EqualTo(H3Index.Invalid), "should not be valid");
     }
 
     [Test]
@@ -200,7 +202,7 @@ public class H3UniEdgeExtensionsTests {
         var destination = TestHelpers.SfIndex.GetDirectedEdgeDestination();
 
         // Assert
-        Assert.AreEqual(H3Index.Invalid, destination, "should not be valid");
+        Assert.That(destination, Is.EqualTo(H3Index.Invalid), "should not be valid");
     }
 
     [Test]
@@ -213,8 +215,8 @@ public class H3UniEdgeExtensionsTests {
         var actual = edge.DirectedEdgeToCells();
 
         // Assert
-        Assert.AreEqual(TestHelpers.SfIndex, actual.Item1, "should be equal");
-        Assert.AreEqual(sf2, actual.Item2, "should be equal");
+        Assert.That(actual.Item1, Is.EqualTo(TestHelpers.SfIndex), "should be equal");
+        Assert.That(actual.Item2, Is.EqualTo(sf2), "should be equal");
     }
 
     [Test]
@@ -240,7 +242,7 @@ public class H3UniEdgeExtensionsTests {
     public void Test_Upstream_GetUnidirectionalEdges_Pentagon() {
         // Arrange
         var pentagons = LookupTables.PentagonIndexesPerResolution
-            .SelectMany(e => e.Value)
+            .SelectMany(e => e)
             .ToArray();
 
         var rings = pentagons.Select(index =>
@@ -290,7 +292,9 @@ public class H3UniEdgeExtensionsTests {
         // Act
         var vertsPerIndex = edgesPerIndex
             .Select(edges => edges
-                .Select(edge => edge.GetDirectedEdgeBoundaryVertices().ToArray()).ToArray()
+                .Select(edge => edge == H3Index.Invalid
+                    ? Array.Empty<LatLng>()
+                    : edge.GetDirectedEdgeBoundaryVertices().ToArray()).ToArray()
             ).ToArray();
 
         // Assert
@@ -310,7 +314,9 @@ public class H3UniEdgeExtensionsTests {
         // Act
         var vertsPerIndex = edgesPerIndex
             .Select(edges => edges
-                .Select(edge => edge.GetDirectedEdgeBoundaryVertices().ToArray()).ToArray()
+                .Select(edge => edge == H3Index.Invalid
+                    ? Array.Empty<LatLng>()
+                    : edge.GetDirectedEdgeBoundaryVertices().ToArray()).ToArray()
             ).ToArray();
 
         // Assert
@@ -318,21 +324,106 @@ public class H3UniEdgeExtensionsTests {
     }
 
     [Test]
-    public void Test_Upstream_GetExactEdgeLengthInRadians_ZeroForInvalid() {
+    public void Test_Upstream_GetExactEdgeLengthInRadians_ThrowsForInvalid() {
         // Act
-        var actual = H3Index.Invalid.EdgeLengthRadians();
+        Action actual = () => H3Index.Invalid.EdgeLengthRadians();
 
         // Assert
-        Assert.AreEqual(0.0, actual, "should be zero");
+        Assert.Throws<ArgumentException>(actual, "should throw for invalid index");
     }
 
     [Test]
-    public void Test_Upstream_GetExactEdgeLengthInRadians_ZeroForNonEdge() {
+    public void Test_GH109_EdgeLength_ThrowsForNonEdge() {
+        // Arrange
+        var index = H3Index.FromLatLng(new LatLng(-23.553301290491326 * M_PI_180, -46.65526874921591 * M_PI_180), 9);
+
         // Act
-        var actual = TestHelpers.SfIndex.EdgeLengthRadians();
+        Action actual = () => index.EdgeLengthMeters();
 
         // Assert
-        Assert.AreEqual(0.0, actual, "should be zero");
+        Assert.Throws<ArgumentException>(actual, "should throw for cell index input");
+    }
+
+    [Test]
+    public void Test_EdgeLength_ApproximatesAverageHexagonEdgeLength() {
+        // Arrange
+        var edges = TestHelpers.SfIndex.OriginToDirectedEdges();
+
+        // Act
+        var lengths = edges.Select(edge => edge.EdgeLengthMeters()).ToArray();
+
+        // Assert
+        var average = H3Index.GetHexagonEdgeLengthAverageInM(TestHelpers.SfIndex.Resolution);
+        foreach (var length in lengths) {
+            Assert.That(length > 0, Is.True, "should be positive");
+            Assert.That(Math.Abs(length - average) / average < 0.25, Is.True, $"{length} should be within 25% of the resolution average {average}");
+        }
+    }
+
+    [Test]
+    public void Test_ReverseDirectedEdge_SwapsOriginAndDestination() {
+        // Arrange
+        var origin = TestHelpers.SfIndex;
+        var destination = origin.GetDirectNeighbour(Direction.I).Item1;
+        var edge = origin.ToDirectedEdge(destination);
+
+        // Act
+        var reversed = edge.ReverseDirectedEdge();
+
+        // Assert
+        Assert.That(reversed.IsValidDirectedEdge(), Is.True, "should be a valid directed edge");
+        Assert.That(reversed.DirectedEdgeToCells(), Is.EqualTo((destination, origin)), "origin/destination should be swapped");
+    }
+
+    [Test]
+    public void Test_ReverseDirectedEdge_RoundTrips() {
+        // Arrange
+        var origin = TestHelpers.SfIndex;
+        var edge = origin.ToDirectedEdge(origin.GetDirectNeighbour(Direction.I).Item1);
+
+        // Act
+        var actual = edge.ReverseDirectedEdge().ReverseDirectedEdge();
+
+        // Assert
+        Assert.That(actual, Is.EqualTo(edge), "double reverse should round-trip");
+    }
+
+    [Test]
+    public void Test_ReverseDirectedEdge_InvalidForInvalidEdge() {
+        // Act
+        var actual = H3Index.Invalid.ReverseDirectedEdge();
+
+        // Assert
+        Assert.That(actual, Is.EqualTo(H3Index.Invalid), "reverse of invalid should be invalid");
+    }
+
+    [Test]
+    public void Test_DestinationToDirectedEdges_AllPointAtDestination() {
+        // Arrange
+        var destination = TestHelpers.SfIndex;
+
+        // Act
+        var edges = destination.DestinationToDirectedEdges().ToArray();
+
+        // Assert
+        Assert.That(edges.Length, Is.EqualTo(6), "should produce six edges");
+        foreach (var edge in edges) {
+            Assert.That(edge.IsValidDirectedEdge(), Is.True, $"{edge} should be valid");
+            Assert.That(edge.GetDirectedEdgeDestination(), Is.EqualTo(destination), "should point at destination");
+        }
+    }
+
+    [Test]
+    public void Test_DestinationToDirectedEdges_PentagonYieldsInvalidPlaceholder() {
+        // Arrange
+        var pentagon = H3Index.Create(2, 4, 0);
+
+        // Act
+        var edges = pentagon.DestinationToDirectedEdges().ToArray();
+
+        // Assert
+        Assert.That(edges[0], Is.EqualTo(H3Index.Invalid), "K direction should be invalid for pentagons");
+        Assert.That(edges.Count(edge => edge.IsValidDirectedEdge()), Is.EqualTo(5), "should produce five valid edges");
     }
 
     private static void AssertAllEdges(H3Index[] origins, IEnumerable<H3Index>[] rings, IEnumerable<H3Index>[] actualEdges) {
@@ -342,10 +433,10 @@ public class H3UniEdgeExtensionsTests {
             var edges = actualEdges[i];
 
             foreach (var edge in edges) {
-                Assert.IsTrue(edge.IsValidDirectedEdge(), $"{edge} should be valid");
+                Assert.That(edge.IsValidDirectedEdge(), Is.True, $"{edge} should be valid");
                 var (edgeOrigin, edgeDest) = edge.DirectedEdgeToCells();
-                Assert.AreEqual(origin, edgeOrigin, "should be equal");
-                Assert.AreEqual(1, neighbours.Where(neighbour => neighbour == edgeDest).Count(), "should have one match");
+                Assert.That(edgeOrigin, Is.EqualTo(origin), "should be equal");
+                Assert.That(neighbours.Where(neighbour => neighbour == edgeDest).Count(), Is.EqualTo(1), "should have one match");
             }
         }
     }
@@ -366,13 +457,11 @@ public class H3UniEdgeExtensionsTests {
                     continue;
                 }
 
-                Assert.AreEqual(expectedVertexCount, edgeVert.Length, $"should have {expectedVertexCount} vertices");
+                Assert.That(edgeVert.Length, Is.EqualTo(expectedVertexCount), $"should have {expectedVertexCount} vertices");
 
                 for (var j = 0; j < expectedVertexCount; j += 1) {
                     var expectedVert = expectedVerts[vertexMap[i, j]];
-                    Assert.IsTrue(
-                        expectedVert.AlmostEquals(edgeVert[j]),
-                        $"should be equal: {edgeVert[j].Longitude},{edgeVert[j].Latitude} == {expectedVert.Longitude},{expectedVert.Latitude}");
+                    Assert.That(expectedVert.AlmostEquals(edgeVert[j]), Is.True, $"should be equal: {edgeVert[j].Longitude},{edgeVert[j].Latitude} == {expectedVert.Longitude},{expectedVert.Latitude}");
                 }
             }
         }

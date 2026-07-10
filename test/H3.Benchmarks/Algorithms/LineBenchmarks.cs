@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using H3.Algorithms;
 using H3.Extensions;
+using NetTopologySuite.Utilities;
 #if RUN_COMPARATIVE_BENCHMARKS
 using H3Lib.Extensions;
 #endif
 
-namespace H3.Benchmarks.Algorithms; 
+namespace H3.Benchmarks.Algorithms;
 
 [Config(typeof(CompareVersionsBenchmarkConfig))]
 [MemoryDiagnoser]
@@ -24,11 +25,13 @@ public class LineBenchmarks {
     public void Setup() {
         Console.WriteLine($"TestIndexValue = {Common.TestIndexValue:x}");
         Console.WriteLine($"SfIndexAt14 = {SfIndexAt14}");
-        Console.WriteLine($"length = {SfIndexAt14.DistanceTo(Common.TestIndexValue)}");
+        Console.WriteLine($"length = {SfIndexAt14.GridDistance(Common.TestIndexValue)}");
     }
 
-    [Benchmark(Description = "pocketken.H3.LineTo")]
-    public List<H3Index> LineTo() => SfIndexAt14.LineTo(Common.TestIndexValue).ToList();
+    [Benchmark(Description = "pocketken.H3.GridPathCells")]
+    public void LineTo() {
+        var result = SfIndexAt14.GridPathCells(Common.TestIndexValue).ToList();
+    }
 
 #if RUN_COMPARATIVE_BENCHMARKS
     [Benchmark(Description = "H3Lib.LineTo")]

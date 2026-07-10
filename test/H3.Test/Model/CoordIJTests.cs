@@ -1,6 +1,7 @@
-﻿using System.Linq;
+using System.Linq;
 using H3.Model;
 using NUnit.Framework;
+
 
 namespace H3.Test.Model; 
 
@@ -17,8 +18,8 @@ public class CoordIJTests {
         var actual = CoordIJ.FromCoordIJK(ijk);
 
         // Assert
-        Assert.AreEqual(0, actual.I, "should be zero");
-        Assert.AreEqual(0, actual.J, "should be zero");
+        Assert.That(actual.I, Is.EqualTo(0), "should be zero");
+        Assert.That(actual.J, Is.EqualTo(0), "should be zero");
     }
 
     [Test]
@@ -30,9 +31,9 @@ public class CoordIJTests {
         var actual = ij.ToCoordIJK();
 
         // Assert
-        Assert.AreEqual(0, actual.I, "should be zero");
-        Assert.AreEqual(0, actual.J, "should be zero");
-        Assert.AreEqual(0, actual.K, "should be zero");
+        Assert.That(actual.I, Is.EqualTo(0), "should be zero");
+        Assert.That(actual.J, Is.EqualTo(0), "should be zero");
+        Assert.That(actual.K, Is.EqualTo(0), "should be zero");
     }
 
     [Test]
@@ -45,7 +46,7 @@ public class CoordIJTests {
         var actual = coords.Select(ijk => CoordIJ.FromCoordIJK(ijk).ToCoordIJK());
 
         // Assert
-        Assert.AreEqual(coords, actual, "should be equal");
+        Assert.That(actual, Is.EqualTo(coords), "should be equal");
     }
 
 }

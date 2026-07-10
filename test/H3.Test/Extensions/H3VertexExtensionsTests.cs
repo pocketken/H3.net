@@ -1,8 +1,9 @@
-﻿using System.Linq;
+using System.Linq;
 using H3.Extensions;
 using H3.Model;
 using static H3.Constants;
 using NUnit.Framework;
+
 
 namespace H3.Test.Extensions; 
 
@@ -22,9 +23,9 @@ public class H3VertexExtensionsTests {
             .Select(group => (Vertex: group.Key, Count: group.Count()));
 
         // Assert
-        Assert.IsEmpty(vertexNums.Where(e => e.Vertex == -1), "should not return invalid vertex");
-        Assert.IsEmpty(vertexNums.Where(e => e.Count > 1), "should not return the same vertex more than once");
-        Assert.IsEmpty(vertexNums.Where(e => e.Vertex >= NUM_HEX_VERTS), "should not return vertex >= NUM_HEX_VERTS");
+        Assert.That(vertexNums.Where(e => e.Vertex == -1), Is.Empty, "should not return invalid vertex");
+        Assert.That(vertexNums.Where(e => e.Count > 1), Is.Empty, "should not return the same vertex more than once");
+        Assert.That(vertexNums.Where(e => e.Vertex >= NUM_HEX_VERTS), Is.Empty, "should not return vertex >= NUM_HEX_VERTS");
     }
 
     [Test]
@@ -39,9 +40,9 @@ public class H3VertexExtensionsTests {
             .Select(group => (Vertex: group.Key, Count: group.Count()));
 
         // Assert
-        Assert.IsEmpty(vertexNums.Where(e => e.Vertex == -1), "should not return invalid vertex");
-        Assert.IsEmpty(vertexNums.Where(e => e.Count > 1), "should not return the same vertex more than once");
-        Assert.IsEmpty(vertexNums.Where(e => e.Vertex >= NUM_PENT_VERTS), "should not return vertex >= NUM_PENT_VERTS");
+        Assert.That(vertexNums.Where(e => e.Vertex == -1), Is.Empty, "should not return invalid vertex");
+        Assert.That(vertexNums.Where(e => e.Count > 1), Is.Empty, "should not return the same vertex more than once");
+        Assert.That(vertexNums.Where(e => e.Vertex >= NUM_PENT_VERTS), Is.Empty, "should not return vertex >= NUM_PENT_VERTS");
     }
 
     [Test]
@@ -56,7 +57,7 @@ public class H3VertexExtensionsTests {
         var vertexNum = origin.GetVertexNumberForDirection(direction);
 
         // Assert
-        Assert.AreEqual(-1, vertexNum, "should return invalid vertex");
+        Assert.That(vertexNum, Is.EqualTo(-1), "should return invalid vertex");
     }
 
     [Test]
@@ -72,10 +73,10 @@ public class H3VertexExtensionsTests {
             .ToArray();
 
         // Assert
-        Assert.AreEqual(NUM_HEX_VERTS, directions.Length, "should return NUM_HEX_VERTS");
-        Assert.IsEmpty(directions.Where(e => e.Direction == Direction.Center), "should not return center direction");
-        Assert.IsEmpty(directions.Where(e => e.Direction == Direction.Invalid), "should not return invalid direction");
-        Assert.IsEmpty(directions.Where(e => e.Count > 1), "should not return the same direction more than once");
+        Assert.That(directions.Length, Is.EqualTo(NUM_HEX_VERTS), "should return NUM_HEX_VERTS");
+        Assert.That(directions.Where(e => e.Direction == Direction.Center), Is.Empty, "should not return center direction");
+        Assert.That(directions.Where(e => e.Direction == Direction.Invalid), Is.Empty, "should not return invalid direction");
+        Assert.That(directions.Where(e => e.Count > 1), Is.Empty, "should not return the same direction more than once");
     }
 
     [Test]
@@ -91,11 +92,11 @@ public class H3VertexExtensionsTests {
             .ToArray();
 
         // Assert
-        Assert.AreEqual(NUM_PENT_VERTS, directions.Length, "should return NUM_PENT_VERTS");
-        Assert.IsEmpty(directions.Where(e => e.Direction == Direction.Center), "should not return center direction");
-        Assert.IsEmpty(directions.Where(e => e.Direction == Direction.Invalid), "should not return invalid direction");
-        Assert.IsEmpty(directions.Where(e => e.Direction == Direction.K), "should not return K direction");
-        Assert.IsEmpty(directions.Where(e => e.Count > 1), "should not return the same direction more than once");
+        Assert.That(directions.Length, Is.EqualTo(NUM_PENT_VERTS), "should return NUM_PENT_VERTS");
+        Assert.That(directions.Where(e => e.Direction == Direction.Center), Is.Empty, "should not return center direction");
+        Assert.That(directions.Where(e => e.Direction == Direction.Invalid), Is.Empty, "should not return invalid direction");
+        Assert.That(directions.Where(e => e.Direction == Direction.K), Is.Empty, "should not return K direction");
+        Assert.That(directions.Where(e => e.Count > 1), Is.Empty, "should not return the same direction more than once");
     }
 
     [Test]
@@ -109,7 +110,7 @@ public class H3VertexExtensionsTests {
         var direction = origin.GetDirectionForVertexNumber(vertexNum);
 
         // Assert
-        Assert.AreEqual(Direction.Invalid, direction, "should return invalid direction");
+        Assert.That(direction, Is.EqualTo(Direction.Invalid), "should return invalid direction");
     }
 
     [Test]
@@ -123,7 +124,7 @@ public class H3VertexExtensionsTests {
         var direction = origin.GetDirectionForVertexNumber(vertexNum);
 
         // Assert
-        Assert.AreEqual(Direction.Invalid, direction, "should return invalid direction");
+        Assert.That(direction, Is.EqualTo(Direction.Invalid), "should return invalid direction");
     }
 
     [Test]
@@ -137,7 +138,7 @@ public class H3VertexExtensionsTests {
         var index = origin.CellToVertex(vertexNum);
 
         // Assert
-        Assert.AreEqual(H3Index.Invalid, index, "should return H3_NULL");
+        Assert.That(index, Is.EqualTo(H3Index.Invalid), "should return H3_NULL");
     }
 
     [Test]
@@ -151,7 +152,7 @@ public class H3VertexExtensionsTests {
         var index = origin.CellToVertex(vertexNum);
 
         // Assert
-        Assert.AreEqual(H3Index.Invalid, index, "should return H3_NULL");
+        Assert.That(index, Is.EqualTo(H3Index.Invalid), "should return H3_NULL");
     }
 
     [Test]
@@ -163,7 +164,7 @@ public class H3VertexExtensionsTests {
         var isValid = vert.IsValidVertex();
 
         // Assert
-        Assert.AreEqual(true, isValid, "should be valid vertex index");
+        Assert.That(isValid, Is.EqualTo(true), "should be valid vertex index");
     }
 
     [Test]
@@ -175,8 +176,8 @@ public class H3VertexExtensionsTests {
         var indicies = origin.CellToVertexes().ToArray();
 
         // Assert
-        Assert.AreEqual(NUM_HEX_VERTS, indicies.Length, "should return NUM_HEX_VERTS indicies");
-        Assert.IsTrue(indicies.All(index => index.IsValidVertex()), "should return valid vertex indicies");
+        Assert.That(indicies.Length, Is.EqualTo(NUM_HEX_VERTS), "should return NUM_HEX_VERTS indicies");
+        Assert.That(indicies.All(index => index.IsValidVertex()), Is.True, "should return valid vertex indicies");
     }
 
     [Test]
@@ -189,7 +190,7 @@ public class H3VertexExtensionsTests {
         vert ^= 1;
 
         // Assert
-        Assert.IsFalse(vert.IsValidVertex(), "should not be valid");
+        Assert.That(vert.IsValidVertex(), Is.False, "should not be valid");
     }
 
     [Test]
@@ -205,7 +206,7 @@ public class H3VertexExtensionsTests {
         };
 
         // Assert
-        Assert.IsFalse(origin == owner, "origin should not own canonical vertex");
+        Assert.That(origin == owner, Is.False, "origin should not own canonical vertex");
     }
 
     [Test]
@@ -220,7 +221,7 @@ public class H3VertexExtensionsTests {
         };
 
         // Assert
-        Assert.IsFalse(nonCanonical.IsValidVertex(), "vertex with incorrect owner should not be valid");
+        Assert.That(nonCanonical.IsValidVertex(), Is.False, "vertex with incorrect owner should not be valid");
     }
 
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 #nullable enable
@@ -16,7 +15,7 @@ public sealed class BaseCell {
     /// <summary>
     /// The home face and IJK address of the cell.
     /// </summary>
-    public FaceIJK Home { get; internal init; } = null!;
+    public FaceIJK Home { get; internal init; }
 
     /// <summary>
     /// Whether or not this base cell is a pentagon.
@@ -32,23 +31,6 @@ public sealed class BaseCell {
     /// Whether or not the cell is a polar pentagon.
     /// </summary>
     public bool IsPolarPentagon { get; internal init; }
-
-    /// <summary>
-    /// All of the neighbouring <see cref="BaseCell"/>s of this cell, by
-    /// <see cref="Direction"/>.
-    /// </summary>
-    public sbyte[] NeighbouringCells { get; internal init; } = null!;
-
-    /// <summary>
-    /// Indicates the number of counter-clockwise rotations that should
-    /// take place to rotate to a given neighbour, by <see cref="Direction"/>.
-    /// </summary>
-    public sbyte[] NeighbourRotations { get; internal init; } = null!;
-
-    /// <summary>
-    /// A map of neighbour cell number to <see cref="Direction"/>.
-    /// </summary>
-    public Dictionary<sbyte, Direction> NeighbourDirections { get; internal init; } = null!;
 
     /// <summary>
     /// Whether or not the specified <paramref name="face"/> matches one of this
@@ -69,7 +51,7 @@ public sealed class BaseCell {
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BaseCell? Neighbour(Direction direction) {
-        var cellNumber = NeighbouringCells[(int)direction];
+        var cellNumber = BaseCells.GetNeighbouringCellNumber(Cell, direction);
         return cellNumber == LookupTables.INVALID_BASE_CELL ? null : BaseCells.Cells[cellNumber];
     }
 
@@ -83,8 +65,12 @@ public sealed class BaseCell {
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Direction GetNeighbourDirection(sbyte originCell, sbyte destinationCell) {
-        var originBaseCell = BaseCells.Cells[originCell];
-        return originBaseCell.NeighbourDirections.TryGetValue(destinationCell, out var direction) ? direction : Direction.Invalid;
+        var offset = originCell * 7;
+        for (var direction = 0; direction < 7; direction += 1) {
+            if (BaseCells.NeighbouringCells[offset + direction] == destinationCell) return (Direction)direction;
+        }
+
+        return Direction.Invalid;
     }
 
     /// <summary>

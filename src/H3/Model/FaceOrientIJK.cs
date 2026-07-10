@@ -2,14 +2,12 @@
 
 #nullable enable
 
-namespace H3.Model; 
+namespace H3.Model;
 
-public sealed class FaceOrientIJK {
+public readonly struct FaceOrientIJK {
     public int Face { get; init; }
     public CoordIJK Translate { get; init; } = new();
     public int CounterClockwiseRotations { get; init; }
-
-    private FaceOrientIJK() { }
 
     public FaceOrientIJK(int face, CoordIJK translate, int rotation) {
         Face = face;

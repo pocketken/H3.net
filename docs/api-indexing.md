@@ -24,7 +24,7 @@ To create an index based upon a geospatial coordinate and a target H3 resolution
 
 ```cs
 // from lon/lat, with a resolution of 9 -- note NTS Coordinates are longitude (X) first,
-// latitude (Y) second, unlike upstream/Model.GeoCoord which is latitude then longitude
+// latitude (Y) second, unlike upstream/Model.LatLng which is latitude then longitude
 // (AND in radians, not degrees).
 var coordinate = new Coordinate(-122.40898669969357, 37.81331899988944);
 var index = coordinate.ToH3Index(9);

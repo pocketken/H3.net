@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if NET8_0_OR_GREATER
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -30,3 +31,4 @@ public class H3IndexJsonConverter : JsonConverter<H3Index> {
         writer.WriteStringValue(value.ToString());
     }
 }
+#endif
