@@ -30,11 +30,14 @@ public static class H3HierarchyExtensions {
     public static (H3Index, int) GetDirectNeighbour(this H3Index origin, Direction direction, int rotations = 0) {
         H3Index outIndex = new(origin);
 
-        var dir = direction;
-        dir = dir.RotateCounterClockwise(rotations);
+        // ensure rotations is modulo'd by 6 before any possible addition,
+        // to protect against signed integer overflow
+        rotations %= 6;
 
-        var oldBaseCell = origin.BaseCell;
-        if (oldBaseCell == null) throw new Exception("origin is not a valid base cell");
+        var dir = direction.RotateCounterClockwise(rotations);
+
+        var oldBaseCellNumber = origin.BaseCellNumber;
+        if (oldBaseCellNumber >= NUM_BASE_CELLS) throw new Exception("origin is not a valid base cell");
 
         var neighbourRotations = 0;
 
@@ -42,16 +45,16 @@ public static class H3HierarchyExtensions {
         var resolution = outIndex.Resolution - 1;
         while (true) {
             if (resolution == -1) {
-                var newBaseCellNumber = oldBaseCell.NeighbouringCells[(sbyte)dir];
-                neighbourRotations = oldBaseCell.NeighbourRotations[(sbyte)dir];
+                var newBaseCellNumber = BaseCells.GetNeighbouringCellNumber(oldBaseCellNumber, dir);
+                neighbourRotations = BaseCells.GetNeighbourCounterClockwiseRotations(oldBaseCellNumber, dir);
 
                 outIndex.BaseCellNumber = newBaseCellNumber;
 
                 if (newBaseCellNumber == LookupTables.INVALID_BASE_CELL) {
                     // Adjust for the deleted k vertex at the base cell level.
                     // This edge actually borders a different neighbor.
-                    outIndex.BaseCellNumber = oldBaseCell.NeighbouringCells[(sbyte)Direction.IK];
-                    neighbourRotations = oldBaseCell.NeighbourRotations[(sbyte)Direction.IK];
+                    outIndex.BaseCellNumber = BaseCells.GetNeighbouringCellNumber(oldBaseCellNumber, Direction.IK);
+                    neighbourRotations = BaseCells.GetNeighbourCounterClockwiseRotations(oldBaseCellNumber, Direction.IK);
 
                     // perform the adjustment for the k-subsequence we're skipping
                     // over.
@@ -64,26 +67,17 @@ public static class H3HierarchyExtensions {
 
             var nextResolution = resolution + 1;
             var oldDir = outIndex.GetDirectionForResolution(nextResolution);
-            Direction nextDir;
 
             if (oldDir == Direction.Invalid) {
                 // Only possible on invalid input
                 return (H3Index.Invalid, rotations);
             }
 
-            if (IsResolutionClass3(nextResolution)) {
-                outIndex.SetDirectionForResolution(
-                    nextResolution,
-                    LookupTables.NewDirectionClass2[(int)oldDir, (int)dir]
-                );
-                nextDir = LookupTables.NewAdjustmentClass2[(int)oldDir, (int)dir];
-            } else {
-                outIndex.SetDirectionForResolution(
-                    nextResolution,
-                    LookupTables.NewDirectionClass3[(int)oldDir, (int)dir]
-                );
-                nextDir = LookupTables.NewAdjustmentClass3[(int)oldDir, (int)dir];
-            }
+            var packed = IsResolutionClass3(nextResolution)
+                ? LookupTables.TraversalPackedClass2[(int)oldDir * 7 + (int)dir]
+                : LookupTables.TraversalPackedClass3[(int)oldDir * 7 + (int)dir];
+            outIndex.SetDirectionForResolution(nextResolution, (Direction)(packed & 7));
+            var nextDir = (Direction)(packed >> 3);
 
             if (nextDir != Direction.Center) {
                 dir = nextDir;
@@ -94,20 +88,21 @@ public static class H3HierarchyExtensions {
             }
         }
 
-        var newBaseCell = outIndex.BaseCell;
+        var newBaseCellNumber2 = outIndex.BaseCellNumber;
 
-        if (newBaseCell.IsPentagon) {
+        if (BaseCells.IsPentagonCellNumber(newBaseCellNumber2)) {
+            var newBaseCell = BaseCells.Cells[newBaseCellNumber2];
             var alreadyAdjustedKSubsequence = false;
 
             // force rotation out of missing k-axes sub-sequence
             if (outIndex.LeadingNonZeroDirection == Direction.K) {
-                if (oldBaseCell != newBaseCell) {
+                if (oldBaseCellNumber != newBaseCellNumber2) {
                     // in this case, we traversed into the deleted
                     // k subsequence of a pentagon base cell.
                     // We need to rotate out of that case depending
                     // on how we got here.
                     // check for a cw/ccw offset face; default is ccw
-                    if (newBaseCell.FaceMatchesOffset(oldBaseCell.Home.Face)) {
+                    if (newBaseCell.FaceMatchesOffset(BaseCells.Cells[oldBaseCellNumber].Home.Face)) {
                         outIndex.RotateClockwise();
                     } else {
                         outIndex.RotateCounterClockwise();
@@ -152,11 +147,11 @@ public static class H3HierarchyExtensions {
 
             // Account for differing orientation of the base cells (this edge
             // might not follow properties of some other edges.)
-            if (oldBaseCell != newBaseCell) {
+            if (oldBaseCellNumber != newBaseCellNumber2) {
                 if (newBaseCell.IsPolarPentagon) {
                     // 'polar' base cells behave differently because they have all
                     // i neighbors.
-                    if (oldBaseCell.Cell is not 118 or 8 && outIndex.LeadingNonZeroDirection != Direction.JK) {
+                    if (oldBaseCellNumber is not (118 or 8) && outIndex.LeadingNonZeroDirection != Direction.JK) {
                         rotations += 1;
                     }
                 } else if (outIndex.LeadingNonZeroDirection == Direction.IK && !alreadyAdjustedKSubsequence) {
@@ -240,16 +235,33 @@ public static class H3HierarchyExtensions {
         // of origin and destination parents and then a lookup table of the children
         // is a super-cheap way to possibly determine they are neighbors.
         var parentRes = resolution - 1;
-        if (parentRes > 0 && origin.GetParentForResolution(parentRes) == destination.GetParentForResolution(parentRes)) {
-            var originResDigit = origin.Direction;
-            var destResDigit = destination.Direction;
+        if (parentRes > 0) {
+            var originParentValue = origin.GetParentValueForResolution(parentRes);
+            if (originParentValue == destination.GetParentValueForResolution(parentRes)) {
+                var originResDigit = origin.Direction;
+                var destResDigit = destination.Direction;
 
-            if (originResDigit == Direction.Center || destResDigit == Direction.Center) {
-                return true;
-            }
+                if (originResDigit == Direction.Center || destResDigit == Direction.Center) {
+                    return true;
+                }
 
-            if (originResDigit.RotateClockwise() == destResDigit || originResDigit.RotateCounterClockwise() == destResDigit) {
-                return true;
+                if (originResDigit == Direction.Invalid) {
+                    return false;
+                }
+
+                if ((originResDigit == Direction.K || destResDigit == Direction.K) &&
+                    new H3Index(originParentValue).IsPentagon) {
+                    // these are invalid cells within the deleted k subsequence of a
+                    // pentagon; fail rather than incorrectly reporting neighbours.
+                    // pentagon cells that are actually neighbours across the deleted
+                    // subsequence will fail the optimized check below, but will be
+                    // accepted by the neighbour check below that.
+                    return false;
+                }
+
+                if (originResDigit.RotateClockwise() == destResDigit || originResDigit.RotateCounterClockwise() == destResDigit) {
+                    return true;
+                }
             }
         }
 
@@ -279,12 +291,7 @@ public static class H3HierarchyExtensions {
         if (resolution == parentResolution) return origin;
 
         // return the parent index
-        H3Index parentIndex = new(origin) {
-            Resolution = parentResolution
-        };
-        parentIndex.InvalidateDirectionsForResolutionRange(parentResolution + 1, resolution);
-
-        return parentIndex;
+        return new H3Index(origin.GetParentValueForResolution(parentResolution));
     }
 
     /// <summary>
@@ -382,6 +389,154 @@ public static class H3HierarchyExtensions {
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Produces the number of children the <see cref="H3Index"/> has at the
+    /// specified resolution.
+    /// </summary>
+    /// <param name="origin">index to count children for</param>
+    /// <param name="childResolution">resolution of child level, must be &gt;=
+    /// the index's resolution and &lt;= MAX_H3_RES</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided
+    /// child resolution is not valid for the index.</exception>
+    public static long CellToChildrenSize(this H3Index origin, int childResolution) {
+        var parentResolution = origin.Resolution;
+        if (!IsValidChildResolution(parentResolution, childResolution)) {
+            throw new ArgumentOutOfRangeException(nameof(childResolution), childResolution,
+                $"must be between the index's resolution ({parentResolution}) and {MAX_H3_RES}");
+        }
+
+        var n = childResolution - parentResolution;
+        return origin.IsPentagon ? 1 + 5 * (IPow(7, n) - 1) / 6 : IPow(7, n);
+    }
+
+    /// <summary>
+    /// Produces the position of the child <see cref="H3Index"/> within an ordered
+    /// list of all children of its parent at the specified resolution.  The order
+    /// of the ordered list is the same as that returned by
+    /// <see cref="GetChildrenForResolution"/>.
+    /// </summary>
+    /// <param name="child">child index to determine the position of</param>
+    /// <param name="parentResolution">parent resolution, must be &gt;= 0 and
+    /// &lt;= the child's resolution</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided
+    /// parent resolution is not valid for the index.</exception>
+    /// <exception cref="ArgumentException">Thrown when the child index contains
+    /// invalid digits.</exception>
+    public static long CellToChildPos(this H3Index child, int parentResolution) {
+        var childResolution = child.Resolution;
+        var parent = child.GetParentForResolution(parentResolution);
+        if (parent == H3Index.Invalid) {
+            throw new ArgumentOutOfRangeException(nameof(parentResolution), parentResolution,
+                $"must be between 0 and the child's resolution ({childResolution})");
+        }
+
+        var position = 0L;
+
+        if (parent.IsPentagon) {
+            // pentagon parents skip the 1 (K) digit, so the offsets are different
+            // from those of hexagons
+            for (var res = childResolution; res > parentResolution; res -= 1) {
+                var parentIsPentagon = child.GetParentForResolution(res - 1).IsPentagon;
+                var rawDigit = child.GetDirectionForResolution(res);
+                if (rawDigit == Direction.Invalid || (parentIsPentagon && rawDigit == Direction.K)) {
+                    throw new ArgumentException("contains invalid digits", nameof(child));
+                }
+
+                var digit = parentIsPentagon && rawDigit > Direction.Center ? (int)rawDigit - 1 : (int)rawDigit;
+                if (digit == (int)Direction.Center) continue;
+
+                var hexChildCount = IPow(7, childResolution - res);
+
+                // the offset for the 0-digit slot depends on whether the current
+                // index is the child of a pentagon; if so, the offset is based on
+                // the count of pentagon children, otherwise, hexagon children
+                position += (parentIsPentagon ? 1 + 5 * (hexChildCount - 1) / 6 : hexChildCount) +
+                            (digit - 1) * hexChildCount;
+            }
+        } else {
+            // hexagon logic, offsets are simple powers of 7
+            for (var res = childResolution; res > parentResolution; res -= 1) {
+                var digit = child.GetDirectionForResolution(res);
+                if (digit == Direction.Invalid) {
+                    throw new ArgumentException("contains invalid digits", nameof(child));
+                }
+
+                position += (int)digit * IPow(7, childResolution - res);
+            }
+        }
+
+        return position;
+    }
+
+    /// <summary>
+    /// Produces the child <see cref="H3Index"/> at the specified position within an
+    /// ordered list of all children of the parent index at the specified resolution.
+    /// The order of the ordered list is the same as that returned by
+    /// <see cref="GetChildrenForResolution"/>.  This is the reverse operation of
+    /// <see cref="CellToChildPos"/>.
+    /// </summary>
+    /// <param name="parent">parent index to produce the child of</param>
+    /// <param name="position">position of the child within the parent's list of
+    /// children at the specified resolution</param>
+    /// <param name="childResolution">resolution of child level, must be &gt;=
+    /// the parent's resolution and &lt;= MAX_H3_RES</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided
+    /// child resolution is not valid for the index, or the position is out of
+    /// range.</exception>
+    public static H3Index ChildPosToCell(this H3Index parent, long position, int childResolution) {
+        var parentResolution = parent.Resolution;
+
+        var maxChildCount = parent.CellToChildrenSize(childResolution);
+        if (position < 0 || position >= maxChildCount) {
+            throw new ArgumentOutOfRangeException(nameof(position), position, $"must be between 0 and {maxChildCount - 1}");
+        }
+
+        var resolutionOffset = childResolution - parentResolution;
+        var child = new H3Index(parent) {
+            Resolution = childResolution
+        };
+        var index = position;
+
+        if (parent.IsPentagon) {
+            // pentagon parents skip the 1 (K) digit, so the offsets are different
+            // from those of hexagons
+            var inPentagon = true;
+            for (var res = 1; res <= resolutionOffset; res += 1) {
+                var resWidth = IPow(7, resolutionOffset - res);
+                if (inPentagon) {
+                    // while inside a parent pentagon, check if this cell is a
+                    // pentagon, and if not, offset its digit to account for the
+                    // skipped direction
+                    var pentagonWidth = 1 + 5 * (resWidth - 1) / 6;
+                    if (index < pentagonWidth) {
+                        child.SetDirectionForResolution(parentResolution + res, Direction.Center);
+                    } else {
+                        index -= pentagonWidth;
+                        inPentagon = false;
+                        child.SetDirectionForResolution(parentResolution + res, (Direction)(index / resWidth + 2));
+                        index %= resWidth;
+                    }
+                } else {
+                    // no longer inside a pentagon, continue as for hexagons
+                    child.SetDirectionForResolution(parentResolution + res, (Direction)(index / resWidth));
+                    index %= resWidth;
+                }
+            }
+        } else {
+            // hexagon logic, offsets are simple powers of 7
+            for (var res = 1; res <= resolutionOffset; res += 1) {
+                var resWidth = IPow(7, resolutionOffset - res);
+                child.SetDirectionForResolution(parentResolution + res, (Direction)(index / resWidth));
+                index %= resWidth;
+            }
+        }
+
+        return child;
     }
 
     /// <summary>

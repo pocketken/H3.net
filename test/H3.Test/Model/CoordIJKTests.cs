@@ -1,6 +1,7 @@
-﻿using System.Linq;
+using System.Linq;
 using H3.Model;
 using NUnit.Framework;
+
 
 namespace H3.Test.Model; 
 
@@ -27,7 +28,7 @@ public class CoordIJKTests {
         var cell = (Direction)coord;
 
         // Assert
-        Assert.AreEqual(expectedIndex, cell);
+        Assert.That(cell, Is.EqualTo(expectedIndex));
     }
 
     [Test]
@@ -40,7 +41,7 @@ public class CoordIJKTests {
         var result = coord == LookupTables.UnitVectors[expectedIndex];
 
         // Assert
-        Assert.IsTrue(result, "should be equal");
+        Assert.That(result, Is.True, "should be equal");
     }
 
     [Test]
@@ -53,9 +54,9 @@ public class CoordIJKTests {
         var result = a + b;
 
         // Assert
-        Assert.AreEqual(1, result.I, "I should be 1");
-        Assert.AreEqual(2, result.J, "J should be 2");
-        Assert.AreEqual(1, result.K, "K should be 1");
+        Assert.That(result.I, Is.EqualTo(1), "I should be 1");
+        Assert.That(result.J, Is.EqualTo(2), "J should be 2");
+        Assert.That(result.K, Is.EqualTo(1), "K should be 1");
     }
 
     [Test]
@@ -68,9 +69,9 @@ public class CoordIJKTests {
         var result = a - b;
 
         // Assert
-        Assert.AreEqual(1, result.I, "I should be 1");
-        Assert.AreEqual(0, result.J, "J should be 0");
-        Assert.AreEqual(-1, result.K, "K should be -1");
+        Assert.That(result.I, Is.EqualTo(1), "I should be 1");
+        Assert.That(result.J, Is.EqualTo(0), "J should be 0");
+        Assert.That(result.K, Is.EqualTo(-1), "K should be -1");
     }
 
     [Test]
@@ -82,9 +83,9 @@ public class CoordIJKTests {
         var result = a *= 2;
 
         // Assert
-        Assert.AreEqual(2, result.I, "I should be 2");
-        Assert.AreEqual(2, result.J, "J should be 2");
-        Assert.AreEqual(0, result.K, "K should be 0");
+        Assert.That(result.I, Is.EqualTo(2), "I should be 2");
+        Assert.That(result.J, Is.EqualTo(2), "J should be 2");
+        Assert.That(result.K, Is.EqualTo(0), "K should be 0");
     }
 
     [Test]
@@ -98,9 +99,9 @@ public class CoordIJKTests {
         var result = (a + b + c) * 2;
 
         // Assert
-        Assert.AreEqual(4, result.I, "I should be 4");
-        Assert.AreEqual(4, result.J, "J should be 4");
-        Assert.AreEqual(2, result.K, "K should be 2");
+        Assert.That(result.I, Is.EqualTo(4), "I should be 4");
+        Assert.That(result.J, Is.EqualTo(4), "J should be 4");
+        Assert.That(result.K, Is.EqualTo(2), "K should be 2");
     }
 
     [Test]
@@ -112,9 +113,9 @@ public class CoordIJKTests {
         var result = CoordIJK.Normalize(a);
 
         // Assert
-        Assert.AreEqual(0, result.I, "I should be 0");
-        Assert.AreEqual(4, result.J, "J should be 4");
-        Assert.AreEqual(2, result.K, "K should be 2");
+        Assert.That(result.I, Is.EqualTo(0), "I should be 0");
+        Assert.That(result.J, Is.EqualTo(4), "J should be 4");
+        Assert.That(result.K, Is.EqualTo(2), "K should be 2");
     }
 
     [Test]
@@ -129,9 +130,9 @@ public class CoordIJKTests {
         var neighbour = ijk.ToNeighbour(direction);
 
         // Assert
-        Assert.AreEqual(expectedI, neighbour.I, $"I should be {expectedI}");
-        Assert.AreEqual(expectedJ, neighbour.J, $"J should be {expectedJ}");
-        Assert.AreEqual(expectedK, neighbour.K, $"K should be {expectedK}");
+        Assert.That(neighbour.I, Is.EqualTo(expectedI), $"I should be {expectedI}");
+        Assert.That(neighbour.J, Is.EqualTo(expectedJ), $"J should be {expectedJ}");
+        Assert.That(neighbour.K, Is.EqualTo(expectedK), $"K should be {expectedK}");
     }
 
     [Test]
@@ -144,7 +145,7 @@ public class CoordIJKTests {
         var actual = coords.Select(ijk => ijk.Cube().Uncube());
 
         // Assert
-        Assert.AreEqual(coords, actual, "should be equal");
+        Assert.That(actual, Is.EqualTo(coords), "should be equal");
     }
 
 }

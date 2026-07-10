@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using H3.Model;
 using static H3.Constants;
 
@@ -136,11 +137,14 @@ public static class H3VertexExtensions {
         // Determine the vertex rotations for this cell
         var rotations = VertexRotations(origin);
 
-        // Find the appropriate vertex, rotating CCW if necessary
-        return isPentagon
+        return VertexNumberForDirection(direction, rotations, isPentagon);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int VertexNumberForDirection(Direction direction, int rotations, bool isPentagon) =>
+        isPentagon
             ? (PentagonDirectionToVertexNum[(int)direction] + NUM_PENT_VERTS - rotations) % NUM_PENT_VERTS
             : (HexDirectionToVertexNum[(int)direction] + NUM_HEX_VERTS - rotations) % NUM_HEX_VERTS;
-    }
 
     /// <summary>
     /// Get the direction for a given vertex number. This returns the direction for
@@ -161,11 +165,14 @@ public static class H3VertexExtensions {
         // Determine the vertex rotations for this cell
         var rotations = VertexRotations(origin);
 
-        // Find the appropriate direction, rotating CW if necessary
-        return isPentagon
+        return DirectionForVertexNumber(vertexNum, rotations, isPentagon);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Direction DirectionForVertexNumber(int vertexNum, int rotations, bool isPentagon) =>
+        isPentagon
             ? PentagonVertexNumToDirection[(vertexNum + rotations) % NUM_PENT_VERTS]
             : HexVertexNumToDirection[(vertexNum + rotations) % NUM_HEX_VERTS];
-    }
 
     /// <summary>
     /// Get a single vertex for a given cell as an H3 index, or
@@ -211,12 +218,12 @@ public static class H3VertexExtensions {
                 ReservedBits = ownerVertexNum
             };
 
-        // Get the left neighbor of the vertex, with its rotations
-        var left = GetDirectionForVertexNumber(cell, vertexNum);
+        // Determine the vertex rotations for this cell once; both the left and
+        // right vertex directions derive from it
+        var cellVertexRotations = VertexRotations(cell);
 
-        if (left == Direction.Invalid) {
-            return H3Index.Invalid;
-        }
+        // Get the left neighbor of the vertex, with its rotations
+        var left = DirectionForVertexNumber(vertexNum, cellVertexRotations, cellIsPentagon);
 
         var (leftNeighbour, lRotations) = cell.GetDirectNeighbour(left);
 
@@ -231,11 +238,7 @@ public static class H3VertexExtensions {
         if (res == 0 || leftNeighbour.GetDirectionForResolution(res) != Direction.Center) {
             // Get the right neighbor of the vertex, with its rotations
             // Note that vertex - 1 is the right side, as vertex numbers are CCW
-            var right = GetDirectionForVertexNumber(cell, (vertexNum - 1 + cellNumVerts) % cellNumVerts);
-
-            if (right == Direction.Invalid) {
-                return H3Index.Invalid;
-            }
+            var right = DirectionForVertexNumber((vertexNum - 1 + cellNumVerts) % cellNumVerts, cellVertexRotations, cellIsPentagon);
 
             var (rightNeighbour, rRotations) = cell.GetDirectNeighbour(right);
 
@@ -296,16 +299,6 @@ public static class H3VertexExtensions {
         for (var i = 0; i < count; i += 1) {
             yield return cell.CellToVertex(i);
         }
-    }
-
-    /// <summary>
-    /// Get the geocoordinates of a H3 vertex index.
-    /// </summary>
-    /// <param name="vertex"></param>
-    /// <returns></returns>
-    [Obsolete("as of 4.0: use VertexToLatLng instead")]
-    public static GeoCoord VertexToGeoCoord(this H3Index vertex) {
-        return (GeoCoord)vertex.ToLatLng();
     }
 
     /// <summary>

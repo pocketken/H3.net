@@ -1,18 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using H3.Extensions;
 using H3.Model;
 using static H3.Constants;
 using static H3.Utils;
 using NetTopologySuite.Geometries;
 using System.Runtime.CompilerServices;
+#if NET8_0_OR_GREATER
 using System.Text.Json.Serialization;
+#endif
 
 #nullable enable
 
 namespace H3;
 
+#if NET8_0_OR_GREATER
 [JsonConverter(typeof(H3IndexJsonConverter))]
-public sealed partial class H3Index : IComparable<H3Index> {
+#endif
+public partial struct H3Index : IComparable<H3Index>, IEquatable<H3Index> {
 
     #region constants
 
@@ -36,6 +42,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
 
     private const ulong LO_MAGIC = 0x492_4924_9249;
     private const ulong HI_MAGIC = 0x1249_2492_4924;
+    private const int LNZ_OFFSET = 19;
 
     /// <summary>
     /// H3 index with mode 0, res 0, base cell 0, and 7 for all index digits.
@@ -53,9 +60,9 @@ public sealed partial class H3Index : IComparable<H3Index> {
 
     #region properties
 
-    internal ulong Value { get; set; }
+    internal ulong Value;
 
-    public BaseCell BaseCell {
+    public readonly BaseCell BaseCell {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => BaseCells.Cells[BaseCellNumber];
     }
@@ -65,7 +72,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// </summary>
     public int HighBit {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int)((Value & H3_HIGH_BIT_MASK) >> H3_MAX_OFFSET);
+        readonly get => (int)((Value & H3_HIGH_BIT_MASK) >> H3_MAX_OFFSET);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set => Value = (Value & H3_HIGH_BIT_MASK_NEGATIVE) | ((ulong)value << H3_MAX_OFFSET);
     }
@@ -75,7 +82,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// </summary>
     public Mode Mode {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (Mode)((Value & H3_MODE_MASK) >> H3_MODE_OFFSET);
+        readonly get => (Mode)((Value & H3_MODE_MASK) >> H3_MODE_OFFSET);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set => Value = (Value & H3_MODE_MASK_NEGATIVE) | ((ulong)value << H3_MODE_OFFSET);
     }
@@ -85,7 +92,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// </summary>
     public int BaseCellNumber {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int)((Value & H3_BC_MASK) >> H3_BC_OFFSET);
+        readonly get => (int)((Value & H3_BC_MASK) >> H3_BC_OFFSET);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set => Value = (Value & H3_BC_MASK_NEGATIVE) | ((ulong)value << H3_BC_OFFSET);
     }
@@ -95,7 +102,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// </summary>
     public int Resolution {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int)((Value & H3_RES_MASK) >> H3_RES_OFFSET);
+        readonly get => (int)((Value & H3_RES_MASK) >> H3_RES_OFFSET);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set => Value = (Value & H3_RES_MASK_NEGATIVE) | ((ulong)value << H3_RES_OFFSET);
     }
@@ -105,7 +112,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// this is the result of <code>GetDirectionForResolution(Resolution)</code>
     /// </summary>
     public Direction Direction {
-        get => GetDirectionForResolution(Resolution);
+        readonly get => GetDirectionForResolution(Resolution);
         set => SetDirectionForResolution(Resolution, value);
     }
 
@@ -115,87 +122,87 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// </summary>
     public int ReservedBits {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int)((Value & H3_RESERVED_MASK) >> H3_RESERVED_OFFSET);
+        readonly get => (int)((Value & H3_RESERVED_MASK) >> H3_RESERVED_OFFSET);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set => Value = (Value & H3_RESERVED_MASK_NEGATIVE) | ((ulong)value << H3_RESERVED_OFFSET);
     }
 
     [Obsolete("as of 4.0: use IsValidCell instead")]
-    public bool IsValid => IsValidCell;
+    public readonly bool IsValid => IsValidCell;
 
     /// <summary>
     /// Whether or not the index is a valid cell.
     /// </summary>
-    public bool IsValidCell {
+    public readonly bool IsValidCell {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get {
-            // null is obviously invalid
-            if (Value == 0UL) return false;
+            // the top 8 bits must be exactly high bit 0, mode Cell (0b0001), reserved 0b000
+            if (Value >> 56 != 0b0000_1000) return false;
 
-            // reserve bits must match
-            if (((Value >> H3_RESERVED_OFFSET) & 0b10000111) != 0) return false;
-
-            // must be cell
-            if (((Value >> H3_MODE_OFFSET) & 0b1111) != (int)Mode.Cell) return false;
-
-            // must be valid base cell
-            var baseCell = (Value >> H3_BC_OFFSET) & 0b1111111;
+            // must be a valid base cell; no need to validate the resolution,
+            // as any 4 bit value is a valid resolution
+            var baseCell = (Value >> H3_BC_OFFSET) & 0b111_1111;
             if (baseCell >= NUM_BASE_CELLS) return false;
 
-            // get resolution
-            var resolution = (int)(Value >> H3_RES_OFFSET & 0b1111);
+            var resolution = (int)((Value >> H3_RES_OFFSET) & 0b1111);
 
-            // Check for the tail of unused cells after `resolution` cells
-            // We expect every bit to be 1 in the tail (because unused cells are
-            // represented by `0b111`), i.e. every bit set to 0 after a NOT.
-            var unusedCount = MAX_H3_RES - resolution;
-            var unusedBitSize = unusedCount * H3_PER_DIGIT_OFFSET;
-            var unusedMask = (ulong)((1 << unusedBitSize) - 1);
-            if ((~Value & unusedMask) != 0) return false;
+            // no digit from 1 to the index's resolution may be Invalid (0b111)
+            var shift = (MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET;
+            var digits = Value >> shift << shift;
+            if ((digits & HI_MAGIC & (~digits - LO_MAGIC)) != 0) return false;
 
-            // check for unused cells
-            var cellsMask = (ulong)((1 << (resolution * H3_PER_DIGIT_OFFSET)) - 1);
-            var cells = (Value >> unusedBitSize) & cellsMask;
-            if (((~cells - LO_MAGIC) & cells & HI_MAGIC) != 0) return false;
+            // every digit after the index's resolution must be Invalid (0b111);
+            // note the resolution check is required as we can't shift by 64
+            if (resolution < MAX_H3_RES) {
+                var unused = ~Value << (LNZ_OFFSET + resolution * H3_PER_DIGIT_OFFSET);
+                if (unused != 0) return false;
+            }
 
-            // check for pentagons with deleted subsequence
-            if (!BaseCells.Cells[baseCell].IsPentagon || resolution == 0) return true;
-            var offset = 64 - resolution * H3_PER_DIGIT_OFFSET;
-            return ((cells << offset).LeadingZeros() + 1) % 3 != 0;
+            // pentagons may not contain a leading K (deleted subsequence) digit;
+            // i.e. the first non-zero digit may not be a 1, meaning the first
+            // one bit of the digits may not fall on a digit boundary
+            if (BaseCells.IsPentagonCellNumber((int)baseCell)) {
+                var cells = Value << LNZ_OFFSET >> LNZ_OFFSET;
+                if (cells != 0 && (63 - cells.LeadingZeros()) % 3 == 0) return false;
+            }
+
+            return true;
         }
     }
 
     /// <summary>
+    /// Whether or not the index is a valid H3 index of any mode, i.e. a
+    /// valid cell, directed edge or vertex index.
+    /// </summary>
+    public readonly bool IsValidIndex => IsValidCell || this.IsValidDirectedEdge() || this.IsValidVertex();
+
+    /// <summary>
     /// The leading non-zero Direction "digit" of the index.
     /// </summary>
-    public Direction LeadingNonZeroDirection {
+    public readonly Direction LeadingNonZeroDirection {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get {
             var resolution = Resolution;
-            for (var r = 1; r <= resolution; r += 1) {
-                var idx = GetDirectionForResolution(r);
-                if (idx != Direction.Center) {
-                    return idx;
-                }
-            }
-
-            return Direction.Center;
+            if (resolution == 0) return Direction.Center;
+            var idx = (Value << LNZ_OFFSET).LeadingZeros();
+            var lnzResolution = idx / H3_PER_DIGIT_OFFSET + 1;
+            return GetDirectionForResolution(lnzResolution < resolution ? lnzResolution : resolution);
         }
     }
 
     /// <summary>
     /// Whether or not this index should be considered as a pentagon.
     /// </summary>
-    public bool IsPentagon {
+    public readonly bool IsPentagon {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => BaseCell.IsPentagon && LeadingNonZeroDirection == Direction.Center;
+        get => BaseCells.IsPentagonCellNumber(BaseCellNumber) && LeadingNonZeroDirection == Direction.Center;
     }
 
     /// <summary>
     /// The maximum number of possible icosahedron faces the index
     /// may intersect.
     /// </summary>
-    public int MaximumFaceCount => IsPentagon ? 5 : 2;
+    public readonly int MaximumFaceCount => IsPentagon ? 5 : 2;
 
     #endregion properties
 
@@ -224,6 +231,56 @@ public sealed partial class H3Index : IComparable<H3Index> {
         return index;
     }
 
+    /// <summary>
+    /// Creates and validates a cell index from its components: a resolution, a
+    /// base cell number and one digit per resolution from 1 to
+    /// <paramref name="resolution"/>.
+    /// </summary>
+    /// <param name="resolution">Cell resolution, 0 - 15</param>
+    /// <param name="baseCellNumber">Base cell number, 0 - 121</param>
+    /// <param name="digits">Digit for each resolution from 1 to
+    /// <paramref name="resolution"/>; must contain at least
+    /// <paramref name="resolution"/> entries</param>
+    /// <returns>The validated cell index</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided
+    /// resolution, base cell number or a digit is out of range.</exception>
+    /// <exception cref="ArgumentException">Thrown when insufficient digits are
+    /// provided, or the components do not produce a valid cell (e.g. a digit
+    /// within the deleted k subsequence of a pentagon).</exception>
+    public static H3Index Create(int resolution, int baseCellNumber, IReadOnlyList<Direction> digits) {
+        ValidateResolution(resolution);
+
+        if (baseCellNumber is < 0 or >= NUM_BASE_CELLS) {
+            throw new ArgumentOutOfRangeException(nameof(baseCellNumber), baseCellNumber, $"must be within the range 0 - {NUM_BASE_CELLS - 1}");
+        }
+
+        if (digits == null) throw new ArgumentNullException(nameof(digits));
+        if (digits.Count < resolution) {
+            throw new ArgumentException($"must contain at least {resolution} digits", nameof(digits));
+        }
+
+        H3Index index = new() {
+            Mode = Mode.Cell,
+            Resolution = resolution,
+            BaseCellNumber = baseCellNumber
+        };
+
+        for (var r = 1; r <= resolution; r += 1) {
+            var digit = digits[r - 1];
+            if (digit is < Direction.Center or >= Direction.Invalid) {
+                throw new ArgumentOutOfRangeException(nameof(digits), digit, $"digit at resolution {r} is out of range");
+            }
+
+            index.SetDirectionForResolution(r, digit);
+        }
+
+        if (!index.IsValidCell) {
+            throw new ArgumentException("components do not produce a valid cell", nameof(digits));
+        }
+
+        return index;
+    }
+
     #region manipulations
 
     /// <summary>
@@ -232,7 +289,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// <param name="resolution"></param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Direction GetDirectionForResolution(int resolution) {
+    public readonly Direction GetDirectionForResolution(int resolution) {
         var v = (int)((Value >> ((MAX_H3_RES - resolution) * H3_PER_DIGIT_OFFSET)) & H3_DIGIT_MASK);
         return (Direction)v;
     }
@@ -262,6 +319,21 @@ public sealed partial class H3Index : IComparable<H3Index> {
     }
 
     /// <summary>
+    /// Produces the raw index value of the parent of this index at the specified
+    /// resolution, without allocating.  Assumes the index is a well-formed cell
+    /// (digits beyond its resolution are already Invalid) and that
+    /// <paramref name="parentResolution"/> is coarser than or equal to the
+    /// index's resolution.
+    /// </summary>
+    /// <param name="parentResolution"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal readonly ulong GetParentValueForResolution(int parentResolution) {
+        var value = (Value & H3_RES_MASK_NEGATIVE) | ((ulong)parentResolution << H3_RES_OFFSET);
+        return value | ((1UL << ((MAX_H3_RES - parentResolution) * H3_PER_DIGIT_OFFSET)) - 1);
+    }
+
+    /// <summary>
     /// Zeros the Direction "digits" for the indexes starting at startResolution
     /// and ending at endResolution.
     /// </summary>
@@ -281,24 +353,6 @@ public sealed partial class H3Index : IComparable<H3Index> {
     }
 
     /// <summary>
-    /// Invalidates the Direction "digits" for the indexes starting at startResolution
-    /// and ending at endResolution
-    /// </summary>
-    /// <param name="startResolution"></param>
-    /// <param name="endResolution"></param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void InvalidateDirectionsForResolutionRange(int startResolution, int endResolution) {
-        if (startResolution > endResolution) return;
-
-        var m = ~0UL;
-        m <<= H3_PER_DIGIT_OFFSET * (endResolution - startResolution + 1);
-        m = ~m;
-        m <<= H3_PER_DIGIT_OFFSET * (15 - endResolution);
-
-        Value |= m;
-    }
-
-    /// <summary>
     /// Performs an in-place 60 degree clockwise rotation of the index.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -315,26 +369,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RotatePentagonCounterClockwise() {
-        var resolution = Resolution;
-        var foundFirstNonZeroDigit = false;
-
-        for (var r = 1; r <= resolution; r += 1) {
-            // rotate digit
-            SetDirectionForResolution(r, GetDirectionForResolution(r).RotateCounterClockwise());
-
-            // look for the first non-zero digit so we
-            // can adjust for deleted k-axes sequence
-            // if necessary
-            if (foundFirstNonZeroDigit || GetDirectionForResolution(r) == Direction.Center)
-                continue;
-
-            foundFirstNonZeroDigit = true;
-
-            // adjust for deleted k-axes sequence
-            if (LeadingNonZeroDirection == Direction.K) {
-                RotateCounterClockwise();
-            }
-        }
+        RotateCounterClockwise(LeadingNonZeroDirection == Direction.JK ? 2 : 1);
     }
 
     /// <summary>
@@ -342,26 +377,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RotatePentagonClockwise() {
-        var resolution = Resolution;
-        var foundFirstNonZeroDigit = false;
-
-        for (var r = 1; r <= resolution; r += 1) {
-            // rotate digit
-            SetDirectionForResolution(r, GetDirectionForResolution(r).RotateClockwise());
-
-            // look for the first non-zero digit so we
-            // can adjust for deleted k-axes sequence
-            // if necessary
-            if (foundFirstNonZeroDigit || GetDirectionForResolution(r) == Direction.Center)
-                continue;
-
-            foundFirstNonZeroDigit = true;
-
-            // adjust for deleted k-axes sequence
-            if (LeadingNonZeroDirection == Direction.K) {
-                RotateClockwise();
-            }
-        }
+        RotateClockwise(LeadingNonZeroDirection == Direction.IK ? 2 : 1);
     }
 
     #endregion manipulations
@@ -374,11 +390,12 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// </summary>
     /// <param name="faceIjk"></param>
     /// <returns></returns>
-    public bool ToFaceWithInitializedFijk(FaceIJK faceIjk) {
+    public readonly bool ToFaceWithInitializedFijk(ref FaceIJK faceIjk) {
         var resolution = Resolution;
 
         // center base cell hierarchy is entirely on this face
-        var possibleOverage = !(!BaseCell.IsPentagon && (resolution == 0 || faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0));
+        var possibleOverage = BaseCells.IsPentagonCellNumber(BaseCellNumber) || resolution != 0 ||
+                              (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0);
 
         for (var r = 1; r <= resolution; r += 1) {
             if (IsResolutionClass3(r)) {
@@ -396,24 +413,24 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// <summary>
     /// Convert a <see cref="H3Index"/> to a <see cref="FaceIJK"/> address.
     /// </summary>
-    /// <param name="toUpdateFijk">optional value to update and return
-    /// instead of allocating a new address</param>
     /// <returns></returns>
-    public FaceIJK ToFaceIJK(FaceIJK? toUpdateFijk = default) {
+    public readonly FaceIJK ToFaceIJK() {
         var index = this;
+        var isPentagon = BaseCells.IsPentagonCellNumber(BaseCellNumber);
 
-        if (BaseCell.IsPentagon && LeadingNonZeroDirection == Direction.IK) {
+        if (isPentagon && LeadingNonZeroDirection == Direction.IK) {
             index = new(this);
             index.RotateClockwise();
         }
 
         // start with the "home" face and ijk+ coordinates for the base cell of c
-        var fijk = toUpdateFijk ?? new FaceIJK();
-        fijk.Face = BaseCell.Home.Face;
-        fijk.Coord.I = BaseCell.Home.Coord.I;
-        fijk.Coord.J = BaseCell.Home.Coord.J;
-        fijk.Coord.K = BaseCell.Home.Coord.K;
-        var overage = index.ToFaceWithInitializedFijk(fijk);
+        var home = BaseCell.Home;
+        var fijk = new FaceIJK();
+        fijk.Face = home.Face;
+        fijk.Coord.I = home.Coord.I;
+        fijk.Coord.J = home.Coord.J;
+        fijk.Coord.K = home.Coord.K;
+        var overage = index.ToFaceWithInitializedFijk(ref fijk);
 
         // no overage is possible; h lies on this face
         if (!overage) return fijk;
@@ -434,11 +451,11 @@ public sealed partial class H3Index : IComparable<H3Index> {
 
         // adjust for overage if needed
         // a pentagon base cell with a leading 4 digit requires special handling
-        var pentLeading4 = BaseCell.IsPentagon && index.LeadingNonZeroDirection == Direction.I;
+        var pentLeading4 = isPentagon && index.LeadingNonZeroDirection == Direction.I;
         if (fijk.AdjustOverageClass2(resolution, pentLeading4, false) != Overage.None) {
             // if the base cell is a pentagon we have the potential for secondary
             // overages
-            if (BaseCell.IsPentagon) {
+            if (isPentagon) {
                 while (fijk.AdjustOverageClass2(resolution, false, false) != Overage.None) { }
             }
 
@@ -459,17 +476,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// <see cref="H3Index"/>
     /// </summary>
     /// <returns>Center point LatLng</returns>
-    [Obsolete("as of 4.0: use ToLatLng instead")]
-    public GeoCoord ToGeoCoord() {
-        return new GeoCoord(ToLatLng());
-    }
-
-    /// <summary>
-    /// Determines the spherical coordinates of the center point of a
-    /// <see cref="H3Index"/>
-    /// </summary>
-    /// <returns>Center point LatLng</returns>
-    public LatLng ToLatLng() => ToFaceIJK().ToGeoCoord(Resolution);
+    public readonly LatLng ToLatLng() => ToFaceIJK().ToLatLng(Resolution);
 
     /// <summary>
     /// Determines the spherical coordinates of the center point of a <see cref="H3Index"/>,
@@ -479,7 +486,7 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// point; defaults to <see cref="Utils.DefaultGeometryFactory"/>.  Note that
     /// coordinates are provided in degrees and SRS is assumed to be EPSG:4326.</param>
     /// <returns></returns>
-    public Point ToPoint(GeometryFactory? geometryFactory = null) =>
+    public readonly Point ToPoint(GeometryFactory? geometryFactory = null) =>
         ToLatLng().ToPoint(geometryFactory);
 
     /// <summary>
@@ -498,8 +505,9 @@ public sealed partial class H3Index : IComparable<H3Index> {
         };
 
         if (resolution == 0) {
-            if (face.BaseCellRotation == null || face.Coord.I > MAX_FACE_COORD || face.Coord.J > MAX_FACE_COORD || face.Coord.K > MAX_FACE_COORD) return Invalid;
-            index.BaseCellNumber = face.BaseCellRotation.Cell;
+            if (face.Coord.I > MAX_FACE_COORD || face.Coord.J > MAX_FACE_COORD || face.Coord.K > MAX_FACE_COORD) return Invalid;
+            index.BaseCellNumber = LookupTables.FaceIjkBaseCellTable[
+                LookupTables.FlatFaceIjkIndex(face.Face, face.Coord.I, face.Coord.J, face.Coord.K)];
             return index;
         }
 
@@ -541,20 +549,20 @@ public sealed partial class H3Index : IComparable<H3Index> {
         }
 
         if (ijk.I > MAX_FACE_COORD || ijk.J > MAX_FACE_COORD || ijk.K > MAX_FACE_COORD) return Invalid;
-        var baseCellRotation = LookupTables.FaceIjkBaseCells[face.Face, ijk.I, ijk.J, ijk.K];
+        var flat = LookupTables.FlatFaceIjkIndex(face.Face, ijk.I, ijk.J, ijk.K);
 
         // found our base cell
-        index.BaseCellNumber = baseCellRotation.Cell;
-        var baseCell = baseCellRotation.BaseCell;
-        var numRotations = baseCellRotation.CounterClockwiseRotations;
+        var baseCellNumber = LookupTables.FaceIjkBaseCellTable[flat];
+        index.BaseCellNumber = baseCellNumber;
+        var numRotations = LookupTables.FaceIjkBaseCellRotationTable[flat];
 
         // rotate if necessary to get canonical base cell orientation
         // for this base cell
-        if (baseCell.IsPentagon) {
+        if (BaseCells.IsPentagonCellNumber(baseCellNumber)) {
             // force rotation out of missing k-axes sub-sequence
             if (index.LeadingNonZeroDirection == Direction.K) {
                 // check for a cw/ ccw offset face; default is ccw
-                if (baseCell.FaceMatchesOffset(face.Face)) {
+                if (BaseCells.Cells[baseCellNumber].FaceMatchesOffset(face.Face)) {
                     index.RotateClockwise();
                 } else {
                     index.RotateCounterClockwise();
@@ -578,18 +586,6 @@ public sealed partial class H3Index : IComparable<H3Index> {
     /// <param name="latLng">The spherical coordinates to encode</param>
     /// <param name="resolution">The desired H3 resolution for the encoding</param>
     /// <returns>Returns H3Index.Invalid (H3_NULL) on invalid input</returns>
-    [Obsolete("as of 4.0: use FromLatLng instead")]
-    public static H3Index FromGeoCoord(GeoCoord latLng, int resolution) {
-        return FromLatLng(new LatLng(latLng.Latitude, latLng.Longitude), resolution);
-    }
-
-    /// <summary>
-    /// Encodes a coordinate on the sphere to the H3 index of the containing cell at
-    /// the specified resolution.
-    /// </summary>
-    /// <param name="latLng">The spherical coordinates to encode</param>
-    /// <param name="resolution">The desired H3 resolution for the encoding</param>
-    /// <returns>Returns H3Index.Invalid (H3_NULL) on invalid input</returns>
     public static H3Index FromLatLng(LatLng latLng, int resolution) {
         if (resolution is < 0 or > MAX_H3_RES) return Invalid;
 
@@ -598,53 +594,136 @@ public sealed partial class H3Index : IComparable<H3Index> {
 #else
         if (!double.IsFinite(latLng.Latitude) || !double.IsFinite(latLng.Longitude)) return Invalid;
 #endif
-        return FromFaceIJK(FaceIJK.FromGeoCoord(latLng.Longitude, latLng.Latitude, resolution), resolution);
+        return FromFaceIJK(FaceIJK.FromLatLng(latLng.Longitude, latLng.Latitude, resolution), resolution);
     }
 
     public static H3Index FromPoint(Point point, int resolution) =>
         FromLatLng(LatLng.FromPoint(point), resolution);
 
+    /// <summary>
+    /// The total number of cells (hexagons and pentagons) that exist at the
+    /// specified resolution.
+    /// </summary>
+    /// <param name="resolution">Cell resolution, 0 - 15</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided
+    /// resolution is outside of the range 0 - 15.</exception>
+    public static long GetNumberOfCells(int resolution) {
+        ValidateResolution(resolution);
+        return 2 + 120 * IPow(7, resolution);
+    }
+
+    /// <summary>
+    /// All of the resolution 0 cell indexes.  These are the coarsest cells
+    /// that comprise the H3 indexing scheme, and can be used with e.g.
+    /// <see cref="H3HierarchyExtensions.GetChildrenForResolution"/> to
+    /// iterate over the entire grid at a given resolution.
+    /// </summary>
+    /// <returns>All 122 resolution 0 cell indexes.</returns>
+    public static IEnumerable<H3Index> GetRes0Cells() {
+        for (var baseCellNumber = 0; baseCellNumber < NUM_BASE_CELLS; baseCellNumber += 1) {
+            yield return Create(0, baseCellNumber, Direction.Center);
+        }
+    }
+
+    /// <summary>
+    /// All of the pentagon cell indexes at the specified resolution.
+    /// </summary>
+    /// <param name="resolution">Cell resolution, 0 - 15</param>
+    /// <returns>All 12 pentagon cell indexes at the resolution.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided
+    /// resolution is outside of the range 0 - 15.</exception>
+    public static IReadOnlyList<H3Index> GetPentagons(int resolution) {
+        ValidateResolution(resolution);
+        return LookupTables.PentagonIndexesPerResolution[resolution];
+    }
+
+    /// <summary>
+    /// The average area of a hexagon cell at the specified resolution, in km^2.
+    /// Excludes the 12 pentagon cells per resolution.
+    /// </summary>
+    /// <param name="resolution">Cell resolution, 0 - 15</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided
+    /// resolution is outside of the range 0 - 15.</exception>
+    public static double GetHexagonAreaAverageInKmSquared(int resolution) {
+        ValidateResolution(resolution);
+        return LookupTables.HexgonAreasInKm2[resolution];
+    }
+
+    /// <summary>
+    /// The average area of a hexagon cell at the specified resolution, in m^2.
+    /// Excludes the 12 pentagon cells per resolution.
+    /// </summary>
+    /// <param name="resolution">Cell resolution, 0 - 15</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided
+    /// resolution is outside of the range 0 - 15.</exception>
+    public static double GetHexagonAreaAverageInMSquared(int resolution) {
+        ValidateResolution(resolution);
+        return LookupTables.HexagonAreasInM2[resolution];
+    }
+
+    /// <summary>
+    /// The average edge length of a hexagon cell at the specified resolution,
+    /// in kilometers.  Excludes the 12 pentagon cells per resolution.
+    /// </summary>
+    /// <param name="resolution">Cell resolution, 0 - 15</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided
+    /// resolution is outside of the range 0 - 15.</exception>
+    public static double GetHexagonEdgeLengthAverageInKm(int resolution) {
+        ValidateResolution(resolution);
+        return LookupTables.EdgeLengthsInKm[resolution];
+    }
+
+    /// <summary>
+    /// The average edge length of a hexagon cell at the specified resolution,
+    /// in meters.  Excludes the 12 pentagon cells per resolution.
+    /// </summary>
+    /// <param name="resolution">Cell resolution, 0 - 15</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the provided
+    /// resolution is outside of the range 0 - 15.</exception>
+    public static double GetHexagonEdgeLengthAverageInM(int resolution) {
+        ValidateResolution(resolution);
+        return LookupTables.EdgeLengthsInM[resolution];
+    }
+
+    private static void ValidateResolution(int resolution) {
+        if (resolution is < 0 or > MAX_H3_RES) {
+            throw new ArgumentOutOfRangeException(nameof(resolution), resolution, $"must be within the range 0 - {MAX_H3_RES}");
+        }
+    }
+
     public static implicit operator ulong(H3Index index) => index.Value;
 
     public static implicit operator H3Index(ulong value) => new(value);
 
-    public override string ToString() => $"{Value:x}".ToLowerInvariant();
+    public override readonly string ToString() => Value.ToString("x");
 
     #endregion conversions
 
-    public int CompareTo(H3Index? other) {
-        return other == null ? 1 : Value.CompareTo(other.Value);
-    }
+    public readonly int CompareTo(H3Index other) => Value.CompareTo(other.Value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(H3Index? a, H3Index? b) {
-        if (a is null) return b is null;
-        if (b is null) return false;
-        return a.Value == b.Value;
-    }
+    public readonly bool Equals(H3Index other) => Value == other.Value;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(H3Index? a, H3Index? b) {
-        if (a is null) return b is not null;
-        if (b is null) return true;
-        return a.Value != b.Value;
-    }
+    public static bool operator ==(H3Index a, H3Index b) => a.Value == b.Value;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(H3Index? a, ulong b) {
-        if (a is null) return false;
-        return a.Value == b;
-    }
+    public static bool operator !=(H3Index a, H3Index b) => a.Value != b.Value;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(H3Index? a, ulong b) {
-        if (a is null) return true;
-        return a.Value != b;
-    }
+    public static bool operator ==(H3Index a, ulong b) => a.Value == b;
 
-    public override bool Equals(object? other) => other is H3Index i && Value == i.Value ||
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator !=(H3Index a, ulong b) => a.Value != b;
+
+    public override readonly bool Equals(object? other) => other is H3Index i && Value == i.Value ||
                                                   other is ulong l && Value == l;
 
-    public override int GetHashCode() => Value.GetHashCode();
+    public override readonly int GetHashCode() => Value.GetHashCode();
 
 }

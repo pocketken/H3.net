@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Runtime.CompilerServices;
 using static H3.Constants;
+
+#nullable enable
 
 namespace H3.Model; 
 
-public static class LookupTables {
+public static partial class LookupTables {
 
     #region basecells
 
@@ -24,428 +24,48 @@ public static class LookupTables {
     ///
     /// Valid lookup coordinates are from(0, 0, 0) to(2, 2, 2).
     /// </summary>
-    public static readonly BaseCellRotation[,,,] FaceIjkBaseCells = {
-        {
-            // face 0
-            {
-                // i 0
-                {(16, 0), (18, 0), (24, 0)},  // j 0
-                {(33, 0), (30, 0), (32, 3)},  // j 1
-                {(49, 1), (48, 3), (50, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(8, 0), (5, 5), (10, 5)},    // j 0
-                {(22, 0), (16, 0), (18, 0)},  // j 1
-                {(41, 1), (33, 0), (30, 0)}   // j 2
-            },
-            {
-                // i 2
-                {(4, 0), (0, 5), (2, 5)},    // j 0
-                {(15, 1), (8, 0), (5, 5)},   // j 1
-                {(31, 1), (22, 0), (16, 0)}  // j 2
+    private static BaseCellRotation[,,,]? _faceIjkBaseCells;
+
+    /// <summary>
+    /// Resolution 0 base cell lookup table for each face.
+    ///
+    /// Given the face number and a resolution 0 ijk+ coordinate in that face's
+    /// face-centered ijk coordinate system, gives the base cell located at that
+    /// coordinate and the number of 60 ccw rotations to rotate into that base
+    /// cell's orientation.
+    ///
+    /// Valid lookup coordinates are from (0, 0, 0) to (2, 2, 2).
+    /// </summary>
+    public static BaseCellRotation[,,,] FaceIjkBaseCells {
+        get {
+            var cells = _faceIjkBaseCells;
+            if (cells != null) return cells;
+
+            cells = new BaseCellRotation[NUM_ICOSA_FACES, 3, 3, 3];
+            for (var face = 0; face < NUM_ICOSA_FACES; face += 1) {
+                for (var i = 0; i < 3; i += 1) {
+                    for (var j = 0; j < 3; j += 1) {
+                        for (var k = 0; k < 3; k += 1) {
+                            var flat = FlatFaceIjkIndex(face, i, j, k);
+                            cells[face, i, j, k] = (FaceIjkBaseCellTable[flat], FaceIjkBaseCellRotationTable[flat]);
+                        }
+                    }
+                }
             }
-        },
-        {
-            // face 1
-            {
-                // i 0
-                {(2, 0), (6, 0), (14, 0)},    // j 0
-                {(10, 0), (11, 0), (17, 3)},  // j 1
-                {(24, 1), (23, 3), (25, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(0, 0), (1, 5), (9, 5)},    // j 0
-                {(5, 0), (2, 0), (6, 0)},    // j 1
-                {(18, 1), (10, 0), (11, 0)}  // j 2
-            },
-            {
-                // i 2
-                {(4, 1), (3, 5), (7, 5)},  // j 0
-                {(8, 1), (0, 0), (1, 5)},  // j 1
-                {(16, 1), (5, 0), (2, 0)}  // j 2
-            }
-        },
-        {
-            // face 2
-            {
-                // i 0
-                {(7, 0), (21, 0), (38, 0)},  // j 0
-                {(9, 0), (19, 0), (34, 3)},  // j 1
-                {(14, 1), (20, 3), (36, 3)}  // j 2
-            },
-            {
-                // i 1
-                {(3, 0), (13, 5), (29, 5)},  // j 0
-                {(1, 0), (7, 0), (21, 0)},   // j 1
-                {(6, 1), (9, 0), (19, 0)}    // j 2
-            },
-            {
-                // i 2
-                {(4, 2), (12, 5), (26, 5)},  // j 0
-                {(0, 1), (3, 0), (13, 5)},   // j 1
-                {(2, 1), (1, 0), (7, 0)}     // j 2
-            }
-        },
-        {
-            // face 3
-            {
-                // i 0
-                {(26, 0), (42, 0), (58, 0)},  // j 0
-                {(29, 0), (43, 0), (62, 3)},  // j 1
-                {(38, 1), (47, 3), (64, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(12, 0), (28, 5), (44, 5)},  // j 0
-                {(13, 0), (26, 0), (42, 0)},  // j 1
-                {(21, 1), (29, 0), (43, 0)}   // j 2
-            },
-            {
-                // i 2
-                {(4, 3), (15, 5), (31, 5)},  // j 0
-                {(3, 1), (12, 0), (28, 5)},  // j 1
-                {(7, 1), (13, 0), (26, 0)}   // j 2
-            }
-        },
-        {
-            // face 4
-            {
-                // i 0
-                {(31, 0), (41, 0), (49, 0)},  // j 0
-                {(44, 0), (53, 0), (61, 3)},  // j 1
-                {(58, 1), (65, 3), (75, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(15, 0), (22, 5), (33, 5)},  // j 0
-                {(28, 0), (31, 0), (41, 0)},  // j 1
-                {(42, 1), (44, 0), (53, 0)}   // j 2
-            },
-            {
-                // i 2
-                {(4, 4), (8, 5), (16, 5)},    // j 0
-                {(12, 1), (15, 0), (22, 5)},  // j 1
-                {(26, 1), (28, 0), (31, 0)}   // j 2
-            }
-        },
-        {
-            // face 5
-            {
-                // i 0
-                {(50, 0), (48, 0), (49, 3)},  // j 0
-                {(32, 0), (30, 3), (33, 3)},  // j 1
-                {(24, 3), (18, 3), (16, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(70, 0), (67, 0), (66, 3)},  // j 0
-                {(52, 3), (50, 0), (48, 0)},  // j 1
-                {(37, 3), (32, 0), (30, 3)}   // j 2
-            },
-            {
-                // i 2
-                {(83, 0), (87, 3), (85, 3)},  // j 0
-                {(74, 3), (70, 0), (67, 0)},  // j 1
-                {(57, 1), (52, 3), (50, 0)}   // j 2
-            }
-        },
-        {
-            // face 6
-            {
-                // i 0
-                {(25, 0), (23, 0), (24, 3)},  // j 0
-                {(17, 0), (11, 3), (10, 3)},  // j 1
-                {(14, 3), (6, 3), (2, 3)}     // j 2
-            },
-            {
-                // i 1
-                {(45, 0), (39, 0), (37, 3)},  // j 0
-                {(35, 3), (25, 0), (23, 0)},  // j 1
-                {(27, 3), (17, 0), (11, 3)}   // j 2
-            },
-            {
-                // i 2
-                {(63, 0), (59, 3), (57, 3)},  // j 0
-                {(56, 3), (45, 0), (39, 0)},  // j 1
-                {(46, 3), (35, 3), (25, 0)}   // j 2
-            }
-        },
-        {
-            // face 7
-            {
-                // i 0
-                {(36, 0), (20, 0), (14, 3)},  // j 0
-                {(34, 0), (19, 3), (9, 3)},   // j 1
-                {(38, 3), (21, 3), (7, 3)}    // j 2
-            },
-            {
-                // i 1
-                {(55, 0), (40, 0), (27, 3)},  // j 0
-                {(54, 3), (36, 0), (20, 0)},  // j 1
-                {(51, 3), (34, 0), (19, 3)}   // j 2
-            },
-            {
-                // i 2
-                {(72, 0), (60, 3), (46, 3)},  // j 0
-                {(73, 3), (55, 0), (40, 0)},  // j 1
-                {(71, 3), (54, 3), (36, 0)}   // j 2
-            }
-        },
-        {
-            // face 8
-            {
-                // i 0
-                {(64, 0), (47, 0), (38, 3)},  // j 0
-                {(62, 0), (43, 3), (29, 3)},  // j 1
-                {(58, 3), (42, 3), (26, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(84, 0), (69, 0), (51, 3)},  // j 0
-                {(82, 3), (64, 0), (47, 0)},  // j 1
-                {(76, 3), (62, 0), (43, 3)}   // j 2
-            },
-            {
-                // i 2
-                {(97, 0), (89, 3), (71, 3)},  // j 0
-                {(98, 3), (84, 0), (69, 0)},  // j 1
-                {(96, 3), (82, 3), (64, 0)}   // j 2
-            }
-        },
-        {
-            // face 9
-            {
-                // i 0
-                {(75, 0), (65, 0), (58, 3)},  // j 0
-                {(61, 0), (53, 3), (44, 3)},  // j 1
-                {(49, 3), (41, 3), (31, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(94, 0), (86, 0), (76, 3)},  // j 0
-                {(81, 3), (75, 0), (65, 0)},  // j 1
-                {(66, 3), (61, 0), (53, 3)}   // j 2
-            },
-            {
-                // i 2
-                {(107, 0), (104, 3), (96, 3)},  // j 0
-                {(101, 3), (94, 0), (86, 0)},   // j 1
-                {(85, 3), (81, 3), (75, 0)}     // j 2
-            }
-        },
-        {
-            // face 10
-            {
-                // i 0
-                {(57, 0), (59, 0), (63, 3)},  // j 0
-                {(74, 0), (78, 3), (79, 3)},  // j 1
-                {(83, 3), (92, 3), (95, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(37, 0), (39, 3), (45, 3)},  // j 0
-                {(52, 0), (57, 0), (59, 0)},  // j 1
-                {(70, 3), (74, 0), (78, 3)}   // j 2
-            },
-            {
-                // i 2
-                {(24, 0), (23, 3), (25, 3)},  // j 0
-                {(32, 3), (37, 0), (39, 3)},  // j 1
-                {(50, 3), (52, 0), (57, 0)}   // j 2
-            }
-        },
-        {
-            // face 11
-            {
-                // i 0
-                {(46, 0), (60, 0), (72, 3)},  // j 0
-                {(56, 0), (68, 3), (80, 3)},  // j 1
-                {(63, 3), (77, 3), (90, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(27, 0), (40, 3), (55, 3)},  // j 0
-                {(35, 0), (46, 0), (60, 0)},  // j 1
-                {(45, 3), (56, 0), (68, 3)}   // j 2
-            },
-            {
-                // i 2
-                {(14, 0), (20, 3), (36, 3)},  // j 0
-                {(17, 3), (27, 0), (40, 3)},  // j 1
-                {(25, 3), (35, 0), (46, 0)}   // j 2
-            }
-        },
-        {
-            // face 12
-            {
-                // i 0
-                {(71, 0), (89, 0), (97, 3)},   // j 0
-                {(73, 0), (91, 3), (103, 3)},  // j 1
-                {(72, 3), (88, 3), (105, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(51, 0), (69, 3), (84, 3)},  // j 0
-                {(54, 0), (71, 0), (89, 0)},  // j 1
-                {(55, 3), (73, 0), (91, 3)}   // j 2
-            },
-            {
-                // i 2
-                {(38, 0), (47, 3), (64, 3)},  // j 0
-                {(34, 3), (51, 0), (69, 3)},  // j 1
-                {(36, 3), (54, 0), (71, 0)}   // j 2
-            }
-        },
-        {
-            // face 13
-            {
-                // i 0
-                {(96, 0), (104, 0), (107, 3)},  // j 0
-                {(98, 0), (110, 3), (115, 3)},  // j 1
-                {(97, 3), (111, 3), (119, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(76, 0), (86, 3), (94, 3)},   // j 0
-                {(82, 0), (96, 0), (104, 0)},  // j 1
-                {(84, 3), (98, 0), (110, 3)}   // j 2
-            },
-            {
-                // i 2
-                {(58, 0), (65, 3), (75, 3)},  // j 0
-                {(62, 3), (76, 0), (86, 3)},  // j 1
-                {(64, 3), (82, 0), (96, 0)}   // j 2
-            }
-        },
-        {
-            // face 14
-            {
-                // i 0
-                {(85, 0), (87, 0), (83, 3)},     // j 0
-                {(101, 0), (102, 3), (100, 3)},  // j 1
-                {(107, 3), (112, 3), (114, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(66, 0), (67, 3), (70, 3)},   // j 0
-                {(81, 0), (85, 0), (87, 0)},   // j 1
-                {(94, 3), (101, 0), (102, 3)}  // j 2
-            },
-            {
-                // i 2
-                {(49, 0), (48, 3), (50, 3)},  // j 0
-                {(61, 3), (66, 0), (67, 3)},  // j 1
-                {(75, 3), (81, 0), (85, 0)}   // j 2
-            }
-        },
-        {
-            // face 15
-            {
-                // i 0
-                {(95, 0), (92, 0), (83, 0)},  // j 0
-                {(79, 0), (78, 0), (74, 3)},  // j 1
-                {(63, 1), (59, 3), (57, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(109, 0), (108, 0), (100, 5)},  // j 0
-                {(93, 1), (95, 0), (92, 0)},     // j 1
-                {(77, 1), (79, 0), (78, 0)}      // j 2
-            },
-            {
-                // i 2
-                {(117, 4), (118, 5), (114, 5)},  // j 0
-                {(106, 1), (109, 0), (108, 0)},  // j 1
-                {(90, 1), (93, 1), (95, 0)}      // j 2
-            }
-        },
-        {
-            // face 16
-            {
-                // i 0
-                {(90, 0), (77, 0), (63, 0)},  // j 0
-                {(80, 0), (68, 0), (56, 3)},  // j 1
-                {(72, 1), (60, 3), (46, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(106, 0), (93, 0), (79, 5)},  // j 0
-                {(99, 1), (90, 0), (77, 0)},   // j 1
-                {(88, 1), (80, 0), (68, 0)}    // j 2
-            },
-            {
-                // i 2
-                {(117, 3), (109, 5), (95, 5)},  // j 0
-                {(113, 1), (106, 0), (93, 0)},  // j 1
-                {(105, 1), (99, 1), (90, 0)}    // j 2
-            }
-        },
-        {
-            // face 17
-            {
-                // i 0
-                {(105, 0), (88, 0), (72, 0)},  // j 0
-                {(103, 0), (91, 0), (73, 3)},  // j 1
-                {(97, 1), (89, 3), (71, 3)}    // j 2
-            },
-            {
-                // i 1
-                {(113, 0), (99, 0), (80, 5)},   // j 0
-                {(116, 1), (105, 0), (88, 0)},  // j 1
-                {(111, 1), (103, 0), (91, 0)}   // j 2
-            },
-            {
-                // i 2
-                {(117, 2), (106, 5), (90, 5)},  // j 0
-                {(121, 1), (113, 0), (99, 0)},  // j 1
-                {(119, 1), (116, 1), (105, 0)}  // j 2
-            }
-        },
-        {
-            // face 18
-            {
-                // i 0
-                {(119, 0), (111, 0), (97, 0)},  // j 0
-                {(115, 0), (110, 0), (98, 3)},  // j 1
-                {(107, 1), (104, 3), (96, 3)}   // j 2
-            },
-            {
-                // i 1
-                {(121, 0), (116, 0), (103, 5)},  // j 0
-                {(120, 1), (119, 0), (111, 0)},  // j 1
-                {(112, 1), (115, 0), (110, 0)}   // j 2
-            },
-            {
-                // i 2
-                {(117, 1), (113, 5), (105, 5)},  // j 0
-                {(118, 1), (121, 0), (116, 0)},  // j 1
-                {(114, 1), (120, 1), (119, 0)}   // j 2
-            }
-        },
-        {
-            // face 19
-            {
-                // i 0
-                {(114, 0), (112, 0), (107, 0)},  // j 0
-                {(100, 0), (102, 0), (101, 3)},  // j 1
-                {(83, 1), (87, 3), (85, 3)}      // j 2
-            },
-            {
-                // i 1
-                {(118, 0), (120, 0), (115, 5)},  // j 0
-                {(108, 1), (114, 0), (112, 0)},  // j 1
-                {(92, 1), (100, 0), (102, 0)}    // j 2
-            },
-            {
-                // i 2
-                {(117, 0), (121, 5), (119, 5)},  // j 0
-                {(109, 1), (118, 0), (120, 0)},  // j 1
-                {(95, 1), (108, 1), (114, 0)}    // j 2
-            }
+
+            _faceIjkBaseCells = cells;
+            return cells;
         }
-    };
+    }
+
+    /// <summary>
+    /// Index into <see cref="FaceIjkBaseCellTable"/> and
+    /// <see cref="FaceIjkBaseCellRotationTable"/> for the given face and
+    /// resolution 0 ijk+ coordinate components (0 &lt;= i, j, k &lt;= 2).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int FlatFaceIjkIndex(int face, int i, int j, int k) =>
+        face * 27 + i * 9 + j * 3 + k;
 
     #endregion basecells
 
@@ -517,15 +137,6 @@ public static class LookupTables {
         new(0, 1, 5),
         new(4, 0, 5)
     };
-
-    public static readonly Dictionary<Direction, CoordIJK> DirectionToUnitVector =
-        Enum.GetValues(typeof(Direction)).Cast<Direction>().ToDictionary(e => e, e => e switch {
-            Direction.Invalid => CoordIJK.InvalidIJKCoordinate,
-            _ => UnitVectors[(int)e]
-        });
-
-    public static readonly Dictionary<CoordIJK, Direction> UnitVectorToDirection =
-        DirectionToUnitVector.ToDictionary(e => e.Value, e => e.Key);
 
     #endregion coordinates + unit vectors
 
@@ -882,150 +493,6 @@ public static class LookupTables {
     public const Direction NextRingDirection = Direction.I;
 
     /// <summary>
-    /// New digit when traversing along class II grids.
-    ///
-    /// Current digit -> direction -> new digit.
-    /// </summary>
-    public static readonly Direction[,] NewDirectionClass2 = {
-        {
-            Direction.Center, Direction.K, Direction.J, Direction.JK, Direction.I,
-            Direction.IK, Direction.IJ
-        },
-        {
-            Direction.K, Direction.I, Direction.JK, Direction.IJ, Direction.IK,
-            Direction.J, Direction.Center
-        },
-        {
-            Direction.J, Direction.JK, Direction.K, Direction.I, Direction.IJ,
-            Direction.Center, Direction.IK
-        },
-        {
-            Direction.JK, Direction.IJ, Direction.I, Direction.IK, Direction.Center,
-            Direction.K, Direction.J
-        },
-        {
-            Direction.I, Direction.IK, Direction.IJ, Direction.Center, Direction.J,
-            Direction.JK, Direction.K
-        },
-        {
-            Direction.IK, Direction.J, Direction.Center, Direction.K, Direction.JK,
-            Direction.IJ, Direction.I
-        },
-        {
-            Direction.IJ, Direction.Center, Direction.IK, Direction.J, Direction.K,
-            Direction.I, Direction.JK
-        }
-    };
-
-    /// <summary>
-    /// New traversal direction when traversing along class II grids.
-    ///
-    /// Current digit -> direction -> new ap7 move (at coarser level).
-    /// </summary>
-    public static readonly Direction[,] NewAdjustmentClass2 = {
-        {
-            Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.Center,
-            Direction.Center, Direction.Center
-        },
-        {
-            Direction.Center, Direction.K, Direction.Center, Direction.K, Direction.Center,
-            Direction.IK, Direction.Center
-        },
-        {
-            Direction.Center, Direction.Center, Direction.J, Direction.JK, Direction.Center,
-            Direction.Center, Direction.J
-        },
-        {
-            Direction.Center, Direction.K, Direction.JK, Direction.JK, Direction.Center,
-            Direction.Center, Direction.Center
-        },
-        {
-            Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.I,
-            Direction.I, Direction.IJ
-        },
-        {
-            Direction.Center, Direction.IK, Direction.Center, Direction.Center, Direction.I,
-            Direction.IK, Direction.Center
-        },
-        {
-            Direction.Center, Direction.Center, Direction.J, Direction.Center, Direction.IJ,
-            Direction.Center, Direction.IJ
-        }
-    };
-
-    /// <summary>
-    /// New traversal direction when traversing along class III grids.
-    ///
-    /// Current digit -> direction -> new digit.
-    /// </summary>
-    public static readonly Direction[,] NewDirectionClass3 = {
-        {
-            Direction.Center, Direction.K, Direction.J, Direction.JK, Direction.I,
-            Direction.IK, Direction.IJ
-        },
-        {
-            Direction.K, Direction.J, Direction.JK, Direction.I, Direction.IK,
-            Direction.IJ, Direction.Center
-        },
-        {
-            Direction.J, Direction.JK, Direction.I, Direction.IK, Direction.IJ,
-            Direction.Center, Direction.K
-        },
-        {
-            Direction.JK, Direction.I, Direction.IK, Direction.IJ, Direction.Center,
-            Direction.K, Direction.J
-        },
-        {
-            Direction.I, Direction.IK, Direction.IJ, Direction.Center, Direction.K,
-            Direction.J, Direction.JK
-        },
-        {
-            Direction.IK, Direction.IJ, Direction.Center, Direction.K, Direction.J,
-            Direction.JK, Direction.I
-        },
-        {
-            Direction.IJ, Direction.Center, Direction.K, Direction.J, Direction.JK,
-            Direction.I, Direction.IK
-        }
-    };
-
-    /// <summary>
-    /// New traversal direction when traversing along class III grids.
-    ///
-    /// Current digit -> direction -> new ap7 move (at coarser level).
-    /// </summary>
-    public static readonly Direction[,] NewAdjustmentClass3 = {
-        {
-            Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.Center,
-            Direction.Center, Direction.Center
-        },
-        {
-            Direction.Center, Direction.K, Direction.Center, Direction.JK, Direction.Center,
-            Direction.K, Direction.Center
-        },
-        {
-            Direction.Center, Direction.Center, Direction.J, Direction.J, Direction.Center,
-            Direction.Center, Direction.IJ
-        },
-        {
-            Direction.Center, Direction.JK, Direction.J, Direction.JK, Direction.Center,
-            Direction.Center, Direction.Center
-        },
-        {
-            Direction.Center, Direction.Center, Direction.Center, Direction.Center, Direction.I,
-            Direction.IK, Direction.I
-        },
-        {
-            Direction.Center, Direction.K, Direction.Center, Direction.Center, Direction.IK,
-            Direction.IK, Direction.Center
-        },
-        {
-            Direction.Center, Direction.Center, Direction.IJ, Direction.Center, Direction.I,
-            Direction.Center, Direction.IJ
-        }
-    };
-
-    /// <summary>
     /// Origin leading digit -> index leading digit -> rotations 60 cw
     /// Either being 1 (K axis) is invalid.
     /// No good default at 0.
@@ -1111,53 +578,51 @@ public static class LookupTables {
     };
 
     /// <summary>
-    /// A list of all hex indexes that are pentagons at each resolution.
-    /// </summary>
-    public static readonly Dictionary<int, H3Index[]> PentagonIndexesPerResolution = Enumerable.Range(0, MAX_H3_RES + 1)
-        .ToDictionary(resolution => resolution, resolution =>
-            Enumerable.Range(0, NUM_BASE_CELLS - 1)
-                .Where(baseCellNumber => BaseCells.Cells[baseCellNumber].IsPentagon)
-                .Select(baseCellNumber => H3Index.Create(resolution, baseCellNumber, Direction.Center)).ToArray()
-        );
-
-    /// <summary>
-    /// The area of hexagon cells at each resolution in km^2
+    /// The average area of a hexagon cell at each resolution, in km^2.  Excludes
+    /// the 12 pentagon cells per resolution.
     /// </summary>
     public static readonly double[] HexgonAreasInKm2 = {
-        4250546.848, 607220.9782, 86745.85403, 12392.26486,
-        1770.323552, 252.9033645, 36.1290521,  5.1612932,
-        0.7373276,   0.1053325,   0.0150475,   0.0021496,
-        0.0003071,   0.0000439,   0.0000063,   0.0000009
+        4.357449416078383e+06, 6.097884417941332e+05, 8.680178039899720e+04,
+        1.239343465508816e+04, 1.770347654491307e+03, 2.529038581819449e+02,
+        3.612906216441245e+01, 5.161293359717191e+00, 7.373275975944177e-01,
+        1.053325134272067e-01, 1.504750190766435e-02, 2.149643129451879e-03,
+        3.070918756316060e-04, 4.387026794728296e-05, 6.267181135324313e-06,
+        8.953115907605790e-07
     };
 
     /// <summary>
-    /// The area of hexagon cells at each resolution in m^2
+    /// The average area of a hexagon cell at each resolution, in m^2.  Excludes
+    /// the 12 pentagon cells per resolution.
     /// </summary>
     public static readonly double[] HexagonAreasInM2 = {
-        4.25055E+12, 6.07221E+11, 86745854035, 12392264862,
-        1770323552,  252903364.5, 36129052.1,  5161293.2,
-        737327.6,    105332.5,    15047.5,     2149.6,
-        307.1,       43.9,        6.3,         0.9
+        4.357449416078390e+12, 6.097884417941339e+11, 8.680178039899731e+10,
+        1.239343465508818e+10, 1.770347654491309e+09, 2.529038581819452e+08,
+        3.612906216441250e+07, 5.161293359717198e+06, 7.373275975944188e+05,
+        1.053325134272069e+05, 1.504750190766437e+04, 2.149643129451882e+03,
+        3.070918756316063e+02, 4.387026794728301e+01, 6.267181135324322e+00,
+        8.953115907605802e-01
     };
 
     /// <summary>
-    /// TODO figure out what these are actually used for and doc accordingly
+    /// The average edge length of a hexagon cell at each resolution, in km.
+    /// Excludes the 12 pentagon cells per resolution.
     /// </summary>
     public static readonly double[] EdgeLengthsInKm = {
-        1107.712591, 418.6760055, 158.2446558, 59.81085794,
-        22.6063794,  8.544408276, 3.229482772, 1.220629759,
-        0.461354684, 0.174375668, 0.065907807, 0.024910561,
-        0.009415526, 0.003559893, 0.001348575, 0.000509713
+        1281.256011, 483.0568391, 182.5129565, 68.97922179,
+        26.07175968, 9.854090990, 3.724532667, 1.406475763,
+        0.531414010, 0.200786148, 0.075863783, 0.028663897,
+        0.010830188, 0.004092010, 0.001546100, 0.000584169
     };
 
     /// <summary>
-    /// TODO figure out what these are actually used for and doc accordingly
+    /// The average edge length of a hexagon cell at each resolution, in m.
+    /// Excludes the 12 pentagon cells per resolution.
     /// </summary>
     public static readonly double[] EdgeLengthsInM = {
-        1107712.591, 418676.0055, 158244.6558, 59810.85794,
-        22606.3794,  8544.408276, 3229.482772, 1220.629759,
-        461.3546837, 174.3756681, 65.90780749, 24.9105614,
-        9.415526211, 3.559893033, 1.348574562, 0.509713273
+        1281256.011, 483056.8391, 182512.9565, 68979.22179,
+        26071.75968, 9854.090990, 3724.532667, 1406.475763,
+        531.4140101, 200.7861476, 75.86378287, 28.66389748,
+        10.83018784, 4.092010473, 1.546099657, 0.584168630
     };
 
     #endregion other

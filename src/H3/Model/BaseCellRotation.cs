@@ -24,12 +24,10 @@ public sealed class BaseCellRotation {
     public static int GetCounterClockwiseRotationsForBaseCell(int cell, int face) {
         if (face is < 0 or > NUM_ICOSA_FACES) return InvalidRotations;
 
-        for (var i = 0; i < 3; i+= 1) {
-            for (var j = 0; j < 3; j += 1) {
-                for (var k = 0; k < 3; k += 1) {
-                    var e = LookupTables.FaceIjkBaseCells[face, i, j, k];
-                    if (e.Cell == cell) return e.CounterClockwiseRotations;
-                }
+        var offset = face * 27;
+        for (var i = 0; i < 27; i += 1) {
+            if (LookupTables.FaceIjkBaseCellTable[offset + i] == cell) {
+                return LookupTables.FaceIjkBaseCellRotationTable[offset + i];
             }
         }
 

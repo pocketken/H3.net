@@ -76,21 +76,73 @@ public static class Polyfill {
 
     /// <summary>
     /// Returns all of the H3 indexes that are contained within the provided
-    /// <see cref="Geometry"/> at the specified resolution.  Supports Polygons with holes.
+    /// <see cref="Geometry"/> at the specified resolution.  Supports Polygons
+    /// (with holes), MultiPolygons (including disjoint polygons), Points,
+    /// LineStrings and (nested) GeometryCollections thereof.
     /// </summary>
-    /// <param name="polygon">Containment polygon</param>
+    /// <remarks>Geometry coordinates must be provided in WGS84 (EPSG:4326).
+    /// For other coordinate systems, either transform the geometry first
+    /// (e.g. via ProjNet) or use the <see cref="Fill(Geometry, int, Func{H3Index, bool})"/>
+    /// overload and perform containment checks in the desired CRS.</remarks>
+    /// <param name="polygon">Containment geometry</param>
     /// <param name="resolution">H3 resolution</param>
     /// <param name="testMode">Specify which <see cref="VertexTestMode"/> to use when checking
     /// index vertex containment.  Defaults to <see cref="VertexTestMode.Center"/></param>.
-    /// <returns>Indices that are contained within polygon</returns>
+    /// <returns>Indices that are contained within the geometry</returns>
     public static IEnumerable<H3Index> Fill(this Geometry polygon, int resolution, VertexTestMode testMode = VertexTestMode.Center) {
         if (polygon.IsEmpty) return Enumerable.Empty<H3Index>();
-        var isTransMeridian = polygon.IsTransMeridian();
-        var testPoly = isTransMeridian ? SplitGeometry(polygon) : polygon;
+
+        return polygon switch {
+            Point point => new[] { point.Coordinate.ToH3Index(resolution) },
+            LineString line => line.Coordinates.TraceCoordinates(resolution),
+            GeometryCollection collection and not MultiPolygon => FillCollection(collection, resolution, testMode),
+            _ => FillPolygons(polygon, resolution, testMode)
+        };
+    }
+
+    /// <summary>
+    /// Returns all of the H3 indexes that match the provided containment
+    /// predicate, flood-filling outward from the (interior) seed cells of the
+    /// provided <see cref="Geometry"/>.  The predicate receives each candidate
+    /// index and returns whether or not it is part of the fill, allowing custom
+    /// containment logic (e.g. containment tests performed in a different CRS,
+    /// buffered containment and so on).
+    /// </summary>
+    /// <remarks>The predicate must produce a connected fill region that
+    /// includes the geometry's interior points; cells that are not reachable
+    /// from a seed cell via neighbours matching the predicate are not
+    /// produced.</remarks>
+    /// <param name="geometry">Geometry providing the fill seed(s)</param>
+    /// <param name="resolution">H3 resolution</param>
+    /// <param name="predicate">Whether or not a candidate index is contained
+    /// within the fill area</param>
+    /// <returns>Indices that match the containment predicate</returns>
+    public static IEnumerable<H3Index> Fill(this Geometry geometry, int resolution, Func<H3Index, bool> predicate) {
+        if (geometry.IsEmpty) return Enumerable.Empty<H3Index>();
+
+        var testPoly = geometry.IsTransMeridian() ? SplitGeometry(geometry) : geometry;
 
         HashSet<ulong> searched = new();
-        Stack<H3Index> toSearch = new();
-        toSearch.Push(testPoly.InteriorPoint.Coordinate.ToH3Index(resolution));
+        Stack<H3Index> toSearch = new(GetSeeds(testPoly, resolution));
+
+        return FillUsingPredicate(toSearch, searched, predicate);
+    }
+
+    private static IEnumerable<H3Index> FillCollection(GeometryCollection collection, int resolution, VertexTestMode testMode) {
+        HashSet<H3Index> indexes = new();
+
+        foreach (var geometry in collection.Geometries) {
+            indexes.UnionWith(geometry.Fill(resolution, testMode));
+        }
+
+        return indexes;
+    }
+
+    private static IEnumerable<H3Index> FillPolygons(Geometry polygon, int resolution, VertexTestMode testMode) {
+        var testPoly = polygon.IsTransMeridian() ? SplitGeometry(polygon) : polygon;
+
+        HashSet<ulong> searched = new();
+        Stack<H3Index> toSearch = new(GetSeeds(testPoly, resolution));
         IndexedPointInAreaLocator locator = new(testPoly);
 
         return testMode switch {
@@ -99,6 +151,27 @@ public static class Polyfill {
             VertexTestMode.Center => FillUsingCenterVertex(locator, toSearch, searched),
             _ => throw new ArgumentOutOfRangeException(nameof(testMode), "invalid vertex test mode")
         };
+    }
+
+    private static IEnumerable<H3Index> GetSeeds(Geometry geometry, int resolution) {
+        for (var g = 0; g < geometry.NumGeometries; g += 1) {
+            yield return geometry.GetGeometryN(g).InteriorPoint.Coordinate.ToH3Index(resolution);
+        }
+    }
+
+    private static IEnumerable<H3Index> FillUsingPredicate(Stack<H3Index> toSearch, ISet<ulong> searched, Func<H3Index, bool> predicate) {
+        while (toSearch.Count != 0) {
+            var index = toSearch.Pop();
+
+            for (var direction = Direction.Center; direction < Direction.Invalid; direction += 1) {
+                var (neighbour, _) = index.GetDirectNeighbour(direction);
+                if (neighbour == H3Index.Invalid || !searched.Add(neighbour)) continue;
+                if (!predicate(neighbour)) continue;
+
+                yield return neighbour;
+                toSearch.Push(neighbour);
+            }
+        }
     }
 
     /// <summary>
@@ -111,16 +184,15 @@ public static class Polyfill {
     /// <returns></returns>
     private static IEnumerable<H3Index> FillUsingCenterVertex(IPointOnGeometryLocator locator, Stack<H3Index> toSearch, ISet<ulong> searched) {
         var coordinate = new Coordinate();
-        var faceIjk = new FaceIJK();
 
         while (toSearch.Count != 0) {
             var index = toSearch.Pop();
 
-            foreach (var neighbour in index.GetNeighbours()) {
-                if (searched.Contains(neighbour)) continue;
-                searched.Add(neighbour);
+            for (var direction = Direction.Center; direction < Direction.Invalid; direction += 1) {
+                var (neighbour, _) = index.GetDirectNeighbour(direction);
+                if (neighbour == H3Index.Invalid || !searched.Add(neighbour)) continue;
 
-                var location = locator.Locate(neighbour.ToCoordinate(coordinate, faceIjk));
+                var location = locator.Locate(neighbour.ToCoordinate(coordinate));
                 if (location != Location.Interior)
                     continue;
 
@@ -136,16 +208,15 @@ public static class Polyfill {
     /// </summary>
     private static IEnumerable<H3Index> FillUsingAnyVertex(IPointOnGeometryLocator locator, Stack<H3Index> toSearch, ISet<ulong> searched) {
         var coordinate = new Coordinate();
-        var faceIjk = new FaceIJK();
 
         while (toSearch.Count != 0) {
             var index = toSearch.Pop();
 
-            foreach (var neighbour in index.GetNeighbours()) {
-                if (searched.Contains(neighbour)) continue;
-                searched.Add(neighbour);
+            for (var direction = Direction.Center; direction < Direction.Invalid; direction += 1) {
+                var (neighbour, _) = index.GetDirectNeighbour(direction);
+                if (neighbour == H3Index.Invalid || !searched.Add(neighbour)) continue;
 
-                foreach (var vertex in neighbour.GetCellBoundaryVertices(faceIjk)) {
+                foreach (var vertex in neighbour.GetCellBoundaryVertices()) {
                     coordinate.X = vertex.LongitudeDegrees;
                     coordinate.Y = vertex.LatitudeDegrees;
 
@@ -167,18 +238,17 @@ public static class Polyfill {
     /// </summary>
     private static IEnumerable<H3Index> FillUsingAllVertices(IPointOnGeometryLocator locator, Stack<H3Index> toSearch, ISet<ulong> searched) {
         var coordinate = new Coordinate();
-        var faceIjk = new FaceIJK();
 
         while (toSearch.Count != 0) {
             var index = toSearch.Pop();
 
-            foreach (var neighbour in index.GetNeighbours()) {
-                if (searched.Contains(neighbour)) continue;
-                searched.Add(neighbour);
+            for (var direction = Direction.Center; direction < Direction.Invalid; direction += 1) {
+                var (neighbour, _) = index.GetDirectNeighbour(direction);
+                if (neighbour == H3Index.Invalid || !searched.Add(neighbour)) continue;
 
                 var matched = true;
 
-                foreach (var vertex in neighbour.GetCellBoundaryVertices(faceIjk)) {
+                foreach (var vertex in neighbour.GetCellBoundaryVertices()) {
                     coordinate.X = vertex.LongitudeDegrees;
                     coordinate.Y = vertex.LatitudeDegrees;
 
@@ -219,10 +289,8 @@ public static class Polyfill {
 
         // trace the coordinates
         var coordLen = coordinates.Length - 1;
-        FaceIJK faceIjk = new();
         LatLng v1 = new();
         LatLng v2 = new();
-        Vec3d v3d = new();
         for (var c = 0; c < coordLen; c += 1) {
             // from this coordinate to next/first
             var vA = coordinates[c];
@@ -239,7 +307,7 @@ public static class Polyfill {
             for (var j = 1; j < count; j += 1) {
                 // interpolate line
                 var interpolated = LinearLocation.PointAlongSegmentByFraction(vA, vB, (double)j / count);
-                indices.Add(interpolated.ToH3Index(resolution, faceIjk, v3d));
+                indices.Add(interpolated.ToH3Index(resolution));
             }
         }
 

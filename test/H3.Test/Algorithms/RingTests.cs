@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using H3.Algorithms;
+using H3.Extensions;
 using NUnit.Framework;
+
 
 namespace H3.Test.Algorithms; 
 
@@ -114,8 +117,8 @@ public class RingTests {
         var actual = TestHelpers.SfIndex.GridRing(0).ToList();
 
         // Assert
-        Assert.AreEqual(1, actual.Count, "should have count of 1");
-        Assert.AreEqual(TestHelpers.SfIndex, actual[0], "should be equal");
+        Assert.That(actual.Count, Is.EqualTo(1), "should have count of 1");
+        Assert.That(actual[0], Is.EqualTo(TestHelpers.SfIndex), "should be equal");
     }
 
     [Test]
@@ -125,11 +128,11 @@ public class RingTests {
         var actual = TestHelpers.SfIndex.GridRing(k).ToList();
 
         // Assert
-        Assert.AreEqual(expectedRing.Length, actual.Count, "should have same count");
+        Assert.That(actual.Count, Is.EqualTo(expectedRing.Length), "should have same count");
         for (var i = 0; i < expectedRing.Length; i += 1) {
             var expectedIndex = expectedRing[i];
             var actualIndex = actual[i];
-            Assert.AreEqual(expectedIndex, actualIndex, "should be equal");
+            Assert.That(actualIndex, Is.EqualTo(expectedIndex), "should be equal");
         }
     }
 
@@ -141,7 +144,10 @@ public class RingTests {
         H3Index nearPentagon = 0x837405fffffffff;
 
         // Act
-        var exception = Assert.Throws<HexRingPentagonException>(() => nearPentagon.GridRing(k).ToList(), "should throw pentagon exception");
+        var exception = Assert.Throws<HexRingPentagonException>(() => nearPentagon.GridRingUnsafe(k).ToList(), "should throw pentagon exception");
+
+        // Assert
+        Assert.That(exception, Is.Not.Null, "should have thrown exception");
     }
 
     [Test]
@@ -150,7 +156,7 @@ public class RingTests {
         var onPentagon = H3Index.Create(0, 4, 0);
 
         // Act
-        var exception = Assert.Throws<HexRingPentagonException>(() => onPentagon.GridRing(2).ToList(), "should throw pentagon exception");
+        var exception = Assert.Throws<HexRingPentagonException>(() => onPentagon.GridRingUnsafe(2).ToList(), "should throw pentagon exception");
 
         // Assert
         Assert.That(exception, Is.Not.Null, "should have thrown exception");
@@ -162,18 +168,142 @@ public class RingTests {
         H3Index invalidDigit = 0x4d4b00fe5c5c3030;
 
         // Act
-        var exception = Assert.Throws<HexRingKSequenceException>(() => invalidDigit.GridRing(2).First());
+        var exception = Assert.Throws<HexRingKSequenceException>(() => invalidDigit.GridRingUnsafe(2).First());
 
         // Assert
         Assert.That(exception, Is.Not.Null, "should have thrown exception");
     }
 
+    [Test]
+    public void Test_Upstream_GridRing_InvalidCell() {
+        // Arrange
+        H3Index invalidDigit = 0x4d4b00fe5c5c3030;
+
+        // Act
+        Action actual = () => invalidDigit.GridRing(2);
+
+        // Assert
+        Assert.Throws<ArgumentException>(actual, "should throw for invalid cell");
+    }
+
+    [Test]
+    public void Test_Upstream_GridRing_NegativeK() {
+        // Act
+        Action actual = () => TestHelpers.SfIndex.GridRing(-1);
+
+        // Assert
+        Assert.Throws<ArgumentOutOfRangeException>(actual, "should throw for negative k");
+    }
+
+    [Test]
+    public void Test_Upstream_GridRing_Identity() {
+        // Act
+        var actual = TestHelpers.SfIndex.GridRing(0).ToArray();
+
+        // Assert
+        Assert.That(actual, Is.EqualTo(new[] { TestHelpers.SfIndex }), "should return only the origin");
+    }
+
+    [Test]
+    public void Test_Upstream_GridRing0_PolarPentagon() {
+        // Arrange
+        var polar = H3Index.Create(0, 4, 0);
+        H3Index[] expected = {
+            0x8007fffffffffff, 0x8001fffffffffff, 0x8011fffffffffff,
+            0x801ffffffffffff, 0x8019fffffffffff
+        };
+
+        // Act
+        var actual = polar.GridRing(1).ToArray();
+
+        // Assert
+        Assert.That(actual, Is.EquivalentTo(expected), "should return the pentagon's 5 neighbours");
+    }
+
+    [Test]
+    public void Test_Upstream_GridRing1_PolarPentagon() {
+        // Arrange
+        var polar = H3Index.Create(1, 4, 0);
+        H3Index[] expected = {
+            0x81093ffffffffff, 0x81097ffffffffff, 0x8108fffffffffff,
+            0x8108bffffffffff, 0x8109bffffffffff
+        };
+
+        // Act
+        var actual = polar.GridRing(1).ToArray();
+
+        // Assert
+        Assert.That(actual, Is.EquivalentTo(expected), "should return the pentagon's 5 neighbours");
+    }
+
+    [Test]
+    public void Test_Upstream_GridRing1_PolarPentagon_K3() {
+        // Arrange
+        var polar = H3Index.Create(1, 4, 0);
+        H3Index[] expected = {
+            0x811fbffffffffff, 0x81003ffffffffff, 0x81183ffffffffff,
+            0x8111bffffffffff, 0x81067ffffffffff, 0x811e7ffffffffff,
+            0x8101bffffffffff, 0x81107ffffffffff, 0x81063ffffffffff,
+            0x811e3ffffffffff, 0x8119bffffffffff, 0x81103ffffffffff,
+            0x81007ffffffffff, 0x81187ffffffffff, 0x8107bffffffffff
+        };
+
+        // Act
+        var actual = polar.GridRing(3).ToArray();
+
+        // Assert
+        Assert.That(actual, Is.EquivalentTo(expected), "should return 15 cells at ring 3");
+    }
+
+    [Test]
+    public void Test_Upstream_GridRing1_Pentagon_K4() {
+        // Arrange
+        var pentagon = H3Index.Create(1, 14, 0);
+        H3Index[] expected = {
+            0x81227ffffffffff, 0x81293ffffffffff, 0x8136bffffffffff,
+            0x81167ffffffffff, 0x81477ffffffffff, 0x810dbffffffffff,
+            0x81473ffffffffff, 0x81237ffffffffff, 0x81127ffffffffff,
+            0x8126bffffffffff, 0x81177ffffffffff, 0x810d3ffffffffff,
+            0x8150fffffffffff, 0x8102fffffffffff, 0x8129bffffffffff,
+            0x8102bffffffffff, 0x81507ffffffffff, 0x8136fffffffffff,
+            0x8127bffffffffff, 0x81137ffffffffff
+        };
+
+        // Act
+        var actual = pentagon.GridRing(4).ToArray();
+
+        // Assert
+        Assert.That(actual, Is.EquivalentTo(expected), "should return 20 cells at ring 4");
+    }
+
+    [Test]
+    public void Test_Upstream_GridRing_MatchesGridDiskDistancesSafe([Range(0, 2)] int k) {
+        // Arrange
+        var cells = H3Index.GetRes0Cells()
+            .SelectMany(cell => cell.GetChildrenForResolution(1))
+            .Select(cell => (
+                Cell: cell,
+                Expected: cell.GridDiskDistancesSafe(k)
+                    .Where(ringCell => ringCell.Distance == k)
+                    .Select(ringCell => ringCell.Index)
+                    .ToArray()
+            ));
+
+        foreach (var (cell, expected) in cells) {
+            // Act
+            var ring = cell.GridRing(k).ToArray();
+
+            // Assert
+            Assert.That(ring, Is.EquivalentTo(expected), $"ring {k} of {cell} should match filtered disk");
+        }
+    }
+
     private static void AssertRing((H3Index, int)[] expectedRing, RingCell[] actualRing) {
-        Assert.AreEqual(expectedRing.Length, actualRing.Length, "should be same length");
+        Assert.That(actualRing.Length, Is.EqualTo(expectedRing.Length), "should be same length");
         for (var i = 0; i < expectedRing.Length; i += 1) {
             var expected = expectedRing[i];
 
-            Assert.IsNotNull(actualRing.FirstOrDefault(cell => cell.Index == expected.Item1 && cell.Distance == expected.Item2), $"can't find {expected.Item1:x} at k {expected.Item2}");
+            Assert.That(actualRing.FirstOrDefault(cell => cell.Index == expected.Item1 && cell.Distance == expected.Item2), Is.Not.Null, $"can't find {expected.Item1:x} at k {expected.Item2}");
         }
     }
 

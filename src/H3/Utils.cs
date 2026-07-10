@@ -1,5 +1,5 @@
 ﻿using System;
-#if NET5_0_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
 using System.Numerics;
 #endif
 using System.Runtime.CompilerServices;
@@ -7,7 +7,7 @@ using NetTopologySuite.Geometries;
 using static H3.Constants;
 
 [assembly: InternalsVisibleTo("H3.Test")]
-namespace H3; 
+namespace H3;
 
 public static class Utils {
 
@@ -30,6 +30,25 @@ public static class Utils {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double Square(double v) => v * v;
+
+    /// <summary>
+    /// Integer exponentiation via exponentiation by squaring.
+    /// </summary>
+    /// <param name="baseValue"></param>
+    /// <param name="power"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static long IPow(long baseValue, long power) {
+        var result = 1L;
+
+        while (power != 0) {
+            if ((power & 1) != 0) result *= baseValue;
+            power >>= 1;
+            baseValue *= baseValue;
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// Determines the azimuth to p2 from p1 in radians.
@@ -57,7 +76,10 @@ public static class Utils {
     ///  * https://en.wikipedia.org/wiki/Haversine_formula
     ///  * https://www.movable-type.co.uk/scripts/latlong.html
     /// </summary>
-    /// <param name="p2">Destination coordinate</param>
+    /// <param name="p1Lon"></param>
+    /// <param name="p1Lat"></param>
+    /// <param name="p2Lon"></param>
+    /// <param name="p2Lat"></param>
     /// <returns>The great circle distance in radians between this coordinate
     /// and the destination coordinate.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -158,27 +180,23 @@ public static class Utils {
 #endif
 
 #if !NET5_0_OR_GREATER
+    private static readonly byte[] Log2DeBruijn = {
+        00, 09, 01, 10, 13, 21, 02, 29,
+        11, 14, 16, 18, 22, 25, 03, 30,
+        08, 12, 20, 28, 15, 17, 24, 07,
+        19, 27, 23, 06, 26, 05, 04, 31
+    };
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int LeadingZeros(int value) {
-        if (value <= 0) return value == 0 ? 32 : 0;
-        var n = 31;
-        if (value >= 1 << 16) {
-            n -= 16;
-            value >>= 16;
-        }
-        if (value >= 1 << 8) {
-            n -= 8;
-            value >>= 8;
-        }
-        if (value >= 1 << 4) {
-            n -= 4;
-            value >>= 4;
-        }
-        if (value >= 1 << 2) {
-            n -= 2;
-            value >>= 2;
-        }
-        return n - (value >> 1);
+    private static int LeadingZeros(uint value) {
+        // Fill trailing zeros with ones, eg 00010010 becomes 00011111
+        value |= value >> 01;
+        value |= value >> 02;
+        value |= value >> 04;
+        value |= value >> 08;
+        value |= value >> 16;
+        // Using deBruijn sequence, k=2, n=5 (2^5=32) : 0b_0000_0111_1100_0100_1010_1100_1101_1101u
+        return 31 ^ Log2DeBruijn[(value * 0x07C4ACDDu) >> 27];
     }
 #endif
 
@@ -192,8 +210,8 @@ public static class Utils {
 #if NET5_0_OR_GREATER
         return BitOperations.LeadingZeroCount(value);
 #else
-        var x = (int)(value >> 32);
-        return x == 0 ? 32 + LeadingZeros((int)(value >> 32)) : LeadingZeros(x);
+        var x = (uint)(value >> 32);
+        return x == 0 ? 32 + LeadingZeros((uint)value) : LeadingZeros(x);
 #endif
     }
 

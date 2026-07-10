@@ -1,16 +1,20 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using H3.Extensions;
 using H3.Model;
 using static H3.Constants;
 using NetTopologySuite.Geometries;
 using NUnit.Framework;
+
 using System.Reflection;
 using System.Text.RegularExpressions;
+#if NET8_0_OR_GREATER
 using System.Text.Json;
+#endif
 
-namespace H3.Test; 
+namespace H3.Test;
 
 [TestFixture]
 [Parallelizable(ParallelScope.All)]
@@ -115,15 +119,15 @@ public class H3IndexTests {
         HashSet<H3Index> h3Set = new() { i1, i2 };
 
         // Assert
-        Assert.IsTrue(h3List.Exists(e => e == i1), "should exist");
-        Assert.IsTrue(h3List.Exists(e => e == i1_1), "should exist"); // same value as i1
-        Assert.IsTrue(h3List.Exists(e => e == TestHelpers.TestIndexValue), "should exist");
-        Assert.IsTrue(h3List.Exists(e => e == TestHelpers.TestIndexValue + 1), "should exist");
-        Assert.IsFalse(h3List.Exists(e => e == 0UL), "should not exist");
-        Assert.IsTrue(h3Set.Contains(i1_1), "should contain i1_1");
-        Assert.IsTrue(h3Set.Contains(i2_2), "should contain i2_2");
-        Assert.IsTrue(h3Set.Contains(TestHelpers.TestIndexValue), "should contain TestIndexValue");
-        Assert.IsFalse(h3Set.Contains(0), "should not contain 0");
+        Assert.That(h3List.Exists(e => e == i1), Is.True, "should exist");
+        Assert.That(h3List.Exists(e => e == i1_1), Is.True, "should exist"); // same value as i1
+        Assert.That(h3List.Exists(e => e == TestHelpers.TestIndexValue), Is.True, "should exist");
+        Assert.That(h3List.Exists(e => e == TestHelpers.TestIndexValue + 1), Is.True, "should exist");
+        Assert.That(h3List.Exists(e => e == 0UL), Is.False, "should not exist");
+        Assert.That(h3Set.Contains(i1_1), Is.True, "should contain i1_1");
+        Assert.That(h3Set.Contains(i2_2), Is.True, "should contain i2_2");
+        Assert.That(h3Set.Contains(TestHelpers.TestIndexValue), Is.True, "should contain TestIndexValue");
+        Assert.That(h3Set.Contains(0), Is.False, "should not contain 0");
     }
 
     [Test]
@@ -253,6 +257,245 @@ public class H3IndexTests {
     }
 
     [Test]
+    [TestCase(0)]
+    [TestCase(1)]
+    [TestCase(2)]
+    [TestCase(3)]
+    [TestCase(4)]
+    [TestCase(5)]
+    [TestCase(6)]
+    [TestCase(7)]
+    [TestCase(8)]
+    [TestCase(9)]
+    [TestCase(10)]
+    [TestCase(11)]
+    [TestCase(12)]
+    [TestCase(13)]
+    [TestCase(14)]
+    [TestCase(15)]
+    public void Test_GH111_IsValidCell_TrueForAllResolutions(int resolution) {
+        // Arrange
+        var point = new Point(24.57011413572222, 60.191627502416665) { SRID = 4326 };
+
+        // Act
+        var index = H3Index.FromPoint(point, resolution);
+
+        // Assert
+        Assert.That(index.IsValidCell, Is.True, $"{index} should be valid at resolution {resolution}");
+    }
+
+    [Test]
+    public void Test_GH111_IsValidCell_RejectsInvalidDigitAtHighResolution() {
+        // Arrange
+        var index = new H3Index(TestHelpers.SfIndex) {
+            Resolution = 15
+        };
+        index.ZeroDirectionsForResolutionRange(10, 15);
+        index.SetDirectionForResolution(12, Direction.Invalid);
+
+        // Act
+        var actual = index.IsValidCell;
+
+        // Assert
+        Assert.That(actual, Is.False, "should not be valid (invalid digit at resolution 12)");
+    }
+
+    [Test]
+    public void Test_GH111_IsValidCell_RejectsUnusedDigitAtLowResolution() {
+        // Arrange
+        var index = new H3Index {
+            Mode = Mode.Cell
+        };
+        index.SetDirectionForResolution(15, Direction.Center);
+
+        // Act
+        var actual = index.IsValidCell;
+
+        // Assert
+        Assert.That(actual, Is.False, "should not be valid (unused digit must be Invalid)");
+    }
+
+    [Test]
+    [TestCase(0, ExpectedResult = 122L)]
+    [TestCase(1, ExpectedResult = 842L)]
+    [TestCase(15, ExpectedResult = 569707381193162L)]
+    public long Test_Upstream_GetNumberOfCells(int resolution) {
+        return H3Index.GetNumberOfCells(resolution);
+    }
+
+    [Test]
+    [TestCase(-1)]
+    [TestCase(16)]
+    public void Test_Upstream_GetNumberOfCells_InvalidResolution(int resolution) {
+        // Act
+        Action actual = () => H3Index.GetNumberOfCells(resolution);
+
+        // Assert
+        Assert.Throws<ArgumentOutOfRangeException>(actual, "should throw for out of range resolution");
+    }
+
+    [Test]
+    public void Test_Upstream_GetRes0Cells() {
+        // Act
+        var cells = H3Index.GetRes0Cells().ToArray();
+
+        // Assert
+        Assert.That(cells.Length, Is.EqualTo(122), "should return 122 cells");
+        Assert.That(cells.All(cell => cell.IsValidCell), Is.True, "all cells should be valid");
+        Assert.That(cells.Distinct().Count(), Is.EqualTo(122), "cells should be unique");
+    }
+
+    [Test]
+    public void Test_Upstream_GetPentagons([Range(0, MAX_H3_RES)] int resolution) {
+        // Act
+        var pentagons = H3Index.GetPentagons(resolution);
+
+        // Assert
+        Assert.That(pentagons.Count, Is.EqualTo(NUM_PENTAGONS), $"should return {NUM_PENTAGONS} pentagons at res {resolution}");
+        foreach (var pentagon in pentagons) {
+            Assert.That(pentagon.IsValidCell, Is.True, $"{pentagon} should be valid");
+            Assert.That(pentagon.IsPentagon, Is.True, $"{pentagon} should be a pentagon");
+            Assert.That(pentagon.Resolution, Is.EqualTo(resolution), "should be at the requested resolution");
+        }
+    }
+
+    [Test]
+    [TestCase(0, 4.357449416078383e+06)]
+    [TestCase(15, 8.953115907605790e-07)]
+    public void Test_Upstream_GetHexagonAreaAverageInKmSquared(int resolution, double expected) {
+        // Act
+        var actual = H3Index.GetHexagonAreaAverageInKmSquared(resolution);
+
+        // Assert
+        Assert.That(actual, Is.EqualTo(expected).Within(1e-9), "should match upstream table");
+    }
+
+    [Test]
+    [TestCase(0, 4.357449416078390e+12)]
+    [TestCase(15, 8.953115907605802e-01)]
+    public void Test_Upstream_GetHexagonAreaAverageInMSquared(int resolution, double expected) {
+        // Act
+        var actual = H3Index.GetHexagonAreaAverageInMSquared(resolution);
+
+        // Assert
+        Assert.That(actual, Is.EqualTo(expected).Within(1e-9), "should match upstream table");
+    }
+
+    [Test]
+    [TestCase(0, 1281.256011)]
+    [TestCase(15, 0.000584169)]
+    public void Test_Upstream_GetHexagonEdgeLengthAverageInKm(int resolution, double expected) {
+        // Act
+        var actual = H3Index.GetHexagonEdgeLengthAverageInKm(resolution);
+
+        // Assert
+        Assert.That(actual, Is.EqualTo(expected).Within(1e-9), "should match upstream table");
+    }
+
+    [Test]
+    [TestCase(0, 1281256.011)]
+    [TestCase(15, 0.584168630)]
+    public void Test_Upstream_GetHexagonEdgeLengthAverageInM(int resolution, double expected) {
+        // Act
+        var actual = H3Index.GetHexagonEdgeLengthAverageInM(resolution);
+
+        // Assert
+        Assert.That(actual, Is.EqualTo(expected).Within(1e-9), "should match upstream table");
+    }
+
+    [Test]
+    [TestCase(-1)]
+    [TestCase(16)]
+    public void Test_Upstream_GetHexagonEdgeLengthAverageInM_InvalidResolution(int resolution) {
+        // Act
+        Action actual = () => H3Index.GetHexagonEdgeLengthAverageInM(resolution);
+
+        // Assert
+        Assert.Throws<ArgumentOutOfRangeException>(actual, "should throw for out of range resolution");
+    }
+
+    [Test]
+    public void Test_Upstream_ConstructCell_RoundTripsDigits() {
+        // Arrange
+        var expected = new H3Index(TestHelpers.SfIndex);
+        var resolution = expected.Resolution;
+        var digits = Enumerable.Range(1, resolution)
+            .Select(r => expected.GetDirectionForResolution(r))
+            .ToArray();
+
+        // Act
+        var actual = H3Index.Create(resolution, expected.BaseCellNumber, digits);
+
+        // Assert
+        Assert.That(actual, Is.EqualTo(expected), "should reconstruct the index from its components");
+    }
+
+    [Test]
+    public void Test_Upstream_ConstructCell_InvalidComponents() {
+        // Arrange
+        var digits = new[] { Direction.K, Direction.J };
+
+        // Assert
+        Assert.Throws<ArgumentOutOfRangeException>(() => H3Index.Create(-1, 0, digits), "should throw for negative resolution");
+        Assert.Throws<ArgumentOutOfRangeException>(() => H3Index.Create(2, 122, digits), "should throw for invalid base cell");
+        Assert.Throws<ArgumentException>(() => H3Index.Create(3, 0, digits), "should throw for insufficient digits");
+        Assert.Throws<ArgumentOutOfRangeException>(() => H3Index.Create(1, 0, new[] { Direction.Invalid }), "should throw for out of range digit");
+        Assert.Throws<ArgumentException>(() => H3Index.Create(1, 4, new[] { Direction.K }), "should throw for deleted pentagon subsequence");
+    }
+
+    [Test]
+    public void Test_IsValidIndex_TrueForCell() {
+        // Arrange
+        var cell = new H3Index(TestHelpers.SfIndex);
+
+        // Act
+        var actual = cell.IsValidIndex;
+
+        // Assert
+        Assert.That(actual, Is.True, "cell should be a valid index");
+    }
+
+    [Test]
+    public void Test_IsValidIndex_TrueForDirectedEdge() {
+        // Arrange
+        var cell = new H3Index(TestHelpers.SfIndex);
+        var edge = cell.ToDirectedEdge(cell.GetDirectNeighbour(Direction.I).Item1);
+
+        // Act
+        var actual = edge.IsValidIndex;
+
+        // Assert
+        Assert.That(actual, Is.True, "directed edge should be a valid index");
+    }
+
+    [Test]
+    public void Test_IsValidIndex_TrueForVertex() {
+        // Arrange
+        var vertex = new H3Index(TestHelpers.SfIndex).CellToVertex(0);
+
+        // Act
+        var actual = vertex.IsValidIndex;
+
+        // Assert
+        Assert.That(actual, Is.True, "vertex should be a valid index");
+    }
+
+    [Test]
+    [TestCase(0UL)]
+    [TestCase(ulong.MaxValue)]
+    public void Test_IsValidIndex_FalseForNonIndex(ulong value) {
+        // Arrange
+        var index = new H3Index(value);
+
+        // Act
+        var actual = index.IsValidIndex;
+
+        // Assert
+        Assert.That(actual, Is.False, "should not be a valid index");
+    }
+
+#if NET8_0_OR_GREATER
+    [Test]
     public void Test_Serialization_ToJson() {
         // Arrange
         var expected = $@"""{TestHelpers.SfIndex}""";
@@ -262,8 +505,8 @@ public class H3IndexTests {
         var result = JsonSerializer.Serialize(TestHelpers.SfIndex);
 
         // Assert
-        Assert.IsNotNull(result, "should not be null");
-        Assert.AreEqual(expected, result, "should serialize to hex string");
+        Assert.That(result, Is.Not.Null, "should not be null");
+        Assert.That(result, Is.EqualTo(expected), "should serialize to hex string");
     }
 
     [Test]
@@ -275,7 +518,7 @@ public class H3IndexTests {
         var result = JsonSerializer.Deserialize<H3Index>(indexJson);
 
         // Assert
-        Assert.AreEqual(TestHelpers.SfIndex, result, "should be equal");
+        Assert.That(result, Is.EqualTo(TestHelpers.SfIndex), "should be equal");
     }
 
     [Test]
@@ -287,7 +530,7 @@ public class H3IndexTests {
         var result = JsonSerializer.Deserialize<H3Index>(indexJson);
 
         // Assert
-        Assert.AreEqual(TestHelpers.SfIndex, result, "should be equal");
+        Assert.That(result, Is.EqualTo(TestHelpers.SfIndex), "should be equal");
     }
 
     [Test]
@@ -331,27 +574,24 @@ public class H3IndexTests {
         var result = JsonSerializer.Deserialize<SerializationTest>(indexJson);
 
         // Assert
-        Assert.AreEqual(242, result.SomeOtherProperty, "should have sentinel value");
-        Assert.AreEqual(TestHelpers.SfIndex, result.Index, "should be equal");
+        Assert.That(result.SomeOtherProperty, Is.EqualTo(242), "should have sentinel value");
+        Assert.That(result.Index, Is.EqualTo(TestHelpers.SfIndex), "should be equal");
     }
+#endif
 
 
     private static void AssertKnownIndexValue(H3Index h3) {
-        Assert.IsTrue(TestHelpers.TestIndexValue == h3, "ulong value should equal H3Index");
-        Assert.IsTrue(h3.IsValidCell, "should be valid");
-        Assert.IsFalse(h3.IsPentagon, "should not be a pentagon");
-        Assert.AreEqual(Mode.Cell, h3.Mode, "should be mode of hexagon");
-        Assert.AreEqual(14, h3.Resolution, "should be res 14");
-        Assert.AreEqual(36, h3.BaseCellNumber, "should be basecell 36");
-        Assert.AreEqual(0, h3.ReservedBits, "should have reserved bits of 0");
-        Assert.AreEqual(0, h3.HighBit, "should have high bit of 0");
+        Assert.That(TestHelpers.TestIndexValue == h3, Is.True, "ulong value should equal H3Index");
+        Assert.That(h3.IsValidCell, Is.True, "should be valid");
+        Assert.That(h3.IsPentagon, Is.False, "should not be a pentagon");
+        Assert.That(h3.Mode, Is.EqualTo(Mode.Cell), "should be mode of hexagon");
+        Assert.That(h3.Resolution, Is.EqualTo(14), "should be res 14");
+        Assert.That(h3.BaseCellNumber, Is.EqualTo(36), "should be basecell 36");
+        Assert.That(h3.ReservedBits, Is.EqualTo(0), "should have reserved bits of 0");
+        Assert.That(h3.HighBit, Is.EqualTo(0), "should have high bit of 0");
 
         for (var r = 1; r <= 14; r += 1) {
-            Assert.AreEqual(
-                TestHelpers.TestIndexDirectionPerResolution[r-1],
-                h3.GetDirectionForResolution(r),
-                $"res {r} should have cell index {TestHelpers.TestIndexDirectionPerResolution[r-1]}"
-            );
+            Assert.That(h3.GetDirectionForResolution(r), Is.EqualTo(TestHelpers.TestIndexDirectionPerResolution[r-1]), $"res {r} should have cell index {TestHelpers.TestIndexDirectionPerResolution[r-1]}");
         }
     }
 

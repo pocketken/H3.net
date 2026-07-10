@@ -6,7 +6,7 @@ namespace H3.Data;
 // TODO rename this to H3IndexBitwiseRotationOpsGenerator?
 
 [Generator]
-public class H3IndexBitwiseOpsGenerator : ISourceGenerator {
+public class H3IndexBitwiseOpsGenerator : IIncrementalGenerator {
 
     private static readonly string _indent = string.Empty.PadLeft(12, ' ');
 
@@ -16,7 +16,7 @@ using System.Runtime.CompilerServices;
 
 namespace H3;
 
-public sealed partial class H3Index {{
+public partial struct H3Index {{
 
     /// <summary>
     /// Perform in-place 60 degree clockwise rotation(s) of the index.
@@ -44,9 +44,10 @@ public sealed partial class H3Index {{
 
 }}";
 
-    public void Initialize(GeneratorInitializationContext context) { }
+    public void Initialize(IncrementalGeneratorInitializationContext context) =>
+        context.RegisterPostInitializationOutput(Execute);
 
-    public void Execute(GeneratorExecutionContext context) {
+    private static void Execute(IncrementalGeneratorPostInitializationContext context) {
         var rotateHexCw = new StringBuilder();
         var rotateHexCcw = new StringBuilder();
 

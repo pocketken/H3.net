@@ -84,7 +84,31 @@ public static class H3DirectedEdgeExtensions {
         }
     }
 
-    // TODO implement DestinationToDirectedEdge
+    /// <summary>
+    /// Provides all of the directed edges into the provided H3 cell
+    /// index, i.e. all of the edges whose destination is the provided
+    /// index.
+    /// </summary>
+    /// <param name="destination">Destination H3 index</param>
+    /// <returns>All of the directed edges into the H3 destination index.</returns>
+    public static IEnumerable<H3Index> DestinationToDirectedEdges(this H3Index destination) {
+        foreach (var edge in destination.OriginToDirectedEdges()) {
+            yield return edge == H3Index.Invalid ? H3Index.Invalid : edge.ReverseDirectedEdge();
+        }
+    }
+
+    /// <summary>
+    /// Returns the directed edge that points in the opposite direction, i.e.
+    /// the edge from the destination cell to the origin cell.
+    /// </summary>
+    /// <param name="edge">Directed edge H3 index</param>
+    /// <returns>The reversed directed edge index, or Invalid on failure</returns>
+    public static H3Index ReverseDirectedEdge(this H3Index edge) {
+        var (origin, destination) = edge.DirectedEdgeToCells();
+        return origin == H3Index.Invalid || destination == H3Index.Invalid
+            ? H3Index.Invalid
+            : destination.ToDirectedEdge(origin);
+    }
 
     /// <summary>
     /// Returns the origin cell from the given directed edge.
@@ -155,19 +179,11 @@ public static class H3DirectedEdgeExtensions {
     /// </summary>
     /// <param name="edge"></param>
     /// <returns></returns>
-    [Obsolete("as of 4.0: use GetDirectedEdgeBoundaryVertices instead")]
-    public static IEnumerable<GeoCoord> GetUnidirectionalEdgeBoundaryVertices(this H3Index edge) {
-        return (IEnumerable<GeoCoord>)edge.GetDirectedEdgeBoundaryVertices();
-    }
-
-    /// <summary>
-    /// Provides the coordinates defining the directed edge.
-    /// </summary>
-    /// <param name="edge"></param>
-    /// <returns></returns>
+    /// <exception cref="ArgumentException">Thrown when the provided index is
+    /// not a valid directed edge index.</exception>
     public static IEnumerable<LatLng> GetDirectedEdgeBoundaryVertices(this H3Index edge) {
         if (!edge.IsValidDirectedEdge()) {
-            return Enumerable.Empty<LatLng>();
+            throw new ArgumentException("not a valid directed edge index", nameof(edge));
         }
         var direction = (Direction)edge.ReservedBits;
         var origin = edge.GetDirectedEdgeOrigin();
@@ -175,8 +191,7 @@ public static class H3DirectedEdgeExtensions {
         // get the start vertex for the edge
         var startVertex = origin.GetVertexNumberForDirection(direction);
         if (startVertex == H3VertexExtensions.InvalidVertex) {
-            // TODO throw DirectedEdgeInvalid exception?
-            return Enumerable.Empty<LatLng>();
+            throw new InvalidOperationException($"unable to determine start vertex for edge {edge}");
         }
 
         var face = origin.ToFaceIJK();
@@ -200,14 +215,17 @@ public static class H3DirectedEdgeExtensions {
     /// <summary>
     /// Length of a directed edge in radians.
     /// </summary>
-    /// <param name="edge"></param>
+    /// <remarks>To obtain the average edge length of hexagon cells at a given
+    /// resolution instead, see <see cref="H3Index.GetHexagonEdgeLengthAverageInKm"/>.
+    /// </remarks>
+    /// <param name="edge">Directed edge H3 index</param>
     /// <returns></returns>
+    /// <exception cref="ArgumentException">Thrown when the provided index is
+    /// not a valid directed edge index, e.g. it is a cell index.</exception>
     public static double EdgeLengthRadians(this H3Index edge) {
         var vertices = edge.GetDirectedEdgeBoundaryVertices().ToArray();
 
         var length = 0.0;
-        if (vertices.Length == 0) return length;
-
         for (var i = 0; i < vertices.Length - 1; i += 1) {
             length += vertices[i].GetGreatCircleDistanceInRadians(vertices[i + 1]);
         }
@@ -218,17 +236,27 @@ public static class H3DirectedEdgeExtensions {
     /// <summary>
     /// Length of a directed edge in kilometers.
     /// </summary>
-    /// <param name="edge"></param>
+    /// <remarks>To obtain the average edge length of hexagon cells at a given
+    /// resolution instead, see <see cref="H3Index.GetHexagonEdgeLengthAverageInKm"/>.
+    /// </remarks>
+    /// <param name="edge">Directed edge H3 index</param>
     /// <returns></returns>
+    /// <exception cref="ArgumentException">Thrown when the provided index is
+    /// not a valid directed edge index, e.g. it is a cell index.</exception>
     public static double EdgeLengthKilometers(this H3Index edge) {
         return edge.EdgeLengthRadians() * Constants.EARTH_RADIUS_KM;
     }
 
     /// <summary>
-    /// Length of a directed edge in kilometers.
+    /// Length of a directed edge in meters.
     /// </summary>
-    /// <param name="edge"></param>
+    /// <remarks>To obtain the average edge length of hexagon cells at a given
+    /// resolution instead, see <see cref="H3Index.GetHexagonEdgeLengthAverageInM"/>.
+    /// </remarks>
+    /// <param name="edge">Directed edge H3 index</param>
     /// <returns></returns>
+    /// <exception cref="ArgumentException">Thrown when the provided index is
+    /// not a valid directed edge index, e.g. it is a cell index.</exception>
     public static double EdgeLengthMeters(this H3Index edge) {
         return edge.EdgeLengthKilometers() * 1000;
     }

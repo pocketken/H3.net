@@ -2,9 +2,9 @@
 
 #nullable enable
 
-namespace H3.Model; 
+namespace H3.Model;
 
-public sealed class CoordIJ {
+public struct CoordIJ {
 
     public int I { get; set; }
     public int J { get; set; }
@@ -25,7 +25,19 @@ public sealed class CoordIJ {
     public static implicit operator CoordIJ((int, int) coord) =>
         new(coord.Item1, coord.Item2);
 
-    public CoordIJK ToCoordIJK() => new CoordIJK(I, J, 0).Normalize();
+    /// <summary>
+    /// Converts the IJ coordinate to an IJK coordinate.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="OverflowException">Thrown when the coordinate components
+    /// are too large to be converted without overflowing.</exception>
+    public CoordIJK ToCoordIJK() {
+        if (CoordIJK.NormalizeCouldOverflow(I, J)) {
+            throw new OverflowException("ij coordinates would overflow");
+        }
+
+        return new CoordIJK(I, J, 0).Normalize();
+    }
 
     public static bool operator ==(CoordIJ a, CoordIJ b) => a.I == b.I && a.J == b.J;
 

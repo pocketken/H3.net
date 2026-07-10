@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +7,7 @@ using H3.Model;
 using H3.Extensions;
 using static H3.Constants;
 using NUnit.Framework;
+
 
 namespace H3.Test; 
 
@@ -90,16 +91,16 @@ public static class TestHelpers {
     }
 
     public static void AssertAll(H3Index[] expected, H3Index[] actual) {
-        Assert.AreEqual(expected.Length, actual.Length, "should have same Length");
+        Assert.That(actual.Length, Is.EqualTo(expected.Length), "should have same Length");
         for (var i = 0; i < expected.Length; i+= 1) {
-            Assert.IsTrue(actual.Contains(expected[i]), $"index {expected[i]} should be found");
+            Assert.That(actual.Contains(expected[i]), Is.True, $"index {expected[i]} should be found");
         }
     }
 
     public static void AssertAll(ulong[] expected, H3Index[] actual) {
-        Assert.AreEqual(expected.Length, actual.Length, "should have same Length");
+        Assert.That(actual.Length, Is.EqualTo(expected.Length), "should have same Length");
         for (var i = 0; i < expected.Length; i += 1) {
-            Assert.IsTrue(expected[i] == actual[i], $"index {i} should be {expected[i]} not {actual[i]}");
+            Assert.That(expected[i] == actual[i], Is.True, $"index {i} should be {expected[i]} not {actual[i]}");
         }
     }
 

@@ -1,10 +1,10 @@
 ﻿using BenchmarkDotNet.Attributes;
 using System.Linq;
+using H3.Model;
 using H3.Algorithms;
 using NetTopologySuite.Geometries;
 using static H3.Constants;
 using static H3.Utils;
-using GeoCoord = H3.Model.GeoCoord;
 
 namespace H3.Benchmarks.Algorithms;
 
@@ -12,7 +12,7 @@ namespace H3.Benchmarks.Algorithms;
 [MemoryDiagnoser]
 public class PolyfillBenchmarks {
 
-    private static readonly GeoCoord[] EntireWorld = {
+    private static readonly LatLng[] EntireWorld = {
         (M_PI_2, -M_PI),
         (M_PI_2, M_PI),
         (-M_PI_2, M_PI),
@@ -21,7 +21,7 @@ public class PolyfillBenchmarks {
     };
 
     // coordinates for the upstream lib's "SF" test poly
-    private static readonly GeoCoord[] UberSfTestPoly = {
+    private static readonly LatLng[] UberSfTestPoly = {
         (0.659966917655, -2.1364398519396),
         (0.6595011102219, -2.1359434279405),
         (0.6583348114025, -2.1354884206045),

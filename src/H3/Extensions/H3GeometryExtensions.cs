@@ -18,15 +18,12 @@ public static class H3GeometryExtensions {
     /// <param name="inputIndex"></param>
     /// <param name="result">optional result object; defaults to new <see cref="Coordinate"/>
     /// instance.</param>
-    /// <param name="toUpdateFaceIjk">Optional <see cref="FaceIJK"/> object to use during
-    /// conversion (useful to reduce allocations when performing many coordinate conversions);
-    /// defaults to a new instance if not provided.</param>
     /// <returns></returns>
-    public static Coordinate ToCoordinate(this H3Index inputIndex, Coordinate? result = default, FaceIJK? toUpdateFaceIjk = default) {
+    public static Coordinate ToCoordinate(this H3Index inputIndex, Coordinate? result = default) {
         result ??= new Coordinate();
 
         var resolution = inputIndex.Resolution;
-        var faceIjk = inputIndex.ToFaceIJK(toUpdateFaceIjk);
+        var faceIjk = inputIndex.ToFaceIJK();
 
         var center = LookupTables.GeoFaceCenters[faceIjk.Face];
         var (x, y) = faceIjk.Coord.GetVec2dOrdinates();
@@ -112,10 +109,8 @@ public static class H3GeometryExtensions {
     /// </summary>
     /// <param name="coordinate"></param>
     /// <param name="resolution"></param>
-    /// <param name="faceIjk">optional <see cref="FaceIJK"/> instance to re-use for the conversion</param>
-    /// <param name="v3d">optional <see cref="Vec3d"/> instance to re-use for the conversion</param>
     /// <returns></returns>
-    public static H3Index ToH3Index(this Coordinate coordinate, int resolution, FaceIJK? faceIjk = default, Vec3d? v3d = default) {
+    public static H3Index ToH3Index(this Coordinate coordinate, int resolution) {
         if (resolution is < 0 or > MAX_H3_RES) return H3Index.Invalid;
 #if NETSTANDARD2_0
             if (!coordinate.X.IsFinite() || !coordinate.Y.IsFinite()) return H3Index.Invalid;
@@ -123,12 +118,10 @@ public static class H3GeometryExtensions {
         if (!double.IsFinite(coordinate.X) || !double.IsFinite(coordinate.Y)) return H3Index.Invalid;
 #endif
         return H3Index.FromFaceIJK(
-            FaceIJK.FromGeoCoord(
+            FaceIJK.FromLatLng(
                 coordinate.X * M_PI_180,
                 coordinate.Y * M_PI_180,
-                resolution,
-                faceIjk,
-                v3d
+                resolution
             ),
             resolution
         );
@@ -144,11 +137,12 @@ public static class H3GeometryExtensions {
     public static int[] GetFaces(this H3Index index) {
         while (true) {
             var resolution = index.Resolution;
+            var isPentagon = index.IsPentagon;
 
             // We can't use the vertex-based approach here for class II pentagons,
             // because all their vertices are on the icosahedron edges. Their
             // direct child pentagons cross the same faces, so use those instead.
-            if (index.IsPentagon && !IsResolutionClass3(resolution)) {
+            if (isPentagon && !IsResolutionClass3(resolution)) {
                 // Note that this would not work for res 15, but this is only run on
                 // Class II pentagons, it should never be invoked for a res 15 index.
                 index = index.GetDirectChild(Direction.Center);
@@ -163,7 +157,7 @@ public static class H3GeometryExtensions {
             int vertexCount;
             FaceIJK[] vertices;
 
-            if (index.IsPentagon) {
+            if (isPentagon) {
                 vertexCount = NUM_PENT_VERTS;
                 vertices = fijk.GetPentagonVertices(ref resolution);
             } else {
@@ -173,9 +167,9 @@ public static class H3GeometryExtensions {
 
             // We may not use all of the slots in the output array,
             // so fill with invalid values to indicate unused slots
-            var result = new int[index.MaximumFaceCount];
+            var result = new int[isPentagon ? 5 : 2];
 #if NETSTANDARD2_0
-                for (var i = 0; i < index.MaximumFaceCount; i += 1) {
+                for (var i = 0; i < result.Length; i += 1) {
                     result[i] = -1;
                 }
 #else
@@ -188,7 +182,7 @@ public static class H3GeometryExtensions {
 
                 // Adjust overage, determining whether this vertex is
                 // on another face
-                if (index.IsPentagon) {
+                if (isPentagon) {
                     vert.AdjustPentagonVertexOverage(resolution);
                 } else {
                     vert.AdjustOverageClass2(resolution, false, true);
@@ -213,27 +207,21 @@ public static class H3GeometryExtensions {
     /// <summary>
     /// Area of H3 cell in radians^2.
     ///
-    /// The area is calculated by breaking the cell into spherical triangles and
-    /// summing up their areas. Note that some H3 cells (hexagons and pentagons)
-    /// are irregular, and have more than 6 or 5 sides.
+    /// The area is computed from the cell boundary loop using the Cagnoli
+    /// spherical area formula with compensated summation.  Note that some H3
+    /// cells (hexagons and pentagons) are irregular, and have more than 6 or
+    /// 5 sides.
     /// </summary>
     /// <param name="index">H3 cell</param>
     /// <returns>area in radians^2</returns>
     public static double CellAreaInRadiansSquared(this H3Index index) {
         var resolution = index.Resolution;
         var faceIjk = index.ToFaceIJK();
-        var center = faceIjk.ToGeoCoord(resolution);
         var boundary = (index.IsPentagon
             ? faceIjk.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS)
             : faceIjk.GetHexagonBoundary(resolution, 0, NUM_HEX_VERTS)).ToArray();
-        var area = 0.0;
 
-        for (var i = 0; i < boundary.Length; i += 1) {
-            var j = (i + 1) % boundary.Length;
-            area += LatLng.GetTriangleArea(boundary[i], boundary[j], center);
-        }
-
-        return area;
+        return LatLng.GetLoopAreaInRadiansSquared(boundary);
     }
 
     /// <summary>
@@ -260,7 +248,7 @@ public static class H3GeometryExtensions {
     public static double GetRadiusInKm(this H3Index index) {
         var resolution = index.Resolution;
         var faceIjk = index.ToFaceIJK();
-        var center = faceIjk.ToGeoCoord(resolution);
+        var center = faceIjk.ToLatLng(resolution);
         var firstVertex =  (index.IsPentagon
             ? faceIjk.GetPentagonBoundary(resolution, 0, 1)
             : faceIjk.GetHexagonBoundary(resolution, 0, 1)).First();
@@ -272,13 +260,9 @@ public static class H3GeometryExtensions {
     /// a given H3 index.
     /// </summary>
     /// <param name="index">H3Index to get boundary for</param>
-    /// <param name="toUpdateIjk">Optional <see cref="FaceIJK"/> to be used
-    /// for index coordinate conversions; defaults to none.  Useful for
-    /// reducing allocations when producing boundaries for a large number
-    /// of indices.</param>
     /// <returns>boundary coordinates</returns>
-    public static IEnumerable<LatLng> GetCellBoundaryVertices(this H3Index index, FaceIJK? toUpdateIjk = default) {
-        var face = index.ToFaceIJK(toUpdateIjk);
+    public static IEnumerable<LatLng> GetCellBoundaryVertices(this H3Index index) {
+        var face = index.ToFaceIJK();
         var resolution = index.Resolution;
         return index.IsPentagon
             ? face.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS)
@@ -295,12 +279,15 @@ public static class H3GeometryExtensions {
     /// <returns>Polygon for cell boundary</returns>
     public static Polygon GetCellBoundary(this H3Index index, GeometryFactory? geomFactory = null) {
         // get vertices and copy first onto the end to close the hole
-        var polyVertices = GetCellBoundaryVertices(index).ToList();
-        polyVertices.Add(polyVertices.First());
+        List<Coordinate> coordinates = new(11);
+
+        foreach (var vert in GetCellBoundaryVertices(index)) {
+            coordinates.Add(new Coordinate(vert.LongitudeDegrees, vert.LatitudeDegrees));
+        }
+
+        coordinates.Add(coordinates[0].Copy());
         var gf = geomFactory ?? DefaultGeometryFactory;
-        return gf.CreatePolygon(
-            polyVertices.Select(vert => new Coordinate(vert.LongitudeDegrees, vert.LatitudeDegrees))
-                .ToArray());
+        return gf.CreatePolygon(coordinates.ToArray());
     }
 
     /// <summary>
@@ -312,7 +299,56 @@ public static class H3GeometryExtensions {
     /// <returns></returns>
     public static MultiPolygon GetCellBoundaries(this IEnumerable<H3Index> indices, GeometryFactory? geomFactory = null) {
         var gf = geomFactory ?? DefaultGeometryFactory;
-        return gf.CreateMultiPolygon(indices.Select(index => index.GetCellBoundary()).ToArray());
+        return gf.CreateMultiPolygon(indices.Select(index => index.GetCellBoundary(gf)).ToArray());
+    }
+
+    /// <summary>
+    /// Generates a MultiPolygon of the dissolved outline(s) of a set of cells,
+    /// i.e. the boundaries of the set with shared edges removed, including any
+    /// holes.  Cells must be unique and valid, and all be at the same
+    /// resolution.
+    /// </summary>
+    /// <param name="indexes"></param>
+    /// <param name="geomFactory">Optional GeometryFactory to be used to create
+    /// the MultiPolygon instance.  Note that vertex coordinates are provided in
+    /// EPSG 4326 (WGS84)</param>
+    /// <returns>MultiPolygon of the dissolved cell set outlines</returns>
+    /// <exception cref="ArgumentException">Thrown when the set contains an
+    /// invalid cell index, mixed resolutions or duplicates.</exception>
+    public static MultiPolygon CellsToMultiPolygon(this IEnumerable<H3Index> indexes, GeometryFactory? geomFactory = null) {
+        var gf = geomFactory ?? DefaultGeometryFactory;
+
+        HashSet<ulong> seen = new();
+        List<Geometry> polygons = new();
+        var resolution = -1;
+
+        foreach (var index in indexes) {
+            if (!index.IsValidCell) {
+                throw new ArgumentException($"{index} is not a valid cell index", nameof(indexes));
+            }
+
+            if (resolution == -1) {
+                resolution = index.Resolution;
+            } else if (index.Resolution != resolution) {
+                throw new ArgumentException("all indexes must be at the same resolution", nameof(indexes));
+            }
+
+            if (!seen.Add(index)) {
+                throw new ArgumentException($"{index} is present more than once", nameof(indexes));
+            }
+
+            polygons.Add(index.GetCellBoundary(gf));
+        }
+
+        if (polygons.Count == 0) {
+            return gf.CreateMultiPolygon();
+        }
+
+        return NetTopologySuite.Operation.Union.CascadedPolygonUnion.Union(polygons) switch {
+            MultiPolygon multiPolygon => multiPolygon,
+            Polygon polygon => gf.CreateMultiPolygon(new[] { polygon }),
+            _ => gf.CreateMultiPolygon()
+        };
     }
 
 }

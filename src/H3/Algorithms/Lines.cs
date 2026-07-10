@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using H3.Extensions;
 using H3.Model;
 
@@ -72,8 +72,11 @@ public static class Lines {
     /// </summary>
     /// <remarks>
     /// This function may fail to find the line between two cells, for
-    /// example if they are very far apart. It may also fail when finding
-    /// distances for indexes on opposite sides of a pentagon.
+    /// example if they are very far apart.  When the path from origin to
+    /// destination crosses pentagon distortion relative to the origin's local
+    /// coordinate chart, the interpolation is retried anchored at the
+    /// destination instead, resolving cases where the chart is discontinuous
+    /// relative to one anchor but not the other.
     /// - The specific output of this function should not be considered stable
     ///   across library versions. The only guarantees the library provides are
     ///   that the line length will be `GridDistance(start, end) + 1` and that
@@ -86,18 +89,26 @@ public static class Lines {
     /// <returns>all points from start to end, inclusive; empty if could not
     /// compute a line</returns>
     public static IEnumerable<H3Index> GridPathCells(this H3Index origin, H3Index destination) {
-        CoordIJK startIjk;
-        CoordIJK endIjk;
-        var workIjk1 = new CoordIJK();
-        var workIjk2 = new CoordIJK();
-
-        // translate to local coordinates
         try {
-            startIjk = LocalCoordIJK.ToLocalIJK(origin, origin);
-            endIjk = LocalCoordIJK.ToLocalIJK(origin, destination);
+            return Interpolate(origin, destination);
         } catch {
-            yield break;
+            // retry interpolation anchored at the destination and reverse the
+            // output; this can resolve cases where the local IJK chart is
+            // discontinuous relative to one anchor but not the other
+            try {
+                var path = Interpolate(destination, origin);
+                path.Reverse();
+                return path;
+            } catch {
+                return Enumerable.Empty<H3Index>();
+            }
         }
+    }
+
+    private static List<H3Index> Interpolate(H3Index origin, H3Index destination) {
+        // translate to local coordinates
+        var startIjk = LocalCoordIJK.ToLocalIJK(origin, origin);
+        var endIjk = LocalCoordIJK.ToLocalIJK(origin, destination);
 
         // get grid distance between start/end
         var distance = startIjk.GetDistanceTo(endIjk);
@@ -115,15 +126,19 @@ public static class Lines {
         double startJ = startIjk.J;
         double startK = startIjk.K;
 
+        List<H3Index> path = new(distance + 1);
+
         for (var n = 0; n < distance + 1; n += 1) {
-            CoordIJK.CubeRound(
+            var rounded = CoordIJK.CubeRound(
                 startI + iStep * n,
                 startJ + jStep * n,
-                startK + kStep * n,
-                endIjk
-            ).Uncube();
-            yield return LocalCoordIJK.ToH3Index(origin, endIjk, startIjk, workIjk1, workIjk2);
+                startK + kStep * n
+            );
+            rounded.Uncube();
+            path.Add(LocalCoordIJK.ToH3Index(origin, rounded));
         }
+
+        return path;
     }
 
 }

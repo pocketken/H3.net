@@ -1,10 +1,11 @@
-﻿using System.Linq;
+using System.Linq;
 using H3.Algorithms;
 using H3.Extensions;
 using NetTopologySuite.Geometries;
 using NUnit.Framework;
 
-namespace H3.Test.Algorithms; 
+
+namespace H3.Test.Algorithms;
 
 [TestFixture]
 [Parallelizable(ParallelScope.All)]
@@ -60,7 +61,7 @@ public class LineTests {
         var lineSize = start.GridDistance(end);
 
         // Assert
-        Assert.AreEqual(-1, lineSize, "line size should be -1");
+        Assert.That(lineSize, Is.EqualTo(-1), "line size should be -1");
     }
 
     [Test]
@@ -84,21 +85,21 @@ public class LineTests {
         foreach (var (Start, End, Distance, Line) in lines) {
             if (Distance >= 0) {
                 var i = 0;
-                H3Index lastIndex = null;
-                H3Index previousLastIndex = null;
+                H3Index lastIndex = H3Index.Invalid;
+                H3Index previousLastIndex = H3Index.Invalid;
 
                 foreach (var index in Line) {
                     if (i == 0) {
-                        Assert.AreEqual(Start, index, $"line should start with {Start}");
+                        Assert.That(index, Is.EqualTo(Start), $"line should start with {Start}");
                     }
 
-                    Assert.IsTrue(index.IsValidCell, $"{index} should be valid");
-                    if (lastIndex != null) {
-                        Assert.IsTrue(index.IsNeighbour(lastIndex), $"{index} should be neighbours with previous index {lastIndex}");
+                    Assert.That(index.IsValidCell, Is.True, $"{index} should be valid");
+                    if (lastIndex != H3Index.Invalid) {
+                        Assert.That(index.IsNeighbour(lastIndex), Is.True, $"{index} should be neighbours with previous index {lastIndex}");
                     }
 
-                    if (previousLastIndex != null) {
-                        Assert.IsFalse(index.IsNeighbour(previousLastIndex), $"{index} should not be neighbours with index before previous {previousLastIndex}");
+                    if (previousLastIndex != H3Index.Invalid) {
+                        Assert.That(index.IsNeighbour(previousLastIndex), Is.False, $"{index} should not be neighbours with index before previous {previousLastIndex}");
                     }
 
                     i++;
@@ -106,11 +107,45 @@ public class LineTests {
                     lastIndex = index;
                 }
 
-                Assert.AreEqual(End, lastIndex, $"line should end with {End}");
-                Assert.AreEqual(Distance + 1, i, $"line should have count of {Distance + 1}");
+                Assert.That(lastIndex, Is.EqualTo(End), $"line should end with {End}");
+                Assert.That(i, Is.EqualTo(Distance + 1), $"line should have count of {Distance + 1}");
             } else {
-                Assert.IsEmpty(Line, "should be empty for invalid distances");
+                Assert.That(Line, Is.Empty, "should be empty for invalid distances");
             }
         }
+    }
+
+    [Test]
+    public void Test_Upstream_GridPathCells_PentagonReverseInterpolation() {
+        // Arrange
+        H3Index start = 0x820807fffffffff;
+        H3Index end = 0x8208e7fffffffff;
+        var distance = start.GridDistance(end);
+
+        // Act
+        var path = start.GridPathCells(end).ToArray();
+
+        // Assert
+        Assert.That(path.Length, Is.EqualTo(distance + 1), $"path should contain {distance + 1} cells");
+        Assert.That(path[0], Is.EqualTo(start), "path should start at the origin");
+        Assert.That(path[path.Length - 1], Is.EqualTo(end), "path should end at the destination");
+        for (var i = 1; i < path.Length; i += 1) {
+            Assert.That(path[i].IsValidCell, Is.True, $"{path[i]} should be valid");
+            Assert.That(path[i].IsNeighbour(path[i - 1]), Is.True, $"{path[i]} should neighbour {path[i - 1]}");
+        }
+    }
+
+    [Test]
+    public void Test_Upstream_GridPathCells_KnownFailureNotCoveredByReverseInterpolation() {
+        // Arrange
+        H3Index start = 0x8411b61ffffffff;
+        H3Index end = 0x84016d3ffffffff;
+        Assume.That(start.GridDistance(end) >= 0, "distance should be computable");
+
+        // Act
+        var path = start.GridPathCells(end);
+
+        // Assert
+        Assert.That(path, Is.Empty, "interpolation should fail in both anchor charts");
     }
 }

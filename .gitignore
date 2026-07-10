@@ -364,3 +364,7 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 .DS_Store
+
+# local benchmark comparison feed + results
+test/H3.CompareBenchmarks/packages/
+BenchmarkDotNet.Artifacts/
