@@ -13,6 +13,10 @@ public class Constants {
     public const double M_SQRT3_2 = 0.8660254037844386467637231707529361834714; // sqrt(3) / 2.0
     public const double M_SIN60 = M_SQRT3_2; // sin(60')
     public const double M_SQRT7 = 2.6457513110645905905016157536392604257102;
+    // reciprocal sqrt(7); libh3 scales the inverse projection by this literal
+    // (r *= M_RSQRT7), not by dividing by M_SQRT7 — kept verbatim for bit parity.
+    public const double M_RSQRT7 = 0.37796447300922722721451653623418006081576;
+    public const double M_ONETHIRD = 0.333333333333333333333333333333333333333;
 
     // rotation angle between Class II and Class III resolution axes
     public const double M_AP7_ROT_RADS = 0.333473172251832115336090755351601070065900389; // (asin(sqrt(3.0 / 28.0)))

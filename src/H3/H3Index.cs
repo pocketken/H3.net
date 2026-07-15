@@ -397,14 +397,22 @@ public partial struct H3Index : IComparable<H3Index>, IEquatable<H3Index> {
         var possibleOverage = BaseCells.IsPentagonCellNumber(BaseCellNumber) || resolution != 0 ||
                               (faceIjk.Coord.I == 0 && faceIjk.Coord.J == 0 && faceIjk.Coord.K == 0);
 
-        for (var r = 1; r <= resolution; r += 1) {
-            if (IsResolutionClass3(r)) {
-                faceIjk.Coord.DownAperture7CounterClockwise();
-            } else {
-                faceIjk.Coord.DownAperture7Clockwise();
-            }
+        // Refine the face ijk one aperture-7 step per resolution digit.  Digit
+        // resolutions alternate Class III (odd r, counter-clockwise) / Class II
+        // (even r, clockwise), so every (odd, even) digit pair is a CCW step
+        // followed by a CW step; fuse each such pair into a single combined
+        // transform with ONE normalization (halving the normalizations on this
+        // serial, latency-bound chain), then apply a trailing lone CCW step when
+        // the resolution is odd.  Bit-for-bit identical to a per-digit walk.
+        var r = 1;
+        for (; r < resolution; r += 2) {
+            faceIjk.Coord.DownAperture7ClassIIIThenClassII(
+                GetDirectionForResolution(r), GetDirectionForResolution(r + 1));
+        }
 
-            faceIjk.Coord.ToNeighbour(GetDirectionForResolution(r));
+        if (r == resolution) {
+            // trailing odd (Class III, counter-clockwise) digit
+            faceIjk.Coord.DownAperture7ToNeighbour(true, GetDirectionForResolution(r));
         }
 
         return possibleOverage;
@@ -520,31 +528,34 @@ public partial struct H3Index : IComparable<H3Index>, IEquatable<H3Index> {
         // adjust r for the fact that the res 0 base cell offsets the indexing
         // digits
         CoordIJK last = new();
-        CoordIJK lastCenter = new();
         for (var r = resolution - 1; r >= 0; r--) {
             last.I = ijk.I;
             last.J = ijk.J;
             last.K = ijk.K;
 
+            // Up-step to the parent, then subtract the parent's aperture-7
+            // down-step (its "center" expressed at the child resolution) from
+            // `last` to recover this digit's ijk unit vector.  The down-step's
+            // own Normalize is intentionally omitted: the difference is
+            // re-normalized by the CoordIJK -> Direction conversion in
+            // SetDirectionForResolution, and Normalize is invariant under the
+            // (1,1,1) multiple that the omitted normalize would have removed, so
+            // the encoded digit is bit-for-bit identical while avoiding a
+            // per-digit normalization and struct copy on this serial chain.
             if (IsResolutionClass3(r + 1)) {
-                // rotate ccw
+                // rotate ccw; down = (3I+J, 3J+K, I+3K)
                 ijk.UpAperture7CounterClockwise();
-                lastCenter.I = ijk.I;
-                lastCenter.J = ijk.J;
-                lastCenter.K = ijk.K;
-                lastCenter.DownAperture7CounterClockwise();
+                last.I -= 3 * ijk.I + ijk.J;
+                last.J -= 3 * ijk.J + ijk.K;
+                last.K -= ijk.I + 3 * ijk.K;
             } else {
-                // rotate cw
+                // rotate cw; down = (3I+K, I+3J, J+3K)
                 ijk.UpAperture7Clockwise();
-                lastCenter.I = ijk.I;
-                lastCenter.J = ijk.J;
-                lastCenter.K = ijk.K;
-                lastCenter.DownAperture7Clockwise();
+                last.I -= 3 * ijk.I + ijk.K;
+                last.J -= ijk.I + 3 * ijk.J;
+                last.K -= ijk.J + 3 * ijk.K;
             }
 
-            last.I -= lastCenter.I;
-            last.J -= lastCenter.J;
-            last.K -= lastCenter.K;
             index.SetDirectionForResolution(r + 1, last);
         }
 
@@ -616,7 +627,7 @@ public partial struct H3Index : IComparable<H3Index>, IEquatable<H3Index> {
     /// <summary>
     /// All of the resolution 0 cell indexes.  These are the coarsest cells
     /// that comprise the H3 indexing scheme, and can be used with e.g.
-    /// <see cref="H3HierarchyExtensions.GetChildrenForResolution"/> to
+    /// <see cref="H3HierarchyExtensions.GetChildrenForResolution(H3Index,int)"/> to
     /// iterate over the entire grid at a given resolution.
     /// </summary>
     /// <returns>All 122 resolution 0 cell indexes.</returns>

@@ -12,6 +12,12 @@ public struct FaceIJK : IEquatable<FaceIJK> {
 
     private const double THREE_M_SQRT32 = 3.0 * M_SQRT3_2;
 
+    // Stack scratch-buffer size for boundary generation.  A full hexagon loop
+    // emits at most NUM_HEX_VERTS (6) vertices + NUM_HEX_VERTS (6) edge-crossing
+    // intersections = 12, and a pentagon loop at most 10, so 16 cannot overflow
+    // for any in-contract length.
+    private const int BoundaryStackBufferSize = 16;
+
     public int Face { get; set; }
     public CoordIJK Coord;
 
@@ -41,7 +47,18 @@ public struct FaceIJK : IEquatable<FaceIJK> {
 
     public static FaceIJK FromLatLng(double longitudeRadians, double latitudeRadians, int resolution) {
         unchecked {
-            var v3d = Vec3d.FromLonLat(longitudeRadians, latitudeRadians);
+            // Trig of the query point, computed once and reused: to build the 3D
+            // unit vector for face selection, and (via the angle-subtraction
+            // identities below) to form the projection azimuth without any
+            // atan2 / sin / cos of the azimuth itself.
+            var cosLat = Math.Cos(latitudeRadians);
+            var sinLat = Math.Sin(latitudeRadians);
+            var cosLon = Math.Cos(longitudeRadians);
+            var sinLon = Math.Sin(longitudeRadians);
+
+            // identical (same product order) to Vec3d.FromLonLat, so face
+            // selection is bit-for-bit unchanged
+            var v3d = new Vec3d(cosLon * cosLat, sinLon * cosLat, sinLat);
             var result = new FaceIJK();
 
             result.Face = 0;
@@ -59,23 +76,55 @@ public struct FaceIJK : IEquatable<FaceIJK> {
                 sqd = sqdT;
             }
 
-            var r = Math.Acos(1 - sqd / 2);
             double x = 0;
             double y = 0;
 
-            if (r >= EPSILON) {
-                var center = LookupTables.GeoFaceCenters[result.Face];
-                var az = NormalizeAngle(AzimuthInRadians(center.Longitude, center.Latitude, longitudeRadians,
-                    latitudeRadians));
-                var theta = NormalizeAngle(LookupTables.AxisAzimuths[result.Face] - az);
+            // dot == cos(angular distance) to the chosen face center; the square
+            // distance between the two unit vectors is 2 - 2*dot.  The original
+            // guard Math.Acos(dot) >= EPSILON is (EPSILON = 1e-16, cos(EPSILON)
+            // rounds to exactly 1.0) identically `dot < 1.0`; at the face center
+            // (dot == 1) the point projects to the origin.
+            var dot = 1.0 - sqd / 2.0;
+            if (dot < 1.0) {
+                var face = result.Face;
 
-                if (IsResolutionClass3(resolution)) theta = NormalizeAngle(theta - M_AP7_ROT_RADS);
+                // Azimuth from the face center to the query point, kept as its raw
+                // atan2 numerator (yAz) / denominator (xAz) — the north-referenced
+                // spherical convention of AzimuthInRadians — instead of the angle:
+                //   yAz = cos(lat) * sin(dLon)
+                //   xAz = cos(cLat) * sin(lat) - sin(cLat) * cos(lat) * cos(dLon)
+                // with dLon = lon - centerLon expanded by the angle-subtraction
+                // identity from the query and (constant, per-face) center-longitude
+                // trig, so no sin/cos of the difference is evaluated.
+                var cosCLat = LookupTables.GeoFaceCenterCosLatitude[face];
+                var sinCLat = LookupTables.GeoFaceCenterSinLatitude[face];
+                var cosCLon = LookupTables.GeoFaceCenterCosLongitude[face];
+                var sinCLon = LookupTables.GeoFaceCenterSinLongitude[face];
 
-                r = Math.Tan(r) / RES0_U_GNOMONIC;
-                for (var i = 0; i < resolution; i += 1) r *= M_SQRT7;
+                var sinDLon = sinLon * cosCLon - cosLon * sinCLon;
+                var cosDLon = cosLon * cosCLon + sinLon * sinCLon;
 
-                x = r * Math.Cos(theta);
-                y = r * Math.Sin(theta);
+                var yAz = cosLat * sinDLon;
+                var xAz = cosCLat * sinLat - sinCLat * cosLat * cosDLon;
+
+                // The projected planar angle is theta = B - azimuth, where B is the
+                // per-face (per-class) reference axis azimuth; its cos/sin come from
+                // the precomputed cos/sin of B (round-14 tables) via the angle-
+                // subtraction identity applied to cos(az) = xAz/rAz,
+                // sin(az) = yAz/rAz.  The planar radius is
+                // r = tan(distance)/RES0_U_GNOMONIC * M_SQRT7^resolution; since
+                // rAz = sqrt(xAz^2 + yAz^2) = sin(distance) and
+                // tan(distance)/sin(distance) = 1/cos(distance) = 1/dot, the rAz
+                // normalisation and the tangent collapse into a single scale
+                // s = M_SQRT7^resolution / (RES0_U_GNOMONIC * dot) — removing the
+                // acos, tan, atan2 and both azimuth sin/cos entirely.
+                var class3 = IsResolutionClass3(resolution);
+                var cosB = class3 ? LookupTables.AxisAzimuthClass3Cos[face] : LookupTables.AxisAzimuthCos[face];
+                var sinB = class3 ? LookupTables.AxisAzimuthClass3Sin[face] : LookupTables.AxisAzimuthSin[face];
+
+                var s = LookupTables.Sqrt7PositivePowers[resolution] / (RES0_U_GNOMONIC * dot);
+                x = s * (cosB * xAz + sinB * yAz);
+                y = s * (sinB * xAz - cosB * yAz);
             }
 
             result.Coord = CoordIJK.FromVec2d(x, y);
@@ -105,6 +154,29 @@ public struct FaceIJK : IEquatable<FaceIJK> {
     }
 
     /// <summary>
+    /// Span-filling variant of the vertex generator that writes the cell
+    /// vertices into a caller-provided buffer instead of allocating a heap array,
+    /// allowing boundary generation to use a <c>stackalloc</c> scratch buffer.
+    /// Note that this modifies the address in place!
+    /// </summary>
+    private void GetVertices(CoordIJK[] class3Verts, CoordIJK[] class2Verts, ref int resolution, Span<FaceIJK> result) {
+        var verts = IsResolutionClass3(resolution) ? class3Verts : class2Verts;
+        Coord.DownAperture3CounterClockwise();
+        Coord.DownAperture3Clockwise();
+
+        // if res is Class III we need to add a cw aperture 7 to get to
+        // icosahedral Class II
+        if (IsResolutionClass3(resolution)) {
+            Coord.DownAperture7Clockwise();
+            resolution += 1;
+        }
+
+        for (var v = 0; v < verts.Length; v += 1) {
+            result[v] = new FaceIJK(Face, (Coord + verts[v]).Normalize());
+        }
+    }
+
+    /// <summary>
     /// Get the vertices of a cell as substrate FaceIJK addresses.  Note that this modifies
     /// the address in place!
     /// </summary>
@@ -115,6 +187,13 @@ public struct FaceIJK : IEquatable<FaceIJK> {
         GetVertices(LookupTables.Class3HexVertices, LookupTables.Class2HexVertices, ref resolution);
 
     /// <summary>
+    /// Span-filling variant of <see cref="GetHexVertices(ref int)"/>; the buffer
+    /// must have room for at least <see cref="Constants.NUM_HEX_VERTS"/> vertices.
+    /// </summary>
+    private void GetHexVertices(ref int resolution, Span<FaceIJK> result) =>
+        GetVertices(LookupTables.Class3HexVertices, LookupTables.Class2HexVertices, ref resolution, result);
+
+    /// <summary>
     /// Get the vertices of a pentagon cell as substrate FaceIJK addresses.  Note that this
     /// modifies the address in place!
     /// </summary>
@@ -123,6 +202,14 @@ public struct FaceIJK : IEquatable<FaceIJK> {
     /// <returns>cell vertices</returns>
     public FaceIJK[] GetPentagonVertices(ref int resolution) =>
         GetVertices(LookupTables.Class3PentagonVertices, LookupTables.Class2PentagonVertices, ref resolution);
+
+    /// <summary>
+    /// Span-filling variant of <see cref="GetPentagonVertices(ref int)"/>; the
+    /// buffer must have room for at least <see cref="Constants.NUM_PENT_VERTS"/>
+    /// vertices.
+    /// </summary>
+    private void GetPentagonVertices(ref int resolution, Span<FaceIJK> result) =>
+        GetVertices(LookupTables.Class3PentagonVertices, LookupTables.Class2PentagonVertices, ref resolution, result);
 
     /// <summary>
     /// Adjusts a FaceIJK address in place so that the resulting cell address is
@@ -215,10 +302,40 @@ public struct FaceIJK : IEquatable<FaceIJK> {
     /// <param name="length">The number of topological vertexes to return</param>
     /// <returns>The spherical coordinates of the cell boundary</returns>
     public IEnumerable<LatLng> GetPentagonBoundary(int resolution, int start, int length) {
+        // For the normal contract (length <= NUM_PENT_VERTS) the core emits at
+        // most NUM_PENT_VERTS vertices + NUM_PENT_VERTS edge-crossing
+        // intersections = 10, which fits in the stack buffer.  Larger,
+        // out-of-contract lengths fall back to a right-sized heap buffer so the
+        // write can never overflow.
+        if (length <= NUM_PENT_VERTS) {
+            Span<LatLng> buffer = stackalloc LatLng[BoundaryStackBufferSize];
+            var count = GetPentagonBoundary(resolution, start, length, buffer);
+            var result = new LatLng[count];
+            buffer[..count].CopyTo(result);
+            return result;
+        } else {
+            var result = new LatLng[NUM_PENT_VERTS + length];
+            var count = GetPentagonBoundary(resolution, start, length, result);
+            if (count != result.Length) Array.Resize(ref result, count);
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Span-filling core of <see cref="GetPentagonBoundary(int,int,int)"/>.  Writes
+    /// the boundary vertices into <paramref name="destination"/> (which must have
+    /// room for at least <c>length</c> vertices plus, for a full loop, up to
+    /// <see cref="Constants.NUM_PENT_VERTS"/> edge-crossing vertices) and returns
+    /// the number written.  Produces exactly the same vertex sequence as the
+    /// enumerable overload.
+    /// </summary>
+    internal int GetPentagonBoundary(int resolution, int start, int length, Span<LatLng> destination) {
         unchecked {
+            var count = 0;
             var adjustedResolution = resolution;
             FaceIJK centerIjk = new(this);
-            var verts = centerIjk.GetPentagonVertices(ref adjustedResolution);
+            Span<FaceIJK> verts = stackalloc FaceIJK[NUM_PENT_VERTS];
+            centerIjk.GetPentagonVertices(ref adjustedResolution, verts);
 
             // If we're returning the entire loop, we need one more iteration in case
             // of a distortion vertex on the last edge
@@ -299,11 +416,11 @@ public struct FaceIJK : IEquatable<FaceIJK> {
                     }
 
                     // find the intersection and add the lat/lon point to the result
-                    yield return intersection.ToFaceLatLng(tmpFijk.Face, adjustedResolution, true);
+                    destination[count++] = intersection.ToFaceLatLng(tmpFijk.Face, adjustedResolution, true);
                 }
 
                 if (vert < start + NUM_PENT_VERTS) {
-                    yield return fijk.ToFaceLatLng(adjustedResolution, true);
+                    destination[count++] = fijk.ToFaceLatLng(adjustedResolution, true);
                 }
 
                 lastFijk.Face = fijk.Face;
@@ -311,6 +428,8 @@ public struct FaceIJK : IEquatable<FaceIJK> {
                 lastFijk.Coord.J = fijk.Coord.J;
                 lastFijk.Coord.K = fijk.Coord.K;
             }
+
+            return count;
         }
     }
 
@@ -323,10 +442,39 @@ public struct FaceIJK : IEquatable<FaceIJK> {
     /// <param name="length">The number of topological vertexes to return</param>
     /// <returns>The spherical coordinates of the cell boundary</returns>
     public IEnumerable<LatLng> GetHexagonBoundary(int resolution, int start, int length) {
+        // For the normal contract (length <= NUM_HEX_VERTS) the core emits at
+        // most NUM_HEX_VERTS vertices + NUM_HEX_VERTS edge-crossing intersections
+        // = 12, which fits in the stack buffer.  Larger, out-of-contract lengths
+        // fall back to a right-sized heap buffer so the write can never overflow.
+        if (length <= NUM_HEX_VERTS) {
+            Span<LatLng> buffer = stackalloc LatLng[BoundaryStackBufferSize];
+            var count = GetHexagonBoundary(resolution, start, length, buffer);
+            var result = new LatLng[count];
+            buffer[..count].CopyTo(result);
+            return result;
+        } else {
+            var result = new LatLng[NUM_HEX_VERTS + length];
+            var count = GetHexagonBoundary(resolution, start, length, result);
+            if (count != result.Length) Array.Resize(ref result, count);
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Span-filling core of <see cref="GetHexagonBoundary(int,int,int)"/>.  Writes
+    /// the boundary vertices into <paramref name="destination"/> (which must have
+    /// room for at least <c>length</c> vertices plus, for a full loop, up to
+    /// <see cref="Constants.NUM_HEX_VERTS"/> edge-crossing vertices) and returns
+    /// the number written.  Produces exactly the same vertex sequence as the
+    /// enumerable overload.
+    /// </summary>
+    internal int GetHexagonBoundary(int resolution, int start, int length, Span<LatLng> destination) {
         unchecked {
+            var count = 0;
             var adjustedResolution = resolution;
             FaceIJK centerIjk = new(this);
-            var verts = centerIjk.GetHexVertices(ref adjustedResolution);
+            Span<FaceIJK> verts = stackalloc FaceIJK[NUM_HEX_VERTS];
+            centerIjk.GetHexVertices(ref adjustedResolution, verts);
 
             var additionalIteration = length == NUM_HEX_VERTS ? 1 : 0;
 
@@ -398,7 +546,7 @@ public struct FaceIJK : IEquatable<FaceIJK> {
 
                     var atVertex = orig2d0 == intersection || orig2d1 == intersection;
                     if (!atVertex) {
-                        yield return intersection.ToFaceLatLng(centerIjk.Face, adjustedResolution, true);
+                        destination[count++] = intersection.ToFaceLatLng(centerIjk.Face, adjustedResolution, true);
                     }
                 }
 
@@ -406,12 +554,14 @@ public struct FaceIJK : IEquatable<FaceIJK> {
                 // vert == start + NUM_HEX_VERTS is only used to test for possible
                 // intersection on last edge
                 if (vert < start + NUM_HEX_VERTS) {
-                    yield return fijk.ToFaceLatLng(adjustedResolution, true);
+                    destination[count++] = fijk.ToFaceLatLng(adjustedResolution, true);
                 }
 
                 lastFace = fijk.Face;
                 lastOverage = overage;
             }
+
+            return count;
         }
     }
 
@@ -426,27 +576,67 @@ public struct FaceIJK : IEquatable<FaceIJK> {
 
     public static LatLng ToFaceLatLng(double x, double y, int face, int resolution, bool isSubstrate) {
         unchecked {
+            // Faithful transliteration of libh3 v4.5.0 _hex2dToVec3 + vec3ToLatLng.
+            // v4.5.0 replaced the spherical-law-of-cosines inverse projection with a
+            // 3D-vector construction (tangent basis + linear combination + normalize),
+            // so the port must follow it — and perform the same operations in the same
+            // order — to stay bit-for-bit with the reference boundaries and centers.
+            var faceCenter = LookupTables.FaceCenters[face];
+
+            // calculate (r, theta) in hex2d
             var r = Math.Sqrt(x * x + y * y);
             if (r < EPSILON) {
-                return new LatLng(LookupTables.GeoFaceCenters[face]);
+                return faceCenter.ToLatLng();
             }
 
             var theta = Math.Atan2(y, x);
 
-            for (var i = 0; i < resolution; i += 1) r /= M_SQRT7;
+            // scale for current resolution length u
+            for (var i = 0; i < resolution; i++) r *= M_RSQRT7;
+
+            // scale accordingly if this is a substrate grid
             if (isSubstrate) {
-                r /= 3.0;
-                if (IsResolutionClass3(resolution)) r /= M_SQRT7;
+                r *= M_ONETHIRD;
+                if (IsResolutionClass3(resolution)) r *= M_RSQRT7;
             }
 
-            r = Math.Atan(r * RES0_U_GNOMONIC);
-            if (!isSubstrate && IsResolutionClass3(resolution)) {
-                theta = NormalizeAngle(theta + M_AP7_ROT_RADS);
-            }
+            r *= RES0_U_GNOMONIC;
 
-            theta = NormalizeAngle(LookupTables.AxisAzimuths[face] - theta);
-            return LatLng.ForAzimuthDistanceInRadians(LookupTables.GeoFaceCenters[face], theta, r);
+            // perform inverse gnomonic scaling of r
+            r = Math.Atan(r);
+
+            // adjust theta for Class III; if a substrate grid it's already adjusted
+            if (!isSubstrate && IsResolutionClass3(resolution))
+                theta = PosAngleRads(theta + M_AP7_ROT_RADS);
+
+            // find theta as an azimuth
+            theta = PosAngleRads(LookupTables.AxisAzimuths[face] - theta);
+
+            // now find the point at (r, theta) from the face center
+            TangentBasis(faceCenter, out var north, out var east);
+            var dir = Vec3d.LinComb(Math.Cos(theta), north, Math.Sin(theta), east);
+            var v3 = Vec3d.LinComb(Math.Cos(r), faceCenter, Math.Sin(r), dir).Normalize();
+
+            return v3.ToLatLng();
         }
+    }
+
+    /// <summary>
+    /// Local north and east directions on the tangent plane at a point on the unit
+    /// sphere (libh3 <c>_vec3TangentBasis</c>).  Not valid at a pole, but icosahedron
+    /// face centers are never at the poles.
+    /// </summary>
+    private static void TangentBasis(Vec3d p, out Vec3d north, out Vec3d east) {
+        var northPole = new Vec3d(0.0, 0.0, 1.0);
+        north = Vec3d.LinComb(1.0, northPole, -Vec3d.Dot(northPole, p), p).Normalize();
+        east = Vec3d.Cross(north, p);
+    }
+
+    /// <summary>Normalizes an angle in radians to the range [0, 2*pi) (libh3 <c>_posAngleRads</c>).</summary>
+    private static double PosAngleRads(double rads) {
+        var tmp = rads < 0.0 ? rads + M_2PI : rads;
+        if (rads >= M_2PI) tmp -= M_2PI;
+        return tmp;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -30,11 +30,25 @@ public static class H3HierarchyExtensions {
     public static (H3Index, int) GetDirectNeighbour(this H3Index origin, Direction direction, int rotations = 0) {
         H3Index outIndex = new(origin);
 
-        // ensure rotations is modulo'd by 6 before any possible addition,
-        // to protect against signed integer overflow
-        rotations %= 6;
-
-        var dir = direction.RotateCounterClockwise(rotations);
+        // Reorient the translation direction by the accumulated CCW rotation.  In
+        // the overwhelmingly common rotations == 0 case — the entire interior of a
+        // fast k-ring / k-disk traversal (no face crossing has occurred yet) and
+        // every caller that takes the default — this reorientation is the identity,
+        // so both the modulo reduction and the rotation-table lookup can be
+        // skipped: RotateCounterClockwise by a zero rotation count always returns
+        // the direction unchanged (CounterClockwise[(int)d * 6] == d for every
+        // direction d).  For a non-zero rotation the modulo (which also bounds the
+        // table index and guards the later `rotations += …` accumulations against
+        // signed overflow) and the table lookup run exactly as before, so the
+        // produced index and returned rotation count are bit-for-bit identical for
+        // all inputs.
+        Direction dir;
+        if (rotations == 0) {
+            dir = direction;
+        } else {
+            rotations %= 6;
+            dir = direction.RotateCounterClockwise(rotations);
+        }
 
         var oldBaseCellNumber = origin.BaseCellNumber;
         if (oldBaseCellNumber >= NUM_BASE_CELLS) throw new Exception("origin is not a valid base cell");
@@ -88,7 +102,24 @@ public static class H3HierarchyExtensions {
             }
         }
 
-        var newBaseCellNumber2 = outIndex.BaseCellNumber;
+        // The digit walk crossed a base cell boundary iff it consumed every
+        // resolution digit (resolution reached -1); otherwise it stopped on a
+        // carry-free Center step with the base cell — and neighbourRotations
+        // (still 0) — untouched.
+        var crossedBaseCell = resolution == -1;
+
+        // Common case (no base cell crossing, non-pentagon base cell): there is
+        // no rotation fix-up to apply, so return immediately.  This skips the
+        // base-cell re-extraction, the repeated pentagon test and — most
+        // importantly — the large, non-inlined RotateCounterClockwise(0) call
+        // the general tail would otherwise make.  rotations was already reduced
+        // modulo 6 and is unchanged here (neighbourRotations == 0), so this is
+        // bit-for-bit identical to running that tail.
+        if (!crossedBaseCell && !BaseCells.IsPentagonCellNumber(oldBaseCellNumber)) {
+            return (outIndex, rotations);
+        }
+
+        var newBaseCellNumber2 = crossedBaseCell ? outIndex.BaseCellNumber : oldBaseCellNumber;
 
         if (BaseCells.IsPentagonCellNumber(newBaseCellNumber2)) {
             var newBaseCell = BaseCells.Cells[newBaseCellNumber2];
@@ -167,6 +198,137 @@ public static class H3HierarchyExtensions {
         rotations = (rotations + neighbourRotations) % 6;
 
         return (outIndex, rotations);
+    }
+
+    /// <summary>
+    /// Rotations-free specialization of <see cref="GetDirectNeighbour"/> for callers
+    /// that always pass <c>rotations = 0</c> and discard the returned rotation count
+    /// (e.g. the polyfill flood fill and <c>GetDirectedEdgeDestination</c>).  The
+    /// <c>rotations</c> accumulator in <see cref="GetDirectNeighbour"/> — apart from
+    /// seeding <c>dir</c> from the (here zero) input — never feeds back into the
+    /// produced index; it only forms the discarded output.  Dropping it removes a
+    /// direction-rotation table load, several <c>rotations += …</c> updates, the
+    /// trailing base-cell-orientation rotation block, a constant-modulo, and the
+    /// <c>(H3Index,int)</c> tuple pack, while keeping every index-mutating rotation.
+    /// The returned index is therefore bit-for-bit identical to
+    /// <c>origin.GetDirectNeighbour(direction, 0).Item1</c>.
+    /// </summary>
+    /// <param name="origin">Origin index</param>
+    /// <param name="direction">Direction to move in</param>
+    /// <returns>H3Index of the specified neighbor or H3_NULL if deleted
+    /// k-subsequence distortion is encountered.</returns>
+    internal static H3Index GetDirectNeighbourWithoutRotations(this H3Index origin, Direction direction) {
+        H3Index outIndex = new(origin);
+
+        // rotations == 0, so dir == direction.RotateCounterClockwise(0) == direction
+        var dir = direction;
+
+        var oldBaseCellNumber = origin.BaseCellNumber;
+        if (oldBaseCellNumber >= NUM_BASE_CELLS) throw new Exception("origin is not a valid base cell");
+
+        var neighbourRotations = 0;
+
+        // Adjust the indexing digits and, if needed, the base cell.
+        var resolution = outIndex.Resolution - 1;
+        while (true) {
+            if (resolution == -1) {
+                var newBaseCellNumber = BaseCells.GetNeighbouringCellNumber(oldBaseCellNumber, dir);
+                neighbourRotations = BaseCells.GetNeighbourCounterClockwiseRotations(oldBaseCellNumber, dir);
+
+                outIndex.BaseCellNumber = newBaseCellNumber;
+
+                if (newBaseCellNumber == LookupTables.INVALID_BASE_CELL) {
+                    // Adjust for the deleted k vertex at the base cell level.
+                    outIndex.BaseCellNumber = BaseCells.GetNeighbouringCellNumber(oldBaseCellNumber, Direction.IK);
+                    neighbourRotations = BaseCells.GetNeighbourCounterClockwiseRotations(oldBaseCellNumber, Direction.IK);
+
+                    outIndex.RotateCounterClockwise();
+                }
+
+                break;
+            }
+
+            var nextResolution = resolution + 1;
+            var oldDir = outIndex.GetDirectionForResolution(nextResolution);
+
+            if (oldDir == Direction.Invalid) {
+                // Only possible on invalid input
+                return H3Index.Invalid;
+            }
+
+            var packed = IsResolutionClass3(nextResolution)
+                ? LookupTables.TraversalPackedClass2[(int)oldDir * 7 + (int)dir]
+                : LookupTables.TraversalPackedClass3[(int)oldDir * 7 + (int)dir];
+            outIndex.SetDirectionForResolution(nextResolution, (Direction)(packed & 7));
+            var nextDir = (Direction)(packed >> 3);
+
+            if (nextDir != Direction.Center) {
+                dir = nextDir;
+                resolution--;
+            } else {
+                // No more adjustment to perform
+                break;
+            }
+        }
+
+        // The digit walk crossed a base cell boundary iff it consumed every
+        // resolution digit (resolution reached -1); otherwise it stopped on a
+        // carry-free Center step with the base cell — and neighbourRotations
+        // (still 0) — untouched.
+        var crossedBaseCell = resolution == -1;
+
+        // Common case (no base cell crossing, non-pentagon base cell): there is
+        // no rotation fix-up to apply, so return immediately.  This skips the
+        // base-cell re-extraction, the repeated pentagon test and — most
+        // importantly — the large, non-inlined RotateCounterClockwise(0) call
+        // the general tail would otherwise make.  Bit-for-bit identical to it.
+        if (!crossedBaseCell && !BaseCells.IsPentagonCellNumber(oldBaseCellNumber)) {
+            return outIndex;
+        }
+
+        var newBaseCellNumber2 = crossedBaseCell ? outIndex.BaseCellNumber : oldBaseCellNumber;
+
+        if (BaseCells.IsPentagonCellNumber(newBaseCellNumber2)) {
+            var newBaseCell = BaseCells.Cells[newBaseCellNumber2];
+
+            // force rotation out of missing k-axes sub-sequence
+            if (outIndex.LeadingNonZeroDirection == Direction.K) {
+                if (oldBaseCellNumber != newBaseCellNumber2) {
+                    // in this case, we traversed into the deleted k subsequence of a
+                    // pentagon base cell; rotate out of it depending on how we got here.
+                    if (newBaseCell.FaceMatchesOffset(BaseCells.Cells[oldBaseCellNumber].Home.Face)) {
+                        outIndex.RotateClockwise();
+                    } else {
+                        outIndex.RotateCounterClockwise();
+                    }
+                } else {
+                    // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+                    switch (origin.LeadingNonZeroDirection) {
+                        case Direction.Center:
+                            // Undefined: the k direction is deleted from here
+                            return H3Index.Invalid;
+
+                        case Direction.JK:
+                            outIndex.RotateCounterClockwise();
+                            break;
+
+                        case Direction.IK:
+                            outIndex.RotateClockwise();
+                            break;
+
+                        default:
+                            // should never happen
+                            return H3Index.Invalid;
+                    }
+                }
+            }
+
+            for (var i = 0; i < neighbourRotations; i += 1) outIndex.RotatePentagonCounterClockwise();
+        } else {
+            outIndex.RotateCounterClockwise(neighbourRotations);
+        }
+
+        return outIndex;
     }
 
     /// <summary>
@@ -392,6 +554,88 @@ public static class H3HierarchyExtensions {
     }
 
     /// <summary>
+    /// Fills <paramref name="destination"/> with all child <see cref="H3Index"/>
+    /// of <paramref name="origin"/> at the specified resolution and returns the
+    /// number written.  Allocation-free equivalent of the streaming
+    /// <see cref="GetChildrenForResolution(H3Index,int)"/>, producing the children
+    /// in the identical order.
+    /// </summary>
+    /// <param name="origin">index to find children for</param>
+    /// <param name="childResolution">resolution of child level</param>
+    /// <param name="destination">buffer of at least
+    /// <see cref="CellToChildrenSize"/>(<paramref name="origin"/>,
+    /// <paramref name="childResolution"/>) cells</param>
+    /// <returns>the number of children written; 0 when the child resolution is
+    /// not valid for the index</returns>
+    /// <exception cref="ArgumentException">Thrown when the destination buffer is
+    /// smaller than <see cref="CellToChildrenSize"/>.</exception>
+    public static int GetChildrenForResolution(this H3Index origin, int childResolution, Span<H3Index> destination) {
+        var parentResolution = origin.Resolution;
+        if (!IsValidChildResolution(parentResolution, childResolution)) {
+            return 0;
+        }
+
+        if (parentResolution == childResolution) {
+            if (destination.Length < 1) {
+                throw new ArgumentException("destination must hold at least 1 cell", nameof(destination));
+            }
+
+            destination[0] = origin;
+            return 1;
+        }
+
+        var size = origin.CellToChildrenSize(childResolution);
+        if (destination.Length < size) {
+            throw new ArgumentException(
+                $"destination must hold at least {size} cells (see {nameof(CellToChildrenSize)})", nameof(destination));
+        }
+
+        // initialize our iterator by starting at the center child at the target
+        // resolution — identical stepping to the streaming overload above
+        H3Index iterator = new(origin) {
+            Resolution = childResolution
+        };
+        iterator.ZeroDirectionsForResolutionRange(parentResolution + 1, childResolution);
+
+        // handle pentagons
+        var fnz = iterator.IsPentagon ? childResolution : -1;
+
+        var count = 0;
+        while (iterator != H3Index.Invalid) {
+            destination[count++] = new H3Index(iterator);
+
+            var childRes = iterator.Resolution;
+            iterator.IncrementDirectionForResolution(childRes);
+
+            for (var i = childResolution; i >= parentResolution; i -= 1) {
+                // done iterating?
+                if (i == parentResolution) {
+                    iterator = H3Index.Invalid;
+                    break;
+                }
+
+                var dir = iterator.GetDirectionForResolution(i);
+
+                // pentagon?
+                if (i == fnz && dir == Direction.K) {
+                    iterator.IncrementDirectionForResolution(i);
+                    fnz -= 1;
+                    break;
+                }
+
+                if (dir == Direction.Invalid) {
+                    // zeros out it[i] and increments it[i-1] by 1
+                    iterator.IncrementDirectionForResolution(i);
+                } else {
+                    break;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
     /// Produces the number of children the <see cref="H3Index"/> has at the
     /// specified resolution.
     /// </summary>
@@ -416,7 +660,7 @@ public static class H3HierarchyExtensions {
     /// Produces the position of the child <see cref="H3Index"/> within an ordered
     /// list of all children of its parent at the specified resolution.  The order
     /// of the ordered list is the same as that returned by
-    /// <see cref="GetChildrenForResolution"/>.
+    /// <see cref="GetChildrenForResolution(H3Index,int)"/>.
     /// </summary>
     /// <param name="child">child index to determine the position of</param>
     /// <param name="parentResolution">parent resolution, must be &gt;= 0 and
@@ -476,7 +720,7 @@ public static class H3HierarchyExtensions {
     /// Produces the child <see cref="H3Index"/> at the specified position within an
     /// ordered list of all children of the parent index at the specified resolution.
     /// The order of the ordered list is the same as that returned by
-    /// <see cref="GetChildrenForResolution"/>.  This is the reverse operation of
+    /// <see cref="GetChildrenForResolution(H3Index,int)"/>.  This is the reverse operation of
     /// <see cref="CellToChildPos"/>.
     /// </summary>
     /// <param name="parent">parent index to produce the child of</param>

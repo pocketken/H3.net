@@ -59,4 +59,38 @@ public struct Vec3d {
 
     public override int GetHashCode() => HashCode.Combine(X, Y, Z);
 
+    // --- libh3 v4.5.0 vec3d.h operations, transliterated verbatim so the inverse
+    //     projection (hex2d -> geo) reproduces the reference bit-for-bit. ---
+
+    /// <summary><c>a*v1 + b*v2</c>, componentwise (libh3 <c>vec3LinComb</c>).</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vec3d LinComb(double a, Vec3d v1, double b, Vec3d v2) =>
+        new(a * v1.X + b * v2.X, a * v1.Y + b * v2.Y, a * v1.Z + b * v2.Z);
+
+    /// <summary>Cross product (libh3 <c>vec3Cross</c>).</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vec3d Cross(Vec3d v1, Vec3d v2) =>
+        new(v1.Y * v2.Z - v1.Z * v2.Y,
+            v1.Z * v2.X - v1.X * v2.Z,
+            v1.X * v2.Y - v1.Y * v2.X);
+
+    /// <summary>Dot product (libh3 <c>vec3Dot</c>).</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static double Dot(Vec3d v1, Vec3d v2) => v1.X * v2.X + v1.Y * v2.Y + v1.Z * v2.Z;
+
+    /// <summary>
+    /// Unit-normalized copy (libh3 <c>vec3Normalize</c>).  A zero vector — whether a
+    /// true zero or the result of the squared norm underflowing — maps to zero.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Vec3d Normalize() {
+        var norm = Math.Sqrt(X * X + Y * Y + Z * Z);
+        var s = norm > 0.0 ? 1.0 / norm : 0.0;
+        return new Vec3d(X * s, Y * s, Z * s);
+    }
+
+    /// <summary>Spherical coordinates of this vector (libh3 <c>vec3ToLatLng</c>): <c>asin(z), atan2(y, x)</c>.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public LatLng ToLatLng() => new(Math.Asin(Z), Math.Atan2(Y, X));
+
 }

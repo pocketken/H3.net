@@ -165,6 +165,48 @@ public static partial class LookupTables {
         2.361378999196363184,  // face 19
     };
 
+    /// <summary>
+    /// Precomputed cosine of each icosahedron face's axis azimuth (the Class II
+    /// projection reference azimuth), indexed by face.  The inverse gnomonic
+    /// projection needs cos/sin of <c>axisAzimuth - atan2(y, x)</c>; supplying the
+    /// (constant, per-face) cos/sin of the axis azimuth lets that be produced from
+    /// the planar components alone by the angle-subtraction identity
+    /// <c>cos(B - t) = cosB cosT + sinB sinT</c>, removing the per-projection
+    /// <c>atan2</c> + <c>cos</c> + <c>sin</c>.  Computed once at static-init with the
+    /// same <c>Math</c> routines the projection previously ran inline, so the result
+    /// stays within ~1 ULP — the round-9/11 class of change — far inside every
+    /// lat/lng, boundary and cell-area tolerance.
+    /// </summary>
+    internal static readonly double[] AxisAzimuthCos = ComputeAxisAzimuthTrig(false, false);
+
+    /// <summary>
+    /// Precomputed sine of each face axis azimuth.  See <see cref="AxisAzimuthCos"/>.
+    /// </summary>
+    internal static readonly double[] AxisAzimuthSin = ComputeAxisAzimuthTrig(true, false);
+
+    /// <summary>
+    /// Precomputed cosine of each face axis azimuth less <c>M_AP7_ROT_RADS</c>, the
+    /// Class III reference azimuth used by non-substrate Class III cells (which
+    /// rotate the raw planar angle by the Class II/III axis offset).  See
+    /// <see cref="AxisAzimuthCos"/>.
+    /// </summary>
+    internal static readonly double[] AxisAzimuthClass3Cos = ComputeAxisAzimuthTrig(false, true);
+
+    /// <summary>
+    /// Precomputed sine of each Class III face axis azimuth.  See
+    /// <see cref="AxisAzimuthClass3Cos"/>.
+    /// </summary>
+    internal static readonly double[] AxisAzimuthClass3Sin = ComputeAxisAzimuthTrig(true, true);
+
+    private static double[] ComputeAxisAzimuthTrig(bool sine, bool class3Offset) {
+        var result = new double[NUM_ICOSA_FACES];
+        for (var face = 0; face < NUM_ICOSA_FACES; face += 1) {
+            var angle = AxisAzimuths[face] - (class3Offset ? M_AP7_ROT_RADS : 0.0);
+            result[face] = sine ? System.Math.Sin(angle) : System.Math.Cos(angle);
+        }
+        return result;
+    }
+
     private const int KI = FaceIJK.KI;
     private const int JK = FaceIJK.JK;
     private const int IJ = FaceIJK.IJ;
@@ -377,6 +419,80 @@ public static partial class LookupTables {
         new(-1.307747883455638156, -0.604647643711872080),  // face 18
         new(-1.054751253523952054, 1.794075294689396615),   // face 19
     };
+
+    /// <summary>
+    /// Precomputed sine of each icosahedron face-center latitude, indexed by
+    /// face number.  The face-center latitude is one of only 20 fixed values, so
+    /// its sine is a loop invariant of the spherical projection.  Computed once
+    /// at static-init from <see cref="GeoFaceCenters"/> using the same
+    /// <c>Math.Sin</c> the projection runs inline, so substituting these values
+    /// is bit-for-bit identical while avoiding the repeated transcendental call.
+    /// </summary>
+    internal static readonly double[] GeoFaceCenterSinLatitude = ComputeGeoFaceCenterLatitudeTrig(true);
+
+    /// <summary>
+    /// Precomputed cosine of each icosahedron face-center latitude, indexed by
+    /// face number.  See <see cref="GeoFaceCenterSinLatitude"/>.
+    /// </summary>
+    internal static readonly double[] GeoFaceCenterCosLatitude = ComputeGeoFaceCenterLatitudeTrig(false);
+
+    private static double[] ComputeGeoFaceCenterLatitudeTrig(bool sine) {
+        var result = new double[NUM_ICOSA_FACES];
+        for (var face = 0; face < NUM_ICOSA_FACES; face += 1) {
+            var latitude = GeoFaceCenters[face].Latitude;
+            result[face] = sine ? System.Math.Sin(latitude) : System.Math.Cos(latitude);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Precomputed sine of each icosahedron face-center longitude, indexed by
+    /// face number.  The forward gnomonic projection (lat/lng -> FaceIJK) forms
+    /// the azimuth's <c>sin(lon - centerLon)</c> / <c>cos(lon - centerLon)</c> by
+    /// the angle-subtraction identity from the query longitude trig and these
+    /// (constant, per-face) center-longitude values, avoiding a per-projection
+    /// <c>sin</c> and <c>cos</c> of the longitude difference.  Computed once at
+    /// static-init from <see cref="GeoFaceCenters"/> with the same <c>Math</c>
+    /// routines, so the result stays within ~1 ULP.  See
+    /// <see cref="GeoFaceCenterSinLatitude"/>.
+    /// </summary>
+    internal static readonly double[] GeoFaceCenterSinLongitude = ComputeGeoFaceCenterLongitudeTrig(true);
+
+    /// <summary>
+    /// Precomputed cosine of each icosahedron face-center longitude, indexed by
+    /// face number.  See <see cref="GeoFaceCenterSinLongitude"/>.
+    /// </summary>
+    internal static readonly double[] GeoFaceCenterCosLongitude = ComputeGeoFaceCenterLongitudeTrig(false);
+
+    private static double[] ComputeGeoFaceCenterLongitudeTrig(bool sine) {
+        var result = new double[NUM_ICOSA_FACES];
+        for (var face = 0; face < NUM_ICOSA_FACES; face += 1) {
+            var longitude = GeoFaceCenters[face].Longitude;
+            result[face] = sine ? System.Math.Sin(longitude) : System.Math.Cos(longitude);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Precomputed positive integer powers of <c>M_SQRT7</c>, indexed by
+    /// resolution: <c>Sqrt7PositivePowers[r] == M_SQRT7^(r)</c>.  Used by the
+    /// forward gnomonic projection (lat/lng -> FaceIJK) in place of the serial
+    /// per-resolution multiplication chain.  (The inverse projection follows libh3
+    /// v4.5.0 exactly and scales by the literal <c>M_RSQRT7</c> per resolution, so
+    /// it needs no precomputed reciprocal power.)  Sized to cover the substrate
+    /// resolution bump (up to <c>MAX_H3_RES + 1</c>) used during boundary generation.
+    /// </summary>
+    internal static readonly double[] Sqrt7PositivePowers = ComputeSqrt7Powers();
+
+    private static double[] ComputeSqrt7Powers() {
+        // indices 0..MAX_H3_RES+1 (the substrate resolution used by boundary
+        // generation can reach MAX_H3_RES + 1)
+        var result = new double[MAX_H3_RES + 2];
+        for (var res = 0; res < result.Length; res += 1) {
+            result[res] = System.Math.Pow(M_SQRT7, res);
+        }
+        return result;
+    }
 
     public static readonly Vec3d[] FaceCenters = {
         new(0.2199307791404606, 0.6583691780274996, 0.7198475378926182),     // face  0

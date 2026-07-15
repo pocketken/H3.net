@@ -1,0 +1,308 @@
+{
+  "provenance": {
+    "cpu": "AMD EPYC-Milan Processor 2.45GHz, 1 CPU, 8 logical and 4 physical cores",
+    "dotnet": ".NET 10.0.9",
+    "tool": "BenchmarkDotNet v0.15.8"
+  },
+  "op_matrix": {
+    "note": "idiomatic pocketken (streaming/normal API) vs the binding's idiomatic call, one ratio (pocketken/native) per op; below 1.0 = pocketken faster.",
+    "rows": [
+      {
+        "op": "latLngToCell",
+        "pocketken_streaming_ns": 168.8,
+        "pocketken_span_ns": null,
+        "native_ns": 320.7,
+        "native_span_ns": null,
+        "streaming_ratio": 0.526,
+        "span_ratio": null,
+        "pocketken_streaming_alloc_b": 0,
+        "pocketken_span_alloc_b": null,
+        "native_alloc_b": 0,
+        "native_span_alloc_b": null
+      },
+      {
+        "op": "cellToParent",
+        "pocketken_streaming_ns": 259.5,
+        "pocketken_span_ns": null,
+        "native_ns": 519.5,
+        "native_span_ns": null,
+        "streaming_ratio": 0.5,
+        "span_ratio": null,
+        "pocketken_streaming_alloc_b": 0,
+        "pocketken_span_alloc_b": null,
+        "native_alloc_b": 0,
+        "native_span_alloc_b": null
+      },
+      {
+        "op": "cellToChildren",
+        "pocketken_streaming_ns": 1030.3,
+        "pocketken_span_ns": 721.0,
+        "native_ns": 1585.2,
+        "native_span_ns": 1149.9,
+        "streaming_ratio": 0.65,
+        "span_ratio": 0.627,
+        "pocketken_streaming_alloc_b": 1368,
+        "pocketken_span_alloc_b": 0,
+        "native_alloc_b": 3040,
+        "native_span_alloc_b": 0
+      },
+      {
+        "op": "gridDiskDist",
+        "pocketken_streaming_ns": 5387.0,
+        "pocketken_span_ns": 5012.9,
+        "native_ns": 6870.5,
+        "native_span_ns": 6321.5,
+        "streaming_ratio": 0.784,
+        "span_ratio": 0.793,
+        "pocketken_streaming_alloc_b": 5352,
+        "pocketken_span_alloc_b": 0,
+        "native_alloc_b": 8048,
+        "native_span_alloc_b": 0
+      },
+      {
+        "op": "gridRing",
+        "pocketken_streaming_ns": 1296.7,
+        "pocketken_span_ns": 1064.3,
+        "native_ns": 1311.2,
+        "native_span_ns": 1201.9,
+        "streaming_ratio": 0.989,
+        "span_ratio": 0.886,
+        "pocketken_streaming_alloc_b": 88,
+        "pocketken_span_alloc_b": 0,
+        "native_alloc_b": 1008,
+        "native_span_alloc_b": 0
+      },
+      {
+        "op": "gridPathCells",
+        "pocketken_streaming_ns": 1305.2,
+        "pocketken_span_ns": 1268.8,
+        "native_ns": 2273.8,
+        "native_span_ns": 2257.5,
+        "streaming_ratio": 0.574,
+        "span_ratio": 0.562,
+        "pocketken_streaming_alloc_b": 144,
+        "pocketken_span_alloc_b": 0,
+        "native_alloc_b": 112,
+        "native_span_alloc_b": 0
+      },
+      {
+        "op": "cellToBoundary",
+        "pocketken_streaming_ns": 1007.6,
+        "pocketken_span_ns": 994.3,
+        "native_ns": 976.7,
+        "native_span_ns": null,
+        "streaming_ratio": 1.032,
+        "span_ratio": 1.018,
+        "pocketken_streaming_alloc_b": 120,
+        "pocketken_span_alloc_b": 0,
+        "native_alloc_b": 120,
+        "native_span_alloc_b": null
+      },
+      {
+        "op": "compactCells",
+        "pocketken_streaming_ns": 3414.7,
+        "pocketken_span_ns": 4060.1,
+        "native_ns": 6232.6,
+        "native_span_ns": 5778.9,
+        "streaming_ratio": 0.548,
+        "span_ratio": 0.703,
+        "pocketken_streaming_alloc_b": 7008,
+        "pocketken_span_alloc_b": 0,
+        "native_alloc_b": 2800,
+        "native_span_alloc_b": 0
+      },
+      {
+        "op": "uncompactCells",
+        "pocketken_streaming_ns": 2072.2,
+        "pocketken_span_ns": 1819.2,
+        "native_ns": 2534.1,
+        "native_span_ns": 1907.3,
+        "streaming_ratio": 0.818,
+        "span_ratio": 0.954,
+        "pocketken_streaming_alloc_b": 160,
+        "pocketken_span_alloc_b": 32,
+        "native_alloc_b": 5536,
+        "native_span_alloc_b": 0
+      },
+      {
+        "op": "polygonToCells",
+        "pocketken_streaming_ns": 62602.6,
+        "pocketken_span_ns": null,
+        "native_ns": 185216.6,
+        "native_span_ns": null,
+        "streaming_ratio": 0.338,
+        "span_ratio": null,
+        "pocketken_streaming_alloc_b": 1800,
+        "pocketken_span_alloc_b": null,
+        "native_alloc_b": 608,
+        "native_span_alloc_b": null
+      }
+    ]
+  },
+  "polygon_sweep": {
+    "note": "~0.5deg SF box, res 4-12, same box+resolution per point. native = H3.NET.Native ToCells; pocketken = Polyfill.Fill (sequential); parallel = ParallelFill (res 9-12).",
+    "rows": [
+      {
+        "resolution": 4,
+        "cells": 1,
+        "native_us": 20.016,
+        "pocketken_us": 7.188,
+        "native_alloc_b": 192,
+        "pocketken_alloc_b": 1816
+      },
+      {
+        "resolution": 5,
+        "cells": 9,
+        "native_us": 40.667,
+        "pocketken_us": 12.711,
+        "native_alloc_b": 256,
+        "pocketken_alloc_b": 1816,
+        "pocketken_parallel_us": 123.1
+      },
+      {
+        "resolution": 6,
+        "cells": 65,
+        "native_us": 89.167,
+        "pocketken_us": 37.016,
+        "native_alloc_b": 704,
+        "pocketken_alloc_b": 1816,
+        "pocketken_parallel_us": 160.3
+      },
+      {
+        "resolution": 7,
+        "cells": 455,
+        "native_us": 390.353,
+        "pocketken_us": 180.591,
+        "native_alloc_b": 3824,
+        "pocketken_alloc_b": 1816,
+        "pocketken_parallel_us": 301.6
+      },
+      {
+        "resolution": 8,
+        "cells": 3189,
+        "native_us": 1886.429,
+        "pocketken_us": 1164.834,
+        "native_alloc_b": 25696,
+        "pocketken_alloc_b": 1816,
+        "pocketken_parallel_us": 696.8
+      },
+      {
+        "resolution": 9,
+        "cells": 22334,
+        "native_us": 12831.534,
+        "pocketken_us": 8364.409,
+        "native_alloc_b": 179182,
+        "pocketken_alloc_b": 1816,
+        "pocketken_parallel_us": 2789.6
+      },
+      {
+        "resolution": 10,
+        "cells": 156334,
+        "native_us": 89156.718,
+        "pocketken_us": 56856.246,
+        "native_alloc_b": 1250856,
+        "pocketken_alloc_b": 1816,
+        "pocketken_parallel_us": 15345.1
+      },
+      {
+        "resolution": 11,
+        "cells": 1094337,
+        "native_us": 716661.068,
+        "pocketken_us": 472806.89,
+        "native_alloc_b": 8754880,
+        "pocketken_alloc_b": 1984,
+        "pocketken_parallel_us": 115691.4
+      },
+      {
+        "resolution": 12,
+        "cells": 7660354,
+        "native_us": 5050253.069,
+        "pocketken_us": 3936966.145,
+        "native_alloc_b": 61283016,
+        "pocketken_alloc_b": 1984,
+        "pocketken_parallel_us": 965946.5
+      }
+    ]
+  },
+  "small_workloads": {
+    "note": "LatLngToCell/GridDisk baseline = raw libh3 (P/Invoke). GridDisk pocketken = GridDiskDistances into a caller buffer (apples-to-apples with the raw buffer fill; cells+distances). PolygonToCells = res-9 SF box. Polyfill 22k/7.7M = 0.5deg box res9/res12 (allocation).",
+    "rows": [
+      {
+        "op": "LatLngToCell",
+        "impl": "raw libh3",
+        "mean_ns": 318.8,
+        "ratio": 1.0,
+        "alloc_b": 0
+      },
+      {
+        "op": "LatLngToCell",
+        "impl": "H3.NET.Native",
+        "mean_ns": 320.7,
+        "ratio": 1.01,
+        "alloc_b": 0
+      },
+      {
+        "op": "LatLngToCell",
+        "impl": "pocketken.H3",
+        "mean_ns": 168.8,
+        "ratio": 0.53,
+        "alloc_b": 0
+      },
+      {
+        "op": "GridDisk",
+        "impl": "raw libh3",
+        "mean_ns": 1585.8,
+        "ratio": 1.0,
+        "alloc_b": 0
+      },
+      {
+        "op": "GridDisk",
+        "impl": "H3.NET.Native",
+        "mean_ns": 1834.4,
+        "ratio": 1.16,
+        "alloc_b": 1504
+      },
+      {
+        "op": "GridDisk",
+        "impl": "pocketken.H3",
+        "mean_ns": 1361.5,
+        "ratio": 0.86,
+        "alloc_b": 0
+      },
+      {
+        "op": "PolygonToCells",
+        "impl": "H3.NET.Native",
+        "mean_ns": 185216.6,
+        "ratio": 1.0,
+        "alloc_b": 608
+      },
+      {
+        "op": "PolygonToCells",
+        "impl": "pocketken.H3",
+        "mean_ns": 62602.6,
+        "ratio": 0.34,
+        "alloc_b": 1800
+      },
+      {
+        "op": "Polyfill 22k",
+        "impl": "H3.NET.Native",
+        "alloc_b": 179182
+      },
+      {
+        "op": "Polyfill 22k",
+        "impl": "pocketken.H3",
+        "alloc_b": 1816
+      },
+      {
+        "op": "Polyfill 7.7M",
+        "impl": "H3.NET.Native",
+        "alloc_b": 61283016
+      },
+      {
+        "op": "Polyfill 7.7M",
+        "impl": "pocketken.H3",
+        "alloc_b": 1984
+      }
+    ]
+  }
+}

@@ -11,10 +11,10 @@ feature:
 
 ```sh
 # benchmark the published 4.0.0 package
-dotnet run --configuration Release --project test/H3.CompareBenchmarks/v4.0.0 -- --filter '*' --join
+dotnet run --configuration Release --project benchmarks/H3.CompareBenchmarks/v4.0.0 -- --filter '*' --join
 
 # benchmark the current working tree
-dotnet run --configuration Release --project test/H3.CompareBenchmarks/current -- --filter '*' --join
+dotnet run --configuration Release --project benchmarks/H3.CompareBenchmarks/current -- --filter '*' --join
 ```
 
 Each run emits a table (and artifacts under `BenchmarkDotNet.Artifacts/`)

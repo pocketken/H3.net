@@ -242,6 +242,23 @@ public struct CoordIJK : IEquatable<CoordIJK> {
     }
 
     /// <summary>
+    /// Rounds <paramref name="n"/>/7 to the nearest integer, ties away from zero,
+    /// using only integer arithmetic.  This is bit-for-bit identical to
+    /// <c>(long)Utils.CRound(n / 7.0)</c> for every value produced on the
+    /// aperture-7 up-scaling paths: for an integer <paramref name="n"/> the exact
+    /// quotient n/7 is never a half-integer (its fractional part is a multiple of
+    /// 1/7, at least 0.14 away from 0.5), so round-half-away equals
+    /// round-to-nearest; and because all operands here derive from 32-bit ijk
+    /// components (|n| &lt; 2^34 &lt;&lt; 2^52), n/7.0 is the correctly-rounded double
+    /// quotient and <c>Floor(n/7.0 + 0.5)</c> / <c>Ceiling(n/7.0 - 0.5)</c> land on
+    /// the same integer as this.  The constant divisor is strength-reduced by the
+    /// JIT to a multiply+shift, removing the double divide and the Floor/Ceiling of
+    /// <see cref="Utils.CRound"/> from the serially dependent up-aperture chain.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static long RoundDiv7(long n) => (n + (n >= 0 ? 3L : -3L)) / 7;
+
+    /// <summary>
     /// Find the normalized ijk coordinates of the indexing parent of a cell in a
     /// counter-clockwise aperture 7 grid, validating that the operation does not
     /// overflow.  Works in place.
@@ -253,8 +270,8 @@ public struct CoordIJK : IEquatable<CoordIJK> {
         var i = (long)I - K;
         var j = (long)J - K;
 
-        var newI = (long)Utils.CRound((3 * i - j) / 7.0);
-        var newJ = (long)Utils.CRound((i + 2 * j) / 7.0);
+        var newI = RoundDiv7(3 * i - j);
+        var newJ = RoundDiv7(i + 2 * j);
 
         if (newI is > int.MaxValue or < int.MinValue || newJ is > int.MaxValue or < int.MinValue || NormalizeCouldOverflow((int)newI, (int)newJ)) {
             throw new OverflowException("ijk coordinates would overflow");
@@ -279,8 +296,8 @@ public struct CoordIJK : IEquatable<CoordIJK> {
         var i = (long)I - K;
         var j = (long)J - K;
 
-        var newI = (long)Utils.CRound((2 * i + j) / 7.0);
-        var newJ = (long)Utils.CRound((3 * j - i) / 7.0);
+        var newI = RoundDiv7(2 * i + j);
+        var newJ = RoundDiv7(3 * j - i);
 
         if (newI is > int.MaxValue or < int.MinValue || newJ is > int.MaxValue or < int.MinValue || NormalizeCouldOverflow((int)newI, (int)newJ)) {
             throw new OverflowException("ijk coordinates would overflow");
@@ -304,8 +321,8 @@ public struct CoordIJK : IEquatable<CoordIJK> {
             var i = I - K;
             var j = J - K;
 
-            I = (int)Utils.CRound((3 * i - j) / 7.0);
-            J = (int)Utils.CRound((i + 2 * j) / 7.0);
+            I = (int)RoundDiv7(3 * i - j);
+            J = (int)RoundDiv7(i + 2 * j);
             K = 0;
 
             return Normalize();
@@ -323,8 +340,8 @@ public struct CoordIJK : IEquatable<CoordIJK> {
             var i = I - K;
             var j = J - K;
 
-            I = (int)Utils.CRound((2 * i + j) / 7.0);
-            J = (int)Utils.CRound((3 * j - i) / 7.0);
+            I = (int)RoundDiv7(2 * i + j);
+            J = (int)RoundDiv7(3 * j - i);
             K = 0;
 
             return Normalize();
@@ -369,6 +386,114 @@ public struct CoordIJK : IEquatable<CoordIJK> {
             K = k;
 
             return Normalize();
+        }
+    }
+
+    /// <summary>
+    /// Fused aperture-7 down-step (counter-clockwise when <paramref name="isClass3"/>,
+    /// otherwise clockwise) immediately followed by a translation to the neighbour in
+    /// the given <paramref name="direction"/>.  Works in place.
+    ///
+    /// This is bit-for-bit identical to calling
+    /// <see cref="DownAperture7CounterClockwise()"/> / <see cref="DownAperture7Clockwise"/>
+    /// and then <see cref="ToNeighbour(Direction)"/>, but performs a single normalization rather
+    /// than two: <see cref="Normalize()"/> only ever subtracts an integer multiple of
+    /// (1,1,1), and is therefore invariant under adding one, so normalizing the summed
+    /// (down-stepped + unit-vector) coordinates once yields exactly the same canonical
+    /// result as normalizing after each sub-step.  Adding the direction's ijk unit
+    /// vector <c>((d&gt;&gt;2)&amp;1, (d&gt;&gt;1)&amp;1, d&amp;1)</c> unconditionally is correct for
+    /// every digit value 0..7: Center (0) adds nothing, and Invalid (7) adds (1,1,1),
+    /// which the normalization removes — matching <see cref="ToNeighbour(Direction)"/>'s
+    /// early-return (no-op after the down-step's own normalize) for those digits.
+    /// </summary>
+    /// <param name="isClass3">Whether the resolution being descended into is Class III
+    /// (counter-clockwise aperture 7); otherwise Class II (clockwise).</param>
+    /// <param name="direction">The digit direction to translate to.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void DownAperture7ToNeighbour(bool isClass3, Direction direction) {
+        unchecked {
+            int i, j, k;
+            if (isClass3) {
+                // DownAperture7CounterClockwise
+                i = 3 * I + J;
+                j = 3 * J + K;
+                k = I + 3 * K;
+            } else {
+                // DownAperture7Clockwise
+                i = 3 * I + K;
+                j = I + 3 * J;
+                k = J + 3 * K;
+            }
+
+            // ToNeighbour: add the direction digit's ijk unit vector.
+            var d = (int)direction;
+            i += (d >> 2) & 1;
+            j += (d >> 1) & 1;
+            k += d & 1;
+
+            // i, j, k are always >= 0 here (this is only reached from the
+            // resolution digit walk, whose inputs — base-cell home coords or
+            // (0,0,0) — are non-negative and preserved by every step, and both
+            // the aperture-7 transform and the unit vector are non-negative), so
+            // the negative-clamp branches of Normalize are provably dead and only
+            // the min-subtraction remains.  Bit-for-bit identical to Normalize().
+            var min = i < j ? i : j;
+            if (k < min) min = k;
+            I = i - min;
+            J = j - min;
+            K = k - min;
+        }
+    }
+
+    /// <summary>
+    /// Fused pair of aperture-7 down-steps for the resolution digit walk: a
+    /// Class III (counter-clockwise) step translating to <paramref name="oddDigit"/>
+    /// immediately followed by a Class II (clockwise) step translating to
+    /// <paramref name="evenDigit"/>, performed with a SINGLE normalization rather
+    /// than one per step.  Works in place.
+    ///
+    /// On the digit walk the resolution parity alternates, so an odd-resolution
+    /// digit (Class III, CCW) is always followed by an even-resolution digit
+    /// (Class II, CW); this fuses that fixed pair.  Composing the two integer
+    /// transforms yields the symmetric map [[10,3,3],[3,10,3],[3,3,10]] plus a
+    /// constant offset formed from the two digits' ijk unit vectors.  Deferring
+    /// the first step's normalization into the second is bit-for-bit identical to
+    /// normalizing after each step: <see cref="Normalize()"/> only ever subtracts a
+    /// multiple of (1,1,1), and every aperture-7 down-step maps (m,m,m) to
+    /// (4m,4m,4m) — again a multiple of (1,1,1) — so the deferred (1,1,1) offset
+    /// is removed by the single trailing normalization (the round-8
+    /// <see cref="DownAperture7ToNeighbour"/> identity applied one level up).
+    /// Inputs on this path are always non-negative, so — as in
+    /// <see cref="DownAperture7ToNeighbour"/> — only the min-subtraction of the
+    /// normalization is required.
+    /// </summary>
+    /// <param name="oddDigit">The Class III (CCW) step's direction digit.</param>
+    /// <param name="evenDigit">The Class II (CW) step's direction digit.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void DownAperture7ClassIIIThenClassII(Direction oddDigit, Direction evenDigit) {
+        unchecked {
+            // ijk unit vectors of the two digits: ((d >> 2) & 1, (d >> 1) & 1, d & 1)
+            var d1 = (int)oddDigit;
+            var d2 = (int)evenDigit;
+            var b1i = (d1 >> 2) & 1;
+            var b1j = (d1 >> 1) & 1;
+            var b1k = d1 & 1;
+            var b2i = (d2 >> 2) & 1;
+            var b2j = (d2 >> 1) & 1;
+            var b2k = d2 & 1;
+
+            // CW(CCW(I,J,K) + u1) + u2, expanded:
+            var i = 10 * I + 3 * J + 3 * K + (3 * b1i + b1k + b2i);
+            var j = 3 * I + 10 * J + 3 * K + (b1i + 3 * b1j + b2j);
+            var k = 3 * I + 3 * J + 10 * K + (b1j + 3 * b1k + b2k);
+
+            // i, j, k are all >= 0, so only the min-subtraction of Normalize is
+            // required (the negative-clamp branches are provably dead).
+            var min = i < j ? i : j;
+            if (k < min) min = k;
+            I = i - min;
+            J = j - min;
+            K = k - min;
         }
     }
 

@@ -347,23 +347,30 @@ public static class LocalCoordIJK {
         // digits
         for (var r = resolution - 1; r >= 0; r -= 1) {
             var lastIJK = ijkCopy;
-            CoordIJK lastCenter;
 
+            // Up-step to the parent, then subtract the parent's aperture-7
+            // down-step (its "center" expressed at the child resolution) from
+            // lastIJK to recover this digit's ijk unit vector.  The down-step's
+            // own Normalize is intentionally omitted: the difference is
+            // re-normalized by the CoordIJK -> Direction conversion in
+            // SetDirectionForResolution, and Normalize is invariant under the
+            // (1,1,1) multiple that the omitted normalize would have removed, so
+            // the encoded digit is bit-for-bit identical while avoiding a
+            // per-digit normalization and struct copy on this serial chain.
             if (IsResolutionClass3(r + 1)) {
-                // rotate ccw
+                // rotate ccw; down = (3I+J, 3J+K, I+3K)
                 ijkCopy.UpAperture7CounterClockwiseChecked();
-                lastCenter = ijkCopy;
-                lastCenter.DownAperture7CounterClockwise();
+                lastIJK.I -= 3 * ijkCopy.I + ijkCopy.J;
+                lastIJK.J -= 3 * ijkCopy.J + ijkCopy.K;
+                lastIJK.K -= ijkCopy.I + 3 * ijkCopy.K;
             } else {
-                // rotate cw
+                // rotate cw; down = (3I+K, I+3J, J+3K)
                 ijkCopy.UpAperture7ClockwiseChecked();
-                lastCenter = ijkCopy;
-                lastCenter.DownAperture7Clockwise();
+                lastIJK.I -= 3 * ijkCopy.I + ijkCopy.K;
+                lastIJK.J -= ijkCopy.I + 3 * ijkCopy.J;
+                lastIJK.K -= ijkCopy.J + 3 * ijkCopy.K;
             }
 
-            lastIJK.I -= lastCenter.I;
-            lastIJK.J -= lastCenter.J;
-            lastIJK.K -= lastCenter.K;
             index.SetDirectionForResolution(r + 1, lastIJK);
         }
 

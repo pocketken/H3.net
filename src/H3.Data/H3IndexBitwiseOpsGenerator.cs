@@ -22,7 +22,6 @@ public partial struct H3Index {{
     /// Perform in-place 60 degree clockwise rotation(s) of the index.
     /// </summary>
     /// <param name=""rotations"">number of rotations to perform</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RotateClockwise(int rotations) {{
         if (rotations <= 0) return;
         Value = Resolution switch {{{0}
@@ -34,7 +33,6 @@ public partial struct H3Index {{
     /// Perform in-place 60 degree clockwise rotation(s) of the index.
     /// </summary>
     /// <param name=""rotations"">number of rotations to perform</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RotateCounterClockwise(int rotations) {{
         if (rotations <= 0) return;
         Value = Resolution switch {{{1}

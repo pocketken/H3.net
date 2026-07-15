@@ -22,84 +22,12 @@ public static class H3GeometryExtensions {
     public static Coordinate ToCoordinate(this H3Index inputIndex, Coordinate? result = default) {
         result ??= new Coordinate();
 
-        var resolution = inputIndex.Resolution;
-        var faceIjk = inputIndex.ToFaceIJK();
-
-        var center = LookupTables.GeoFaceCenters[faceIjk.Face];
-        var (x, y) = faceIjk.Coord.GetVec2dOrdinates();
-
-        var distance = Math.Sqrt(x * x + y * y);
-        if (distance < EPSILON) {
-            result.X = center.LongitudeDegrees;
-            result.Y = center.LatitudeDegrees;
-            return result;
-        }
-
-        var azimuth = Math.Atan2(y, x);
-
-        for (var i = 0; i < resolution; i += 1) distance /= M_SQRT7;
-
-        distance = Math.Atan(distance * RES0_U_GNOMONIC);
-        if (IsResolutionClass3(resolution)) {
-            azimuth = NormalizeAngle(azimuth + M_AP7_ROT_RADS);
-        }
-
-        azimuth = NormalizeAngle(LookupTables.AxisAzimuths[faceIjk.Face] - azimuth);
-
-        double latitude;
-        double longitude;
-
-        if (azimuth < EPSILON || Math.Abs(azimuth - M_PI) < EPSILON) {
-            // due north or south
-            latitude = azimuth < EPSILON ? center.Latitude + distance : center.Latitude - distance;
-
-            if (Math.Abs(latitude - M_PI_2) < EPSILON) {
-                // north pole
-                latitude = M_PI_2;
-                longitude = 0;
-            } else if (Math.Abs(latitude + M_PI_2) < EPSILON) {
-                // south pole
-                latitude = -M_PI_2;
-                longitude = 0;
-            } else {
-                longitude = ConstrainLongitude(center.Longitude);
-            }
-        } else {
-            // not due north or south
-            var sinP1Lat = Math.Sin(center.Latitude);
-            var cosP1Lat = Math.Cos(center.Latitude);
-            var sinDist = Math.Sin(distance);
-            var cosDist = Math.Cos(distance);
-#if NETSTANDARD2_0
-                var sinLat = Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(azimuth), -1.0, 1.0);
-#else
-            var sinLat = Math.Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(azimuth), -1.0, 1.0);
-#endif
-            latitude = Math.Asin(sinLat);
-
-            if (Math.Abs(latitude - M_PI_2) < EPSILON) {
-                // north pole
-                latitude = M_PI_2;
-                longitude = 0;
-            } else if (Math.Abs(latitude + M_PI_2) < EPSILON) {
-                // south pole
-                latitude = -M_PI_2;
-                longitude = 0;
-            } else {
-                var cosP2Lat = Math.Cos(latitude);
-#if NETSTANDARD2_0
-                    var sinLon = Clamp(Math.Sin(azimuth) * sinDist / cosP2Lat, -1.0, 1.0);
-                    var cosLon = Clamp((cosDist - sinP1Lat * Math.Sin(latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
-#else
-                var sinLon = Math.Clamp(Math.Sin(azimuth) * sinDist / cosP2Lat, -1.0, 1.0);
-                var cosLon = Math.Clamp((cosDist - sinP1Lat * Math.Sin(latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
-#endif
-                longitude = ConstrainLongitude(center.Longitude + Math.Atan2(sinLon, cosLon));
-            }
-        }
-
-        result.X = longitude * M_180_PI;
-        result.Y = latitude * M_180_PI;
+        // Delegate to the single inverse projection (FaceIJK.ToLatLng -> the vec3
+        // pipeline that matches libh3 v4.5.0 bit-for-bit).  Keeping one code path
+        // for the cell centre guarantees ToCoordinate and ToLatLng never diverge.
+        var center = inputIndex.ToFaceIJK().ToLatLng(inputIndex.Resolution);
+        result.X = center.LongitudeDegrees;
+        result.Y = center.LatitudeDegrees;
 
         return result;
     }
@@ -217,11 +145,16 @@ public static class H3GeometryExtensions {
     public static double CellAreaInRadiansSquared(this H3Index index) {
         var resolution = index.Resolution;
         var faceIjk = index.ToFaceIJK();
-        var boundary = (index.IsPentagon
-            ? faceIjk.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS)
-            : faceIjk.GetHexagonBoundary(resolution, 0, NUM_HEX_VERTS)).ToArray();
 
-        return LatLng.GetLoopAreaInRadiansSquared(boundary);
+        // fill the boundary straight into a stack buffer (NUM_HEX_VERTS vertices
+        // plus up to NUM_HEX_VERTS edge-crossing intersections) so the whole
+        // area computation is allocation-free
+        Span<LatLng> boundary = stackalloc LatLng[NUM_HEX_VERTS * 2 + 4];
+        var count = index.IsPentagon
+            ? faceIjk.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS, boundary)
+            : faceIjk.GetHexagonBoundary(resolution, 0, NUM_HEX_VERTS, boundary);
+
+        return LatLng.GetLoopAreaInRadiansSquared(boundary[..count]);
     }
 
     /// <summary>
@@ -270,6 +203,41 @@ public static class H3GeometryExtensions {
     }
 
     /// <summary>
+    /// The maximum number of vertices in a cell boundary, i.e. the minimum length
+    /// of the destination buffer for the <see cref="Span{T}"/> overload of
+    /// <see cref="GetCellBoundaryVertices(H3Index,Span{LatLng})"/>.  A Class III
+    /// hexagon boundary is at most <see cref="Constants.NUM_HEX_VERTS"/> vertices
+    /// plus one edge-crossing vertex per side.
+    /// </summary>
+    public const int MaxCellBoundaryVertices = NUM_HEX_VERTS * 2;
+
+    /// <summary>
+    /// Fills <paramref name="destination"/> with the cell boundary vertices in
+    /// spherical coordinates for the given index and returns the number written.
+    /// Allocation-free equivalent of the streaming
+    /// <see cref="GetCellBoundaryVertices(H3Index)"/>, with identical vertices and
+    /// ordering.
+    /// </summary>
+    /// <param name="index">H3Index to get boundary for</param>
+    /// <param name="destination">buffer of at least
+    /// <see cref="MaxCellBoundaryVertices"/> vertices</param>
+    /// <returns>the number of vertices written to <paramref name="destination"/></returns>
+    /// <exception cref="ArgumentException">Thrown when the destination buffer is
+    /// smaller than <see cref="MaxCellBoundaryVertices"/>.</exception>
+    public static int GetCellBoundaryVertices(this H3Index index, Span<LatLng> destination) {
+        if (destination.Length < MaxCellBoundaryVertices) {
+            throw new ArgumentException(
+                $"destination must hold at least {MaxCellBoundaryVertices} vertices (see {nameof(MaxCellBoundaryVertices)})", nameof(destination));
+        }
+
+        var face = index.ToFaceIJK();
+        var resolution = index.Resolution;
+        return index.IsPentagon
+            ? face.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS, destination)
+            : face.GetHexagonBoundary(resolution, 0, NUM_HEX_VERTS, destination);
+    }
+
+    /// <summary>
     /// Generates a Polygon of the cell boundary for a given H3 index.
     /// </summary>
     /// <param name="index"></param>
@@ -278,16 +246,27 @@ public static class H3GeometryExtensions {
     /// 4326 (WGS84)</param>
     /// <returns>Polygon for cell boundary</returns>
     public static Polygon GetCellBoundary(this H3Index index, GeometryFactory? geomFactory = null) {
-        // get vertices and copy first onto the end to close the hole
-        List<Coordinate> coordinates = new(11);
+        var face = index.ToFaceIJK();
+        var resolution = index.Resolution;
 
-        foreach (var vert in GetCellBoundaryVertices(index)) {
-            coordinates.Add(new Coordinate(vert.LongitudeDegrees, vert.LatitudeDegrees));
+        // fill the boundary straight into a stack buffer (NUM_HEX_VERTS vertices
+        // plus up to NUM_HEX_VERTS edge-crossing intersections) so we avoid the
+        // intermediate LatLng[] and List<Coordinate> allocations
+        Span<LatLng> boundary = stackalloc LatLng[NUM_HEX_VERTS * 2 + 4];
+        var count = index.IsPentagon
+            ? face.GetPentagonBoundary(resolution, 0, NUM_PENT_VERTS, boundary)
+            : face.GetHexagonBoundary(resolution, 0, NUM_HEX_VERTS, boundary);
+
+        // build the closed ring directly at the right size: vertices followed by
+        // a copy of the first vertex to close the hole
+        var coordinates = new Coordinate[count + 1];
+        for (var i = 0; i < count; i += 1) {
+            coordinates[i] = new Coordinate(boundary[i].LongitudeDegrees, boundary[i].LatitudeDegrees);
         }
+        coordinates[count] = coordinates[0].Copy();
 
-        coordinates.Add(coordinates[0].Copy());
         var gf = geomFactory ?? DefaultGeometryFactory;
-        return gf.CreatePolygon(coordinates.ToArray());
+        return gf.CreatePolygon(coordinates);
     }
 
     /// <summary>

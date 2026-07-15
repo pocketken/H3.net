@@ -29,7 +29,7 @@ The model types (`H3Index`, `CoordIJK`, `FaceIJK`, `LatLng`, ...) are *mutable s
 See these likely-out-of-date [benchmarks](https://github.com/pocketken/H3.net/blob/main/docs/benchmarks.md), or you can run  them yourself - e.g.:
 
 ```sh
-dotnet run --configuration Release --project .\test\H3.Benchmarks\H3.Benchmarks.csproj --join --framework net10.0
+dotnet run --configuration Release --project .\benchmarks\H3.Benchmarks\H3.Benchmarks.csproj --join --framework net10.0
 ```
 
-To compare the current working tree against the published 4.0.0 package, see [test/H3.CompareBenchmarks](https://github.com/pocketken/H3.net/blob/main/test/H3.CompareBenchmarks/README.md).
+The benchmark projects live under [benchmarks/](https://github.com/pocketken/H3.net/blob/main/benchmarks): `H3.CompareBenchmarks` compares the current working tree against the published 4.0.0 package, and `H3.NativeCompare` compares it against a native `libh3` binding (see [docs/benchmarks.md](https://github.com/pocketken/H3.net/blob/main/docs/benchmarks.md)).
