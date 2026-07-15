@@ -13,3 +13,7 @@
 
 ## c# ##
 *.cs diff=csharp text
+
+# H3 test vectors (cells/centers per base cell + resolution) are generated fixtures.
+test/H3.Test/TestData/** linguist-generated=true
+
