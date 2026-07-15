@@ -59,12 +59,25 @@ public static class Utils {
     /// <param name="p2Lat">p2 latitude, in radians</param>
     /// <returns>azimuth, ...in radians!</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double AzimuthInRadians(double p1Lon, double p1Lat, double p2Lon, double p2Lat) {
+    public static double AzimuthInRadians(double p1Lon, double p1Lat, double p2Lon, double p2Lat) =>
+        AzimuthInRadians(p1Lon, p1Lat, p2Lon, p2Lat, Math.Sin(p1Lat), Math.Cos(p1Lat));
+
+    /// <summary>
+    /// Precomputed-latitude-trig overload of
+    /// <see cref="AzimuthInRadians(double,double,double,double)"/>: the caller
+    /// supplies <paramref name="sinP1Lat"/> = <c>Math.Sin(p1Lat)</c> and
+    /// <paramref name="cosP1Lat"/> = <c>Math.Cos(p1Lat)</c> so callers projecting
+    /// from a fixed point (e.g. an icosahedron face center) can reuse the constant
+    /// values instead of recomputing them.  Bit-for-bit identical to the public
+    /// overload.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static double AzimuthInRadians(double p1Lon, double p1Lat, double p2Lon, double p2Lat, double sinP1Lat, double cosP1Lat) {
         var cosP2Lat = Math.Cos(p2Lat);
         return Math.Atan2(
             cosP2Lat * Math.Sin(p2Lon - p1Lon),
-            Math.Cos(p1Lat) * Math.Sin(p2Lat) -
-            Math.Sin(p1Lat) * cosP2Lat * Math.Cos(p2Lon - p1Lon)
+            cosP1Lat * Math.Sin(p2Lat) -
+            sinP1Lat * cosP2Lat * Math.Cos(p2Lon - p1Lon)
         );
     }
 

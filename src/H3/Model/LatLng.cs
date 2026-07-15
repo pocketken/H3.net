@@ -59,7 +59,33 @@ public struct LatLng : IEquatable<LatLng> {
     /// <returns>
     /// The spherical coordinates at the desired azimuth and distance from p1
     /// </returns>
-    public static LatLng ForAzimuthDistanceInRadians(LatLng p1, double azimuth, double distance) {
+    public static LatLng ForAzimuthDistanceInRadians(LatLng p1, double azimuth, double distance) =>
+        ForAzimuthDistanceInRadians(p1, azimuth, distance, Math.Sin(p1.Latitude), Math.Cos(p1.Latitude));
+
+    /// <summary>
+    /// Precomputed-latitude-trig overload of
+    /// <see cref="ForAzimuthDistanceInRadians(LatLng,double,double)"/>: the caller
+    /// supplies <paramref name="sinP1Lat"/> = <c>Math.Sin(p1.Latitude)</c> and
+    /// <paramref name="cosP1Lat"/> = <c>Math.Cos(p1.Latitude)</c> so the spherical
+    /// projection can reuse the (constant, per-face-center) values instead of
+    /// recomputing them.  Bit-for-bit identical to the public overload.
+    /// </summary>
+    internal static LatLng ForAzimuthDistanceInRadians(LatLng p1, double azimuth, double distance, double sinP1Lat, double cosP1Lat) =>
+        ForAzimuthDistanceInRadians(p1, azimuth, distance, sinP1Lat, cosP1Lat, Math.Sin(distance), Math.Cos(distance));
+
+    /// <summary>
+    /// Precomputed-distance-trig overload of
+    /// <see cref="ForAzimuthDistanceInRadians(LatLng,double,double,double,double)"/>:
+    /// the caller additionally supplies <paramref name="sinDist"/> =
+    /// <c>Math.Sin(distance)</c> and <paramref name="cosDist"/> =
+    /// <c>Math.Cos(distance)</c>.  Projection callers form the angular distance as
+    /// <c>distance = Math.Atan(u)</c> from a gnomonic radius <c>u</c>, so they can
+    /// obtain these from a single <c>sqrt</c> via the tangent identities
+    /// <c>sin(atan u) = u / sqrt(1 + u^2)</c>, <c>cos(atan u) = 1 / sqrt(1 + u^2)</c>
+    /// instead of paying for a sine and a cosine here.  Numerically within ~1 ULP of
+    /// recomputing <c>Math.Sin(distance)</c> / <c>Math.Cos(distance)</c>.
+    /// </summary>
+    internal static LatLng ForAzimuthDistanceInRadians(LatLng p1, double azimuth, double distance, double sinP1Lat, double cosP1Lat, double sinDist, double cosDist) {
         unchecked {
             LatLng p2 = new(p1);
             if (distance < EPSILON) return p2;
@@ -82,11 +108,8 @@ public struct LatLng : IEquatable<LatLng> {
                     p2.Longitude = ConstrainLongitude(p1.Longitude);
                 }
             } else {
-                // not due north or south
-                var sinP1Lat = Math.Sin(p1.Latitude);
-                var cosP1Lat = Math.Cos(p1.Latitude);
-                var cosDist = Math.Cos(distance);
-                var sinDist = Math.Sin(distance);
+                // not due north or south; sinP1Lat / cosP1Lat and sinDist / cosDist
+                // supplied by caller
 #if NETSTANDARD2_0
                 var sinLat = Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * Math.Cos(az), -1.0, 1.0);
 #else
@@ -103,15 +126,88 @@ public struct LatLng : IEquatable<LatLng> {
                     p2.Latitude = -M_PI_2;
                     p2.Longitude = 0;
                 } else {
-                    var cosP2Lat = Math.Cos(p2.Latitude);
+                    // atan2 is invariant under a positive common scale on both of
+                    // its arguments, so the cos(p2.Latitude) that scales sinLon and
+                    // cosLon cancels; computing it (a cosine) and dividing by it
+                    // twice is unnecessary, and the unscaled numerators stay within
+                    // [-1, 1] so the defensive clamp is a no-op and is dropped.  The
+                    // retained /cosP1Lat already exists, so no new division is added.
+                    // sin(p2.Latitude) == sinLat exactly (p2.Latitude = Asin(sinLat)).
+                    var sinLon = Math.Sin(az) * sinDist;
+                    var cosLon = (cosDist - sinP1Lat * sinLat) / cosP1Lat;
+                    p2.Longitude = ConstrainLongitude(p1.Longitude + Math.Atan2(sinLon, cosLon));
+                }
+            }
+
+            return p2;
+        }
+    }
+
+    /// <summary>
+    /// Precomputed-azimuth-trig overload of
+    /// <see cref="ForAzimuthDistanceInRadians(LatLng,double,double,double,double,double,double)"/>:
+    /// the caller supplies <paramref name="sinAz"/> = <c>Math.Sin(azimuth)</c> and
+    /// <paramref name="cosAz"/> = <c>Math.Cos(azimuth)</c> directly instead of the
+    /// azimuth angle itself.  The inverse gnomonic projection forms the azimuth as
+    /// <c>axisAzimuth - atan2(y, x)</c>, whose sine and cosine follow from the
+    /// angle-subtraction identity applied to the (constant, per-face) axis-azimuth
+    /// trig and the planar components — <c>cos(atan2(y,x)) = x / r</c>,
+    /// <c>sin(atan2(y,x)) = y / r</c> — so it never needs the <c>atan2</c>, <c>cos</c>
+    /// or <c>sin</c> that this method would otherwise compute.  Due-north/south is
+    /// detected from <c>|sinAz| &lt; EPSILON</c>, with <c>cosAz</c>'s sign selecting the
+    /// hemisphere (+ north, − south); this differs from the angle-based test only for
+    /// measure-zero borderline inputs, which both branches map to the same point
+    /// within <see cref="Constants.EPSILON_RAD"/>.  Numerically within ~1 ULP of the
+    /// angle-based overload.
+    /// </summary>
+    internal static LatLng ForAzimuthDistanceInRadians(LatLng p1, double distance, double sinP1Lat, double cosP1Lat, double sinDist, double cosDist, double sinAz, double cosAz) {
+        unchecked {
+            LatLng p2 = new(p1);
+            if (distance < EPSILON) return p2;
+
+            if (Math.Abs(sinAz) < EPSILON) {
+                // due north or south; cosAz sign picks the hemisphere
+                p2.Latitude = cosAz >= 0.0 ? p1.Latitude + distance : p1.Latitude - distance;
+
+                if (Math.Abs(p2.Latitude - M_PI_2) < EPSILON) {
+                    // north pole
+                    p2.Latitude = M_PI_2;
+                    p2.Longitude = 0;
+                } else if (Math.Abs(p2.Latitude + M_PI_2) < EPSILON) {
+                    // south pole
+                    p2.Latitude = -M_PI_2;
+                    p2.Longitude = 0;
+                } else {
+                    p2.Longitude = ConstrainLongitude(p1.Longitude);
+                }
+            } else {
+                // not due north or south; sin/cos of the azimuth and of the
+                // face-center latitude / distance all supplied by the caller
 #if NETSTANDARD2_0
-                    var sinLon = Clamp(Math.Sin(az) * sinDist / cosP2Lat, -1.0, 1.0);
-                    var cosLon = Clamp((cosDist - sinP1Lat * Math.Sin(p2.Latitude)) / cosP1Lat / cosP2Lat, -1.0, 1.0);
+                var sinLat = Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * cosAz, -1.0, 1.0);
 #else
-                        var sinLon = Math.Clamp(Math.Sin(az) * sinDist / cosP2Lat, -1.0, 1.0);
-                        var cosLon = Math.Clamp((cosDist - sinP1Lat * Math.Sin(p2.Latitude)) / cosP1Lat / cosP2Lat,
-                            -1.0, 1.0);
+                var sinLat = Math.Clamp(sinP1Lat * cosDist + cosP1Lat * sinDist * cosAz, -1.0, 1.0);
 #endif
+                p2.Latitude = Math.Asin(sinLat);
+
+                if (Math.Abs(p2.Latitude - M_PI_2) < EPSILON) {
+                    // north pole
+                    p2.Latitude = M_PI_2;
+                    p2.Longitude = 0;
+                } else if (Math.Abs(p2.Latitude + M_PI_2) < EPSILON) {
+                    // south pole
+                    p2.Latitude = -M_PI_2;
+                    p2.Longitude = 0;
+                } else {
+                    // atan2 is invariant under a positive common scale on both of
+                    // its arguments, so the cos(p2.Latitude) that scales sinLon and
+                    // cosLon cancels; computing it (a cosine) and dividing by it
+                    // twice is unnecessary, and the unscaled numerators stay within
+                    // [-1, 1] so the defensive clamp is a no-op and is dropped.  The
+                    // retained /cosP1Lat already exists, so no new division is added.
+                    // sin(p2.Latitude) == sinLat exactly (p2.Latitude = Asin(sinLat)).
+                    var sinLon = sinAz * sinDist;
+                    var cosLon = (cosDist - sinP1Lat * sinLat) / cosP1Lat;
                     p2.Longitude = ConstrainLongitude(p1.Longitude + Math.Atan2(sinLon, cosLon));
                 }
             }
@@ -154,6 +250,121 @@ public struct LatLng : IEquatable<LatLng> {
         // the Cagnoli sum yields a signed area, with the sign switching with the
         // orientation of the vertices; normalize into [0, 4 * pi] by adding
         // 4 * pi when the signed area is negative
+        if (sum < 0.0) {
+            KahanAdd(ref sum, ref compensation, 4.0 * M_PI);
+        }
+
+        return sum;
+    }
+
+    /// <summary>
+    /// <see cref="ReadOnlySpan{T}"/> overload of
+    /// <see cref="GetLoopAreaInRadiansSquared(IReadOnlyList{LatLng})"/> that
+    /// consumes the loop vertices straight out of a stack buffer, avoiding any
+    /// heap materialization of the boundary.  Replicates the indexed algorithm
+    /// exactly, so the result is bit-for-bit identical.
+    ///
+    /// Each Cagnoli edge term needs the sine and cosine of both endpoints'
+    /// half-latitudes (<c>lat / 2 + pi / 4</c>).  Every boundary vertex is the
+    /// <c>a</c>-endpoint of one edge and the <c>b</c>-endpoint of the adjacent
+    /// edge, so <see cref="GetCagnoliAreaTerm"/> would evaluate each vertex's
+    /// <see cref="Math.Sin"/> / <see cref="Math.Cos"/> twice.  This overload
+    /// carries the previous vertex's trig into the next edge, computing each
+    /// vertex's half-latitude sine/cosine exactly once — bit-for-bit identical
+    /// (the deterministic <c>Sin</c>/<c>Cos</c> produce the same bits at either
+    /// call site, and the per-edge product order, edge visitation order and thus
+    /// the order-sensitive <see cref="KahanAdd"/> sequence are all unchanged),
+    /// but with ~2 fewer transcendentals per edge.
+    /// </summary>
+    /// <param name="loop">Vertices of the loop; closed implicitly</param>
+    /// <returns>Area of the loop on the unit sphere, in radians^2</returns>
+    internal static double GetLoopAreaInRadiansSquared(ReadOnlySpan<LatLng> loop) {
+        var n = loop.Length;
+        if (n == 0) return 0.0;
+
+        var sum = 0.0;
+        var compensation = 0.0;
+
+        // half-latitude sine/cosine of the first vertex, retained to close the
+        // loop, and carried forward as the "previous" endpoint's trig
+        var first = loop[0];
+        var firstHalfLat = first.Latitude / 2.0 + M_PI / 4.0;
+        var sinFirst = Math.Sin(firstHalfLat);
+        var cosFirst = Math.Cos(firstHalfLat);
+
+        var sinPrev = sinFirst;
+        var cosPrev = cosFirst;
+        var lonPrev = first.Longitude;
+
+        for (var i = 1; i < n; i += 1) {
+            var current = loop[i];
+            var halfLat = current.Latitude / 2.0 + M_PI / 4.0;
+            var sinCur = Math.Sin(halfLat);
+            var cosCur = Math.Cos(halfLat);
+
+            var sa = sinPrev * sinCur;
+            var ca = cosPrev * cosCur;
+            var d = current.Longitude - lonPrev;
+            KahanAdd(ref sum, ref compensation, -2.0 * Math.Atan2(sa * Math.Sin(d), sa * Math.Cos(d) + ca));
+
+            sinPrev = sinCur;
+            cosPrev = cosCur;
+            lonPrev = current.Longitude;
+        }
+
+        // closing edge from the last vertex back to the first, matching
+        // term(loop[n - 1], loop[0]) of the indexed overload
+        {
+            var saC = sinPrev * sinFirst;
+            var caC = cosPrev * cosFirst;
+            var dC = first.Longitude - lonPrev;
+            KahanAdd(ref sum, ref compensation, -2.0 * Math.Atan2(saC * Math.Sin(dC), saC * Math.Cos(dC) + caC));
+        }
+
+        // the Cagnoli sum yields a signed area, with the sign switching with the
+        // orientation of the vertices; normalize into [0, 4 * pi] by adding
+        // 4 * pi when the signed area is negative
+        if (sum < 0.0) {
+            KahanAdd(ref sum, ref compensation, 4.0 * M_PI);
+        }
+
+        return sum;
+    }
+
+    /// <summary>
+    /// Streaming overload of <see cref="GetLoopAreaInRadiansSquared(IReadOnlyList{LatLng})"/>
+    /// that consumes the loop vertices in a single forward pass, avoiding the
+    /// need to materialize the boundary into an array.  Emits the exact same
+    /// sequence of per-edge terms (in the same order) as the indexed overload,
+    /// so the result is bit-for-bit identical.
+    /// </summary>
+    /// <param name="loop">Vertices of the loop; closed implicitly</param>
+    /// <returns>Area of the loop on the unit sphere, in radians^2</returns>
+    internal static double GetLoopAreaInRadiansSquared(IEnumerable<LatLng> loop) {
+        var sum = 0.0;
+        var compensation = 0.0;
+
+        var first = default(LatLng);
+        var previous = default(LatLng);
+        var hasVertices = false;
+
+        foreach (var vertex in loop) {
+            if (!hasVertices) {
+                first = vertex;
+                hasVertices = true;
+            } else {
+                KahanAdd(ref sum, ref compensation, GetCagnoliAreaTerm(previous, vertex));
+            }
+
+            previous = vertex;
+        }
+
+        // close the loop with the final edge from the last vertex back to the
+        // first, matching term(loop[n - 1], loop[0]) of the indexed overload
+        if (hasVertices) {
+            KahanAdd(ref sum, ref compensation, GetCagnoliAreaTerm(previous, first));
+        }
+
         if (sum < 0.0) {
             KahanAdd(ref sum, ref compensation, 4.0 * M_PI);
         }

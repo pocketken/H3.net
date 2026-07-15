@@ -40,8 +40,8 @@ public class H3IndexTests {
                         var segs = s.Split(' ');
                         return (
                             new H3Index(segs[0]),
-                            Convert.ToDouble(segs[1]) * M_PI_180,
-                            Convert.ToDouble(segs[2]) * M_PI_180
+                            Convert.ToDouble(segs[1]),
+                            Convert.ToDouble(segs[2])
                         );
                     }).ToArray()).Returns(true);
             });
@@ -136,13 +136,14 @@ public class H3IndexTests {
         // Act
         var actualCoords = expectedValues.Select(t => t.Item1.ToLatLng()).ToArray();
 
-        // Assert
+        // Assert — expected values are authoritative libh3 degrees; hold ours to MaxUlps.
         for (var i = 0; i < expectedValues.Length; i += 1) {
             var (_, expectedLatitude, expectedLongitude) = expectedValues[i];
             var actualCoord = actualCoords[i];
-            var matches = Math.Abs(expectedLatitude - actualCoord.Latitude) < 0.000001 &&
-                          Math.Abs(expectedLongitude - actualCoord.Longitude) < 0.000001;
+            var matches = TestHelpers.CheckUlps("ToLatLng.latDeg", actualCoord.LatitudeDegrees, expectedLatitude)
+                        & TestHelpers.CheckUlps("ToLatLng.lngDeg", actualCoord.LongitudeDegrees, expectedLongitude);
             if (!matches) {
+                Assert.Fail($"expected: {expectedLatitude},{expectedLongitude} actual: {actualCoord.LatitudeDegrees},{actualCoord.LongitudeDegrees} ulp: {TestHelpers.UlpDistance(actualCoord.LatitudeDegrees, expectedLatitude)},{TestHelpers.UlpDistance(actualCoord.LongitudeDegrees, expectedLongitude)}");
                 return false;
             }
         }
@@ -360,47 +361,47 @@ public class H3IndexTests {
     }
 
     [Test]
-    [TestCase(0, 4.357449416078383e+06)]
-    [TestCase(15, 8.953115907605790e-07)]
+    [TestCase(0, 4357449.4160783831)]
+    [TestCase(15, 8.9531159076057898e-07)]
     public void Test_Upstream_GetHexagonAreaAverageInKmSquared(int resolution, double expected) {
         // Act
         var actual = H3Index.GetHexagonAreaAverageInKmSquared(resolution);
 
         // Assert
-        Assert.That(actual, Is.EqualTo(expected).Within(1e-9), "should match upstream table");
+        Assert.That(TestHelpers.CheckUlps("HexTable", actual, expected), Is.True, $"should match upstream table (ulp {TestHelpers.UlpDistance(actual, expected)})");
     }
 
     [Test]
-    [TestCase(0, 4.357449416078390e+12)]
-    [TestCase(15, 8.953115907605802e-01)]
+    [TestCase(0, 4357449416078.3901)]
+    [TestCase(15, 0.8953115907605802)]
     public void Test_Upstream_GetHexagonAreaAverageInMSquared(int resolution, double expected) {
         // Act
         var actual = H3Index.GetHexagonAreaAverageInMSquared(resolution);
 
         // Assert
-        Assert.That(actual, Is.EqualTo(expected).Within(1e-9), "should match upstream table");
+        Assert.That(TestHelpers.CheckUlps("HexTable", actual, expected), Is.True, $"should match upstream table (ulp {TestHelpers.UlpDistance(actual, expected)})");
     }
 
     [Test]
-    [TestCase(0, 1281.256011)]
-    [TestCase(15, 0.000584169)]
+    [TestCase(0, 1281.2560109999999)]
+    [TestCase(15, 0.00058416900000000005)]
     public void Test_Upstream_GetHexagonEdgeLengthAverageInKm(int resolution, double expected) {
         // Act
         var actual = H3Index.GetHexagonEdgeLengthAverageInKm(resolution);
 
         // Assert
-        Assert.That(actual, Is.EqualTo(expected).Within(1e-9), "should match upstream table");
+        Assert.That(TestHelpers.CheckUlps("HexTable", actual, expected), Is.True, $"should match upstream table (ulp {TestHelpers.UlpDistance(actual, expected)})");
     }
 
     [Test]
-    [TestCase(0, 1281256.011)]
-    [TestCase(15, 0.584168630)]
+    [TestCase(0, 1281256.0109999999)]
+    [TestCase(15, 0.58416862999999997)]
     public void Test_Upstream_GetHexagonEdgeLengthAverageInM(int resolution, double expected) {
         // Act
         var actual = H3Index.GetHexagonEdgeLengthAverageInM(resolution);
 
         // Assert
-        Assert.That(actual, Is.EqualTo(expected).Within(1e-9), "should match upstream table");
+        Assert.That(TestHelpers.CheckUlps("HexTable", actual, expected), Is.True, $"should match upstream table (ulp {TestHelpers.UlpDistance(actual, expected)})");
     }
 
     [Test]

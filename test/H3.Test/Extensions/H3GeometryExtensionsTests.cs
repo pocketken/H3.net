@@ -24,34 +24,36 @@ public class H3GeometryExtensionsTests {
         H3Index.Create(15, 4, 0)
     };
 
+    // authoritative Uber libh3 v4.5.0 cellAreaKm2(latLngToCell(0,0,r)), r = 0..15,
+    // full round-trippable precision (%.17g), built -ffp-contract=off
     private static readonly double[] CellAreasInKm2 = {
-        2.562182162955496e+06, 4.476842017201860e+05, 6.596162242711056e+04,
-        9.228872919002590e+03, 1.318694490797110e+03, 1.879593512281298e+02,
-        2.687164354763186e+01, 3.840848847060638e+00, 5.486939641329893e-01,
-        7.838600808637444e-02, 1.119834221989390e-02, 1.599777169186614e-03,
-        2.285390931423380e-04, 3.264850232091780e-05, 4.664070326136774e-06,
-        6.662957615868888e-07
+        2562182.1629554969, 447684.20172018639, 65961.622427110298,
+        9228.8729190026515, 1318.6944907970751, 187.95935122812688,
+        26.871643547623222, 3.8408488470593798, 0.54869396413390203,
+        0.078386008086490239, 0.011198342220009625, 0.0015997771692882739,
+        0.00022853909314890188, 3.2648502336509069e-05, 4.6640703245025627e-06,
+        6.6629576002927966e-07
     };
 
-    // select st_astext(h3_to_geo_boundary_geometry('8075fffffffffff'::h3index));
-    // and discarding final polygon point
+    // authoritative Uber libh3 v4.5.0 cellToBoundary('8075fffffffffff'), Point(X=lng, Y=lat),
+    // full round-trippable precision (%.17g), built -ffp-contract=off
     private static readonly Point[] Res0BoundaryVertices = {
-        new(-4.01399844347047, 11.5452959754148),
-        new(-13.708146703918, 6.27096513627577),
-        new(-11.6647475421264, -4.46703160978452),
-        new(-0.782839175105521, -5.88992175431391),
-        new(3.94303615578645, 3.96879697660958),
+        new(-4.0139984434704905, 11.545295975414763),
+        new(-13.708146703917997, 6.2709651362757732),
+        new(-11.664747542126426, -4.4670316097845237),
+        new(-0.78283917510552126, -5.8899217543139173),
+        new(3.9430361557864577, 3.9687969766095761),
     };
 
-    // select st_astext(h3_to_geo_boundary_geometry('8e48e1d7038d527'::h3index));
-    // and discarding final polygon point
+    // authoritative Uber libh3 v4.5.0 cellToBoundary('8e48e1d7038d527'), Point(X=lng, Y=lat),
+    // full round-trippable precision (%.17g), built -ffp-contract=off
     private static readonly Point[] TestPointRes14BoundaryVertices = {
-        new(-110.000000429101, 29.9999892327449),
-        new(-109.99998660383, 29.9999986861296),
-        new(-109.999989152051, 30.0000137159278),
-        new(-110.000005525548, 30.0000192923406),
-        new(-110.00001935082, 30.0000098389545),
-        new(-110.000016802594, 29.9999948091569)
+        new(-110.00000042910071, 29.999989232744888),
+        new(-109.9999866038296, 29.999998686129619),
+        new(-109.99998915205138, 30.000013715927761),
+        new(-110.00000552554795, 30.00001929234061),
+        new(-110.00001935081971, 30.000009838954508),
+        new(-110.00001680259425, 29.999994809156938)
     };
 
     // select st_astext(h3_to_geo_boundary_geometry('8e48e1d7038d527'::h3index));
@@ -74,10 +76,11 @@ public class H3GeometryExtensionsTests {
 
                 using var reader = new StreamReader(stream);
 
-                List<(H3Index, LatLng[])> data = new();
+                // authoritative libh3 boundary vertices, stored as (lat, lng) degrees
+                List<(H3Index, (double Lat, double Lng)[])> data = new();
                 string line;
                 H3Index index = H3Index.Invalid;
-                List<LatLng> coords = null;
+                List<(double Lat, double Lng)> coords = null;
 
                 while ((line = reader.ReadLine()) != null) {
                     if (index == H3Index.Invalid) {
@@ -86,7 +89,7 @@ public class H3GeometryExtensionsTests {
                     }
                     switch (line) {
                         case "{":
-                            coords = new List<LatLng>();
+                            coords = new List<(double Lat, double Lng)>();
                             continue;
                         case "}":
                             data.Add((index, coords!.ToArray()));
@@ -98,10 +101,10 @@ public class H3GeometryExtensionsTests {
                     if (coords == null)
                         continue;
 
-                    var match = Regex.Match(line, @"\s+([0-9.-]+) ([0-9.-]+)");
-                    coords.Add(new LatLng(
-                        Convert.ToDouble(match.Groups[1].Value) * M_PI_180,
-                        Convert.ToDouble(match.Groups[2].Value) * M_PI_180)
+                    var match = Regex.Match(line, @"\s+([0-9.eE+-]+) ([0-9.eE+-]+)");
+                    coords.Add((
+                        Convert.ToDouble(match.Groups[1].Value),
+                        Convert.ToDouble(match.Groups[2].Value))
                     );
                 }
 
@@ -147,13 +150,13 @@ public class H3GeometryExtensionsTests {
 
     [Test]
     [TestCaseSource(typeof(H3GeometryExtensionsTests), nameof(GetCellBoundaryVerticesTestCases))]
-    public bool Test_Upstream_GetCellBoundaryVertices(string testDataFn, List<(H3Index, LatLng[])> expectedData) {
+    public bool Test_Upstream_GetCellBoundaryVertices(string testDataFn, List<(H3Index, (double Lat, double Lng)[])> expectedData) {
         // Arrange
 
         // Act
         var vertices = expectedData.Select(t => t.Item1.GetCellBoundaryVertices().ToList()).ToList();
 
-        // Assert
+        // Assert — expected vertices are authoritative libh3 degrees; hold ours to MaxUlps.
         for (var v = 0; v < expectedData.Count; v += 1) {
             var expectedVerts = expectedData[v].Item2;
             var actualVerts = vertices[v];
@@ -166,9 +169,10 @@ public class H3GeometryExtensionsTests {
             for (var i = 0; i < expectedVerts.Length; i += 1) {
                 var ev = expectedVerts[i];
                 var av = actualVerts[i];
-                if (Math.Abs(ev.Latitude - av.Latitude) > 0.000001 ||
-                    Math.Abs(ev.Longitude - av.Longitude) > 0.000001) {
-                    Assert.Fail($"expected: {ev.Latitude},{ev.Longitude} actual: {av.Latitude},{av.Longitude} delta: {Math.Abs(ev.Latitude-av.Latitude)},{Math.Abs(ev.Longitude-av.Longitude)}");
+                var okLat = TestHelpers.CheckUlps("Boundary.latDeg", av.LatitudeDegrees, ev.Lat);
+                var okLng = TestHelpers.CheckUlps("Boundary.lngDeg", av.LongitudeDegrees, ev.Lng);
+                if (!okLat || !okLng) {
+                    Assert.Fail($"expected: {ev.Lat},{ev.Lng} actual: {av.LatitudeDegrees},{av.LongitudeDegrees} ulp: {TestHelpers.UlpDistance(av.LatitudeDegrees, ev.Lat)},{TestHelpers.UlpDistance(av.LongitudeDegrees, ev.Lng)}");
                     return false;
                 }
             }
@@ -189,7 +193,7 @@ public class H3GeometryExtensionsTests {
 
         // Assert
         for (var i = 0; i < CellAreasInKm2.Length; i += 1) {
-            Assert.That(Math.Abs(areas[i] - CellAreasInKm2[i]) < 1e-8, Is.True, $"{indexes[i]} should be {CellAreasInKm2[i]} not {areas[i]}");
+            Assert.That(TestHelpers.CheckUlps("CellArea.km2", areas[i], CellAreasInKm2[i]), Is.True, $"{indexes[i]} should be {CellAreasInKm2[i]} not {areas[i]} (ulp {TestHelpers.UlpDistance(areas[i], CellAreasInKm2[i])})");
         }
     }
 
@@ -300,7 +304,7 @@ public class H3GeometryExtensionsTests {
         }
 
         // Assert
-        Assert.That(sum, Is.EqualTo(4.0 * M_PI).Within(1e-14), "cell areas should sum to the area of the sphere");
+        Assert.That(TestHelpers.CheckUlps("SphereSum", sum, 4.0 * M_PI, TestHelpers.SphereSumMaxUlps), Is.True, $"cell areas should sum to the area of the sphere (ulp {TestHelpers.UlpDistance(sum, 4.0 * M_PI)})");
     }
 
     [Test]
@@ -350,8 +354,8 @@ public class H3GeometryExtensionsTests {
         Assert.That(actual.Length, Is.EqualTo(expected.Length), "should be same length");
         for (var i = 0; i < expected.Length; i += 1) {
             var p = expected[i];
-            Assert.That(Math.Abs(p.X - actual[i].LongitudeDegrees) < EPSILON_DEG, Is.True, $"longitude {i} should be {p.X} not {actual[i].LongitudeDegrees}");
-            Assert.That(Math.Abs(p.Y - actual[i].LatitudeDegrees) < EPSILON_DEG, Is.True, $"latitude {i} should be {p.X} not {actual[i].LongitudeDegrees}");
+            Assert.That(TestHelpers.CheckUlps("Boundary.lngDeg", actual[i].LongitudeDegrees, p.X), Is.True, $"longitude {i} should be {p.X} not {actual[i].LongitudeDegrees} (ulp {TestHelpers.UlpDistance(actual[i].LongitudeDegrees, p.X)})");
+            Assert.That(TestHelpers.CheckUlps("Boundary.latDeg", actual[i].LatitudeDegrees, p.Y), Is.True, $"latitude {i} should be {p.Y} not {actual[i].LatitudeDegrees} (ulp {TestHelpers.UlpDistance(actual[i].LatitudeDegrees, p.Y)})");
         }
 
     }

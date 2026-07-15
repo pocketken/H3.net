@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using H3.Model;
 
 #nullable enable
@@ -153,7 +152,7 @@ public static class H3DirectedEdgeExtensions {
     /// <returns>The destination cell index, or Invalid on failure</returns>
     public static H3Index GetDirectedEdgeDestination(this H3Index edge) {
         var origin = GetDirectedEdgeOrigin(edge);
-        return origin == H3Index.Invalid ? H3Index.Invalid : origin.GetDirectNeighbour((Direction)edge.ReservedBits).Item1;
+        return origin == H3Index.Invalid ? H3Index.Invalid : origin.GetDirectNeighbourWithoutRotations((Direction)edge.ReservedBits);
     }
 
     /// <summary>
@@ -203,6 +202,36 @@ public static class H3DirectedEdgeExtensions {
     }
 
     /// <summary>
+    /// Span-filling variant of <see cref="GetDirectedEdgeBoundaryVertices(H3Index)"/>
+    /// that writes the edge boundary vertices into a caller-provided buffer and
+    /// returns the number written, avoiding the intermediate <c>LatLng[]</c> and
+    /// the boxed array enumerator produced by the <see cref="IEnumerable{T}"/>
+    /// overload.  Produces exactly the same vertex sequence.  The buffer must
+    /// have room for a length-2 boundary plus, for Class III cells, an
+    /// edge-crossing intersection vertex.
+    /// </summary>
+    private static int GetDirectedEdgeBoundaryVertices(this H3Index edge, Span<LatLng> destination) {
+        if (!edge.IsValidDirectedEdge()) {
+            throw new ArgumentException("not a valid directed edge index", nameof(edge));
+        }
+        var direction = (Direction)edge.ReservedBits;
+        var origin = edge.GetDirectedEdgeOrigin();
+
+        // get the start vertex for the edge
+        var startVertex = origin.GetVertexNumberForDirection(direction);
+        if (startVertex == H3VertexExtensions.InvalidVertex) {
+            throw new InvalidOperationException($"unable to determine start vertex for edge {edge}");
+        }
+
+        var face = origin.ToFaceIJK();
+        var resolution = origin.Resolution;
+
+        return origin.IsPentagon
+            ? face.GetPentagonBoundary(resolution, startVertex, 2, destination)
+            : face.GetHexagonBoundary(resolution, startVertex, 2, destination);
+    }
+
+    /// <summary>
     /// Length of a directed edge in radians.
     /// </summary>
     /// <param name="edge"></param>
@@ -223,11 +252,18 @@ public static class H3DirectedEdgeExtensions {
     /// <exception cref="ArgumentException">Thrown when the provided index is
     /// not a valid directed edge index, e.g. it is a cell index.</exception>
     public static double EdgeLengthRadians(this H3Index edge) {
-        var vertices = edge.GetDirectedEdgeBoundaryVertices().ToArray();
+        // the boundary is consumed in a single forward pass, so fill a stack
+        // buffer and sum consecutive great-circle distances rather than
+        // materializing an intermediate array and boxing an array enumerator.
+        // A length-2 edge boundary yields at most 2 vertices plus, for Class III
+        // cells, one edge-crossing intersection vertex; 16 (the boundary core's
+        // scratch-buffer size) cannot overflow.
+        Span<LatLng> vertices = stackalloc LatLng[16];
+        var count = edge.GetDirectedEdgeBoundaryVertices(vertices);
 
         var length = 0.0;
-        for (var i = 0; i < vertices.Length - 1; i += 1) {
-            length += vertices[i].GetGreatCircleDistanceInRadians(vertices[i + 1]);
+        for (var i = 1; i < count; i += 1) {
+            length += vertices[i - 1].GetGreatCircleDistanceInRadians(vertices[i]);
         }
 
         return length;

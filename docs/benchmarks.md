@@ -1,117 +1,93 @@
-## Some Mostly-Pointless Benchmarks
-There is an extremely basic set of benchmarks using [BenchmarkDotNet](https://benchmarkdotnet.org/index.html) that I have begun to use in order to track performance and perform optimizations as things progress.  You can check the code out to run the benchmarks locally if you want, e.g.:
+# pocketken.H3 vs a native binding
 
-```sh
-$ dotnet run --configuration Release --project .\test\H3.Benchmarks\H3.Benchmarks.csproj --filter *Uncompact* --join --framework net5.0
-```
+This compares the managed port against a native H3 binding ([H3.NET.Native](https://github.com/FOOincognita/H3.NET.Native), a `[LibraryImport]` wrapper over Uber's `libh3`) on identical inputs, in the same process. The point is not "managed beats C". It is to see what a .NET app actually gives up, or does not, by using the pure-managed port instead of paying to call the C library.
 
-All numbers here are from my primary Windows development VM:
+## Read this first
 
-``` ini
-BenchmarkDotNet=v0.12.1, OS=Windows 10.0.19042
-AMD Ryzen 9 3900X, 1 CPU, 12 logical and 6 physical cores
-.NET Core SDK=5.0.201
-  [Host]        : .NET Core 5.0.4 (CoreCLR 5.0.421.11614, CoreFX 5.0.421.11614), X64 RyuJIT
-  .NET Core 5.0 : .NET Core 5.0.4 (CoreCLR 5.0.421.11614, CoreFX 5.0.421.11614), X64 RyuJIT
+- One box, one afternoon: this one happens to be **AMD EPYC-Milan, Ubuntu 24.04.4, .NET 10.0.9, BenchmarkDotNet 0.15.8**; YMMV.
+- `libh3` is **Uber H3 v4.5.0 built from source**, CMake `Release` (`-O3`, generic arch, no `-ffast-math`, no `-march=native`). A fast-math or native-arch build would move the native numbers.
+- The **"raw libh3" baseline is a bare P/Invoke from .NET**, not native C. It is the floor for *calling* libh3 from a .NET process, which is the only way a .NET app gets at it. It is not libh3's compute floor. libh3 called from C, with no interop, would be faster, and nothing here measures that.
+- **Ratios travel better than microseconds**, but they still move with OS, libc, libm, CPU, and JIT. Rerun on your own hardware before quoting anything.
+- Where pocketken exposes both a streaming API (returns a collection, allocates) and a span API (fills a caller buffer, allocates nothing), both are shown, each against the binding's matching call.
 
-Job=.NET Core 5.0  Runtime=.NET Core 5.0
-```
+## At a glance
 
-While there are some comparisons here against [H3Lib](https://github.com/RichardVasquez/h3net), I still need to work on getting some benchmarks for the other H3 package which wraps the native library; if anyone is interested in assisting PRs are welcome!
+Speed and allocation across the API surface, per operation, relative to the native binding.
 
-### Hierarchy Ops
+![pocketken.H3 vs the native binding, speed and allocation per operation](images/across-the-board.png)
 
-#### GetParentForResolution
-Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) to get parent at resolution 0 (a silly microbenchmark):
+At or below the binding on speed for every operation except `cellToBoundary` (where the binding returns a bare coordinate list and pocketken builds an NTS geometry), and the span API allocates nothing.
 
-|                              Method |      Mean |     Error |    StdDev |  Gen 0 | Allocated |
-|------------------------------------ |----------:|----------:|----------:|-------:|----------:|
-| pocketken.H3.GetParentForResolution |  4.918 ns | 0.0838 ns | 0.0784 ns | 0.0029 |      24 B |
-|                      H3Lib.ToParent | 21.087 ns | 0.1255 ns | 0.1174 ns |      - |         - |
+| Operation | pocketken streaming | pocketken span | H3.NET.Native |
+| --- | ---: | ---: | ---: |
+| `polygonToCells` | 62.6 µs (0.34x) | | 185.2 µs |
+| `cellToParent` | 259.5 ns (0.50x) | | 519.5 ns |
+| `latLngToCell` | 168.8 ns (0.53x) | | 320.7 ns |
+| `compactCells` | 3.4 µs (0.55x) | 4.1 µs (0.70x) | 6.2 µs |
+| `gridPathCells` | 1.3 µs (0.57x) | 1.3 µs (0.56x) | 2.3 µs |
+| `cellToChildren` | 1.0 µs (0.65x) | 721 ns (0.63x) | 1.6 µs |
+| `gridDiskDistances` | 5.4 µs (0.78x) | 5.0 µs (0.79x) | 6.9 µs |
+| `uncompactCells` | 2.1 µs (0.82x) | 1.8 µs (0.95x) | 2.5 µs |
+| `gridRingUnsafe` | 1.3 µs (0.99x) | 1.1 µs (0.89x) | 1.3 µs |
+| `cellToBoundary` | 1.0 µs (1.03x) | 994 ns (1.02x) | 977 ns |
 
-#### GetChildrenForResolution
-Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) to get all children at resolution 15.
+## Speed vs raw libh3
 
-|                                Method |      Mean |     Error |    StdDev |     Gen 0 |     Gen 1 |    Gen 2 | Allocated |
-|-------------------------------------- |----------:|----------:|----------:|----------:|----------:|---------:|----------:|
-| pocketken.H3.GetChildrenForResolution |  9.639 ms | 0.1317 ms | 0.1099 ms |  796.8750 |  781.2500 | 484.3750 |      5 MB |
-|                      H3Lib.ToChildren | 10.660 ms | 0.2096 ms | 0.3072 ms | 3453.1250 | 1671.8750 | 984.3750 |     24 MB |
+The smallest operations are dominated by fixed cost. A native call pays the managed to native transition every time; the managed port never leaves the runtime, so it comes in below even a bare P/Invoke to `libh3`.
 
-#### GetDirectNeighbour
-Using `89283080dcbffff` (Uber's SF Test index @ resolution 9) and `8e0800000000007` (first pentagon @ resolution 14) to get neighbours at `Direction.I` and `Direction.IJ`:
+![Indexing and traversal relative to a raw libh3 P/Invoke](images/overhead-vs-raw.png)
 
-|                                      Method |     Mean |    Error |   StdDev |  Gen 0 | Allocated |
-|-------------------------------------------- |---------:|---------:|---------:|-------:|----------:|
-|   'pocketken.H3.GetDirectNeighbour(hex, I)' | 16.68 ns | 0.140 ns | 0.124 ns | 0.0029 |      24 B |
-|           'H3Lib.NeighborRotations(hex, I)' | 16.70 ns | 0.187 ns | 0.166 ns |      - |         - |
-|  'pocketken.H3.GetDirectNeighbour(hex, IJ)' | 24.47 ns | 0.223 ns | 0.198 ns | 0.0029 |      24 B |
-|          'H3Lib.NeighborRotations(hex, IJ)' | 27.64 ns | 0.226 ns | 0.189 ns |      - |         - |
-|  'pocketken.H3.GetDirectNeighbour(pent, I)' | 27.50 ns | 0.307 ns | 0.287 ns | 0.0029 |      24 B |
-|          'H3Lib.NeighborRotations(pent, I)' | 33.15 ns | 0.415 ns | 0.388 ns |      - |         - |
-| 'pocketken.H3.GetDirectNeighbour(pent, IJ)' | 27.34 ns | 0.367 ns | 0.343 ns | 0.0029 |      24 B |
-|         'H3Lib.NeighborRotations(pent, IJ)' | 32.86 ns | 0.250 ns | 0.234 ns |      - |         - |
+| Operation | raw libh3 (P/Invoke) | H3.NET.Native | pocketken.H3 |
+| --- | ---: | ---: | ---: |
+| `latLngToCell` | 318.8 ns | 320.7 ns (1.01x) | **168.8 ns (0.53x)** |
+| `gridDisk` (into buffer) | 1585.8 ns | 1834.4 ns (1.16x) | **1361.5 ns (0.86x)** |
 
-### Algorithms
+pocketken runs below the floor for *calling* libh3 from .NET, because it skips the crossing that floor is made of. That is not the same as beating libh3 in C, which this does not measure.
 
-#### Fill (Polyfill)
-Filling world and [Uber SF Test](https://github.com/uber/h3/blob/master/src/apps/testapps/testPolygonToCells.c#L27) polygons at varied resolutions:
+## Allocation
 
-* world, res 4: 288,122 cells
-* world, res 5: 2,016,842 cells
-* SF test, res 10: 8,794 cells
-* SF test, res 11: 61,569 cells
-* SF test, res 12: 430,832 cells
-* SF test, res 13: 3,015,836 cells
-* SF test, res 14: 21,111,191 cells
-* SF test, res 15: 147,778,335 cells
+Indexing and traversal into a caller buffer allocate **nothing**. The fill streams through pooled working buffers, so it stays flat regardless of output size: about **2 KB** whether it returns one cell or 7.66 million. The binding materializes an array the C side sizes from the bounding box, so its allocation grows with the output, to **58 MB** at 7.66 million cells.
 
-|                               Method |           Mean |       Error |      StdDev |        Gen 0 |       Gen 1 |      Gen 2 | Allocated |
-|------------------------------------- |---------------:|------------:|------------:|-------------:|------------:|-----------:|----------:|
-| 'pocketken.H3.Fill(worldPolygon, 4)' |     196.743 ms |   1.8058 ms |   1.6008 ms |   10000.0000 |   2000.0000 |  1000.0000 |     90 MB |
-| 'pocketken.H3.Fill(worldPolygon, 5)' |   1,413.311 ms |  11.3172 ms |  10.5861 ms |   71000.0000 |  13000.0000 |  4000.0000 |    648 MB |
-|   'pocketken.H3.Fill(sfPolygon, 10)' |       7.319 ms |   0.0241 ms |   0.0202 ms |     367.1875 |    226.5625 |   117.1875 |      3 MB |
-|      'H3Lib.Polyfill(sfPolygon, 10)' |     494.078 ms |   1.2105 ms |   0.9450 ms |    3000.0000 |           - |          - |     27 MB |
-|   'pocketken.H3.Fill(sfPolygon, 11)' |      48.994 ms |   0.8197 ms |   0.7667 ms |    2727.2727 |   1090.9091 |   636.3636 |     20 MB |
-|      'H3Lib.Polyfill(sfPolygon, 11)' |   3,319.726 ms |   3.1163 ms |   2.9150 ms |   21000.0000 |   3000.0000 |  1000.0000 |    168 MB |
-|   'pocketken.H3.Fill(sfPolygon, 12)' |     361.273 ms |   6.7138 ms |   6.2801 ms |   16000.0000 |   3000.0000 |  2000.0000 |    145 MB |
-|      'H3Lib.Polyfill(sfPolygon, 12)' |  20,111.706 ms | 269.9403 ms | 239.2950 ms |  137000.0000 |  19000.0000 |  2000.0000 |  1,119 MB |
-|   'pocketken.H3.Fill(sfPolygon, 13)' |   2,692.485 ms |  14.1803 ms |  13.2643 ms |  109000.0000 |  30000.0000 |  9000.0000 |  1,046 MB |
-|   'pocketken.H3.Fill(sfPolygon, 14)' |  18,216.525 ms |  22.5448 ms |  18.8259 ms |  719000.0000 | 119000.0000 | 10000.0000 |  6,702 MB |
-|   'pocketken.H3.Fill(sfPolygon, 15)' | 128,363.156 ms | 501.3173 ms | 444.4047 ms | 4991000.0000 | 791000.0000 | 46000.0000 | 47,576 MB |
+![Bytes allocated per op, log scale](images/allocation.png)
 
-#### Lines
-Line from `8e283080dc80007` to `8e48e1d7038d527` (`DistanceTo` of 554,625 cells).
+| Operation | H3.NET.Native | pocketken.H3 |
+| --- | ---: | ---: |
+| `latLngToCell` | 0 B | 0 B |
+| `gridDisk` (into buffer) | 1,504 B | **0 B** |
+| `polygonToCells` (~22k cells) | 179,182 B | **1,816 B** |
+| `polygonToCells` (7.66M cells) | 61,283,016 B | **1,984 B** |
 
-|              Method |       Mean |    Error |   StdDev |        Gen 0 |      Gen 1 |     Gen 2 | Allocated |
-|-------------------- |-----------:|---------:|---------:|-------------:|-----------:|----------:|----------:|
-| pocketken.H3.LineTo |   725.4 ms |  9.40 ms |  8.79 ms |   34000.0000 | 10000.0000 | 1000.0000 |    283 MB |
-|        H3Lib.LineTo | 4,683.3 ms | 14.94 ms | 13.25 ms | 1057000.0000 |  3000.0000 | 1000.0000 |  8,449 MB |
+The span overloads (`GridDiskDistances`, `GridPathCells`, `CompactCells`, `UncompactCells`, `GetChildrenForResolution`, `GetCellBoundaryVertices` and the rest) fill a caller buffer and allocate nothing; the streaming APIs allocate only the collection they return.
 
-#### Rings
-`hex` is a hexagon index (`8f48e1d7038d520`).
+## polygonToCells
 
-|                                    Method |            Mean |         Error |        StdDev |        Gen 0 |        Gen 1 |        Gen 2 |     Allocated |
-|------------------------------------------ |----------------:|--------------:|--------------:|-------------:|-------------:|-------------:|--------------:|
-|      'pocketken.H3.GetKRing(hex, k = 50)' |        419.5 us |       1.79 us |       1.59 us |      73.7305 |      36.6211 |            - |        608 KB |
-|  'pocketken.H3.GetKRingFast(hex, k = 50)' |        422.6 us |       1.40 us |       1.09 us |      66.4063 |      33.2031 |            - |        548 KB |
-|  'pocketken.H3.GetKRingSlow(hex, k = 50)' |      3,080.5 us |       7.55 us |       6.31 us |     269.5313 |     179.6875 |      89.8438 |      2,113 KB |
-|       'H3Lib.KRingDistances(hex, k = 50)' |        463.7 us |       3.11 us |       2.76 us |      99.6094 |      99.6094 |      99.6094 |        487 KB |
+One fixed ~0.5° box around SF, filled at increasing resolution, so the output climbs from 1 cell to 7.66 million while the polygon stays put.
 
-`pent` is a pentagon index (`8e0800000000007`) which forces the use of the iterative (recursive in the case of H3Lib) method of generating the ring due to the fast method's inability to handle pentagons.
+![polygonToCells fill time vs output cell count](images/no-crossover.png)
 
-|                                    Method |            Mean |         Error |        StdDev |        Gen 0 |        Gen 1 |        Gen 2 |     Allocated |
-|------------------------------------------ |----------------:|--------------:|--------------:|-------------:|-------------:|-------------:|--------------:|
-|     'pocketken.H3.GetKRing(pent, k = 50)' |      3,295.9 us |      24.51 us |      21.73 us |     269.5313 |     179.6875 |      89.8438 |      2,113 KB |
-| 'pocketken.H3.GetKRingSlow(pent, k = 50)' |      3,097.6 us |      23.57 us |      22.05 us |     269.5313 |     179.6875 |      89.8438 |      2,113 KB |
-|      'H3Lib.KRingDistances(pent, k = 50)' | 79,416,403.4 us | 594,028.76 us | 555,654.87 us | 7644000.0000 | 6050000.0000 | 5015000.0000 | 73,068,645 KB |
+| Resolution | Output cells | H3.NET.Native | pocketken.H3 | ParallelFill |
+| ---: | ---: | ---: | ---: | ---: |
+| 4 | 1 | 20.0 µs | **7.2 µs** | |
+| 6 | 65 | 89.2 µs | **37.0 µs** | 160 µs |
+| 8 | 3,189 | 1.89 ms | **1.16 ms** | 0.70 ms |
+| 10 | 156,334 | 89.2 ms | **56.9 ms** | 15.3 ms |
+| 11 | 1,094,337 | 716.7 ms | **472.8 ms** | 115.7 ms |
+| 12 | 7,660,354 | 5.05 s | **3.94 s** | **0.97 s** |
 
-### Sets
-* Compact: Result of compacting all cells at resolution 5.
-* Uncompact: Result of uncompacting all base cells to resolution of 5.
+`pocketken.H3 Fill` is under the binding at every resolution. `ParallelFill` shards the box across cores: on this 4-core host it is worse than the sequential fill below a few thousand cells (res 6: 160 µs vs 37 µs, all overhead) and only starts paying off around res 8. At res 12 it fills the 7.66M-cell region in **0.97 s**, about 4x its own sequential fill and 5x the binding. It is opt-in for exactly those large fills.
 
-|                 Method |     Mean |   Error |  StdDev |      Gen 0 |     Gen 1 |     Gen 2 | Allocated |
-|----------------------- |---------:|--------:|--------:|-----------:|----------:|----------:|----------:|
-|   pocketken.H3.Compact | 330.3 ms | 5.50 ms | 5.14 ms | 11000.0000 | 3000.0000 |         - | 243.51 MB |
-|          H3Lib.Compact | 381.0 ms | 5.83 ms | 5.45 ms |  9000.0000 | 4000.0000 | 2000.0000 | 305.24 MB |
-| pocketken.H3.Uncompact | 136.6 ms | 0.36 ms | 0.32 ms |  6500.0000 | 3500.0000 | 1000.0000 |  78.18 MB |
-|        H3Lib.Uncompact | 203.3 ms | 4.05 ms | 4.16 ms | 43000.0000 | 7333.3333 |  666.6667 | 493.02 MB |
+## No native dependency
+
+pocketken.H3 is a single managed assembly. There is no `libh3` to build, ship, load, version-match, or trust per platform. It targets `netstandard2.0`/`netstandard2.1`/`net8.0`/`net10.0`, has no unsafe code or runtime codegen, and runs anywhere .NET runs, including where loading an unmanaged image is restricted. A native binding, however thin, has to carry a compiled `libh3` for every RID it supports.
+
+Because it is pure IL with no unsafe code or runtime code generation, it is **Unity (IL2CPP) and Native AOT friendly**. Unity consumes the `netstandard2.1` (or `netstandard2.0`) assembly via something like NuGetForUnity, with no `System.Text.Json` dependency chain to fight. The hot-path APIs publish clean under a Native AOT (ILC) compile, the same class of ahead-of-time compiler as IL2CPP, with no trim or dynamic-code (IL2xxx/IL3xxx) warnings attributed to the library. A native binding can run under AOT/IL2CPP as well, but only if its `libh3` is present and statically linked for that platform.
+
+## Accuracy
+
+It is a port, so the goal is that it returns the reference library's results. Index and cell outputs match upstream `libh3` exactly. Geometry (center lat/lng, boundary vertices, cell area, edge length) agrees to floating-point noise which is orders of magnitude finer than the grid itself resolves (the finest cell, at res 15, is sub-metre). Geometry is a tolerance rather than bit-exact only because the transcendental functions route through the platform's libm; the integer index math is identical everywhere. The suite validates against Uber's test vectors and upstream output, including a polyfill corpus that pins each shape (thin sliver, concave L, box-with-hole, antimeridian, disjoint multipolygon) to `libh3`'s exact cell set.
+
+If you find a bug that affects accuracy or performance, PRs are welcome.
+
+---
+
+*Numbers are point-in-time and host-specific. The harness lives in `benchmarks/H3.NativeCompare`; regenerate the data, charts and tables with the scripts in `benchmarks/charts` (`build_data.py`, then `generate_charts.py` / `generate_tables.py`).*

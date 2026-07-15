@@ -1,6 +1,28 @@
 ﻿# pocketken.H3 Change Log
 
-### 4.5.0 - unreleased
+### 4.5.0.1 - 2026-07-14
+
+A performance and allocation pass on top of 4.5.0, plus new zero-allocation span APIs and a parallel polyfill.  No upstream H3 API changes; cell and index results remain identical to 4.5.0 (the projection fix below shifts geometry by a few ULP to match libh3 exactly).
+
+##### Fixes :wrench:
+- the spherical inverse projection (`ToLatLng`, `GetCellBoundary` and its vertices, directed-edge boundaries, and everything built on them) now matches upstream libh3 v4.5.0 bit-for-bit.  v4.5.0 replaced the spherical-law-of-cosines inverse with a 3D-vector construction (tangent basis + linear combination + normalize); the port now follows it in the same operation order.  Center and boundary coordinates shift by a few ULP from earlier 4.5.0 builds
+- fixes a codegen regression on `net10.0` in `GetDirectNeighbour`/`GetDirectNeighbourWithoutRotations`: over-aggressive inlining of the generated per-digit rotation tables gave the method a large zero-initialized stack frame, making grid disk, grid ring, `IsNeighbour`, directed-edge and polyfill operations several times slower under the net10 JIT than under net8.  net10 is now at parity with net8 on these paths (net8 was unaffected)
+- `Fill` now traces the polygon boundary in cells before flooding inward, matching upstream `polygonToCells` seeding.  Thin/narrow features, holes and antimeridian-crossing shapes that are contained but only reachable through non-contained neighbours (and so were previously dropped from a single interior seed) are now returned.  Locked to libh3's exact cell set by a differential corpus (thin sliver, concave L, box-with-hole, antimeridian quad, disjoint multipolygon)
+
+##### Enhancements :tada:
+- new zero-allocation span/buffer-fill overloads across the traversal, hierarchy and set APIs: `GridDisk`, `GridDiskDistances`, `GridRingUnsafe`, `GridPathCells`, `GetChildrenForResolution`, `CompactCells`, `UncompactCells` and `GetCellBoundaryVertices` gain overloads that fill a caller-owned `Span<T>` and return the number of cells written, with sizing helpers `MaxGridDiskSize`, `MaxGridRingSize`, `GridPathCellsSize`, `CellToChildrenSize` and `UncompactCellsSize`.  Allocation-free on a warm `ArrayPool`; the streaming `IEnumerable` APIs are unchanged and produce identical results
+- new `ParallelFill` for large polygon fills: shards the polygon's envelope into horizontal strips, fills each concurrently and unions the result.  Produces the same (unordered) cell set as `Fill`.  It is opt-in and only pays off on large fills: it trades the sequential fill's flat allocation for wall-clock, and below a few thousand output cells the setup cost makes it slower than `Fill`
+
+##### Performance :rocket:
+- the forward and inverse spherical projections (`FromLatLng`/`ToLatLng`, cell boundaries, areas, edge lengths) drop a large amount of redundant transcendental work while staying bit-for-bit with the reference: precomputed per-face-center sin/cos and axis-azimuth tables, angle-subtraction identities in place of per-call `atan2`/`sin`/`cos`, a cancelled `cos(latitude)` in the longitude solve, a collapsed planar-radius `sqrt`, precomputed `M_SQRT7` powers, integer round-div-by-7 on the aperture-7 up-scaling chain, and per-vertex trig cached across the Cagnoli area loop
+- aperture-7 digit-pair down-steps in the resolution walk are fused into a single normalization, and `ToFaceIJK` fuses the aperture-7 down-step with the neighbour walk; `GetDirectNeighbour` fast-paths the common no-base-cell-crossing tail and skips the identity rotation reorient
+- polyfill flood fill replaces NTS's per-call allocating point-in-area locator with an allocation-free inline ray-crossing locator, replaces its `HashSet`/`Stack` working sets with pooled open-addressed structures presized from the geometry's area, and hoists per-cell invariants out of the neighbour walk
+- grid disk, cell boundary and edge length drop iterator and intermediate-array allocations via eager span fills and `stackalloc` buffers; `CompactCells` uses a presized bucket and a primitive `ulong` sort, and `UncompactCells` uses a pooled open-addressed dedup table and an inlined child walk
+
+##### Testing
+- geometry parity is gated per operation against authoritative libh3 v4.5.0: per-cell outputs within 1 ULP and the whole-sphere cell-area sum within 3 ULP, with a persisted manifest recording the worst per-op ULP observed (index and cell outputs match exactly).  Added adversarial `Vec3d` edge-case coverage and per-op ULP diagnostics
+
+### 4.5.0 - 2026-07-10
 
 Aligns the port with upstream [H3 4.5.0](https://github.com/uber/h3/blob/master/CHANGELOG.md) and modernizes the supported .NET targets.
 

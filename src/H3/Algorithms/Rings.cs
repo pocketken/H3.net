@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using H3.Extensions;
@@ -73,7 +74,7 @@ public static class Rings {
     /// the origin cell. In particular, k=0 returns just the origin cell.
     ///
     /// This function is pentagon safe: it first attempts the fast
-    /// <see cref="GridRingUnsafe"/> traversal and transparently falls back to
+    /// <see cref="GridRingUnsafe(H3Index,int)"/> traversal and transparently falls back to
     /// filtering <see cref="GridDiskDistancesSafe"/> when pentagonal distortion
     /// is encountered.
     ///
@@ -205,13 +206,87 @@ public static class Rings {
     public static IEnumerable<RingCell> GridDiskDistances(this H3Index origin, int k) {
         try {
             List<RingCell> result = new(3 * k * (k + 1) + 1);
-            foreach (var cell in origin.GridDiskDistancesUnsafe(k)) {
-                result.Add(cell);
-            }
-
+            GridDiskDistancesUnsafeInto(origin, k, result);
             return result;
         } catch (HexRingException) {
             return origin.GridDiskDistancesSafe(k);
+        }
+    }
+
+    /// <summary>
+    /// Eager, non-iterator equivalent of <see cref="GridDiskDistancesUnsafe"/>
+    /// that writes cells directly into <paramref name="result"/> instead of
+    /// yielding them.  This avoids allocating an iterator state-machine object
+    /// on the hot <see cref="GridDiskDistances(H3Index,int)"/> path, which always drains the
+    /// full disk into a list anyway.  The traversal, cell ordering and
+    /// pentagon/k-subsequence exception semantics are identical to
+    /// <see cref="GridDiskDistancesUnsafe"/>.
+    /// </summary>
+    private static void GridDiskDistancesUnsafeInto(H3Index origin, int k, List<RingCell> result) {
+        var index = origin;
+
+        // k must be >= 0, so origin is always needed
+        result.Add(new RingCell(index, 0));
+
+        // Pentagon was encountered; bail out as user doesn't want this.
+        if (index.IsPentagon) throw new HexRingPentagonException();
+
+        // short circuit; k = 0 means we just want the origin (strange, but you get what you ask for)
+        if (k == 0) return;
+
+        // 0 < ring <= k, current ring
+        var ring = 1;
+
+        // 0 <= direction < 6, current side of the ring
+        var direction = 0;
+
+        // 0 <= i < ring, current position on the side of the ring
+        var i = 0;
+
+        // Number of 60 degree ccw rotations to perform on the direction (based on
+        // which faces have been crossed.)
+        var rotations = 0;
+
+        while (ring <= k) {
+            if (direction == 0 && i == 0) {
+                // Not putting in the output set as it will be done later, at
+                // the end of this ring.
+                (index, rotations) = index.GetDirectNeighbour(LookupTables.NextRingDirection, rotations);
+                if (index == H3Index.Invalid) {
+                    // Should not be possible because `origin` would have to be a pentagon
+                    throw new HexRingKSequenceException();
+                }
+
+                if (index.IsPentagon) {
+                    // Pentagon was encountered; bail out as user doesn't want this.
+                    throw new HexRingPentagonException();
+                }
+            }
+
+            (index, rotations) = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], rotations);
+            if (index == H3Index.Invalid) {
+                // Should not be possible because `origin` would have to be a pentagon
+                throw new HexRingKSequenceException();
+            }
+
+            result.Add(new RingCell(index, ring));
+            i += 1;
+
+            // Check if end of this side of the k-ring
+            if (i == ring) {
+                i = 0;
+                direction += 1;
+
+                // Check if end of this ring.
+                if (direction == 6) {
+                    direction = 0;
+                    ring += 1;
+                }
+            }
+
+            if (index.IsPentagon) {
+                throw new HexRingPentagonException();
+            }
         }
     }
 
@@ -293,7 +368,7 @@ public static class Rings {
     /// table, returning false if the value was already present.  The value
     /// must be non-zero; zero marks empty slots.
     /// </summary>
-    private static bool TryAddToProbeTable(ulong[] table, ulong value) {
+    private static bool TryAddToProbeTable(Span<ulong> table, ulong value) {
         var mask = table.Length - 1;
         var slot = (int)((value * 0x9E3779B97F4A7C15UL) >> 32) & mask;
 
@@ -411,6 +486,288 @@ public static class Rings {
                 throw new HexRingPentagonException();
             }
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Zero-allocation span / buffer-fill overloads (additive; the streaming
+    // IEnumerable API above is unchanged).  Each fill method writes cells into a
+    // caller-owned Span and returns the number written; size the destination via
+    // MaxGridDiskSize / MaxGridRingSize (mirrors libh3's maxGridDiskSize).  The
+    // traversal, ordering and pentagon/k-subsequence semantics are identical to
+    // the corresponding streaming method above (locked by parity tests).
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// The maximum number of cells produced by a grid disk of radius
+    /// <paramref name="k"/>, i.e. the minimum length of the destination buffer
+    /// for the <see cref="Span{T}"/> overloads of <see cref="GridDisk"/> and
+    /// <see cref="GridDiskDistances(H3Index,int,Span{RingCell})"/>.  Equal to
+    /// <c>3·k·(k+1)+1</c>.
+    /// </summary>
+    /// <param name="k">disk radius; must be non-negative</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when k is negative.</exception>
+    public static int MaxGridDiskSize(int k) {
+        if (k < 0) throw new ArgumentOutOfRangeException(nameof(k), k, "must be non-negative");
+        return 3 * k * (k + 1) + 1;
+    }
+
+    /// <summary>
+    /// The maximum number of cells produced by the hollow grid ring at distance
+    /// <paramref name="k"/>, i.e. the minimum length of the destination buffer
+    /// for the <see cref="Span{T}"/> overload of
+    /// <see cref="GridRingUnsafe(H3Index,int,Span{H3Index})"/>.  Equal to
+    /// <c>1</c> when k is 0, otherwise <c>6·k</c>.
+    /// </summary>
+    /// <param name="k">ring distance; must be non-negative</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when k is negative.</exception>
+    public static int MaxGridRingSize(int k) {
+        if (k < 0) throw new ArgumentOutOfRangeException(nameof(k), k, "must be non-negative");
+        return k == 0 ? 1 : 6 * k;
+    }
+
+    /// <summary>
+    /// Fills <paramref name="destination"/> with the cells within grid distance
+    /// <paramref name="k"/> of <paramref name="origin"/> (no distances) and
+    /// returns the number of cells written.  Pentagon safe: attempts the fast
+    /// traversal and transparently falls back to the breadth-first traversal
+    /// when pentagonal distortion is encountered.  Allocation-free on the fast
+    /// path; the fallback rents its scratch from <see cref="ArrayPool{T}"/>.
+    /// </summary>
+    /// <param name="origin">origin cell</param>
+    /// <param name="k">disk radius; must be non-negative</param>
+    /// <param name="destination">buffer of at least
+    /// <see cref="MaxGridDiskSize"/>(<paramref name="k"/>) cells</param>
+    /// <returns>the number of cells written to <paramref name="destination"/></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when k is negative.</exception>
+    /// <exception cref="ArgumentException">Thrown when the destination buffer is
+    /// smaller than <see cref="MaxGridDiskSize"/>.</exception>
+    public static int GridDisk(this H3Index origin, int k, Span<H3Index> destination) {
+        var required = MaxGridDiskSize(k);
+        if (destination.Length < required) {
+            throw new ArgumentException(
+                $"destination must hold at least {required} cells (see {nameof(MaxGridDiskSize)})", nameof(destination));
+        }
+
+        // The cells-only fast path shares the RingCell traversal via a pooled
+        // scratch buffer, then projects the indexes into the caller's span.
+        var scratch = ArrayPool<RingCell>.Shared.Rent(required);
+        try {
+            var cells = scratch.AsSpan(0, required);
+            int count;
+            try {
+                count = GridDiskDistancesUnsafeInto(origin, k, cells);
+            } catch (HexRingException) {
+                count = GridDiskDistancesSafeInto(origin, k, cells);
+            }
+
+            for (var i = 0; i < count; i += 1) destination[i] = cells[i].Index;
+            return count;
+        } finally {
+            ArrayPool<RingCell>.Shared.Return(scratch);
+        }
+    }
+
+    /// <summary>
+    /// Fills <paramref name="destination"/> with the <see cref="RingCell"/>s
+    /// (cell plus ring distance) within grid distance <paramref name="k"/> of
+    /// <paramref name="origin"/> and returns the number written.  Pentagon safe,
+    /// with cells, distances and ordering identical to the streaming
+    /// <see cref="GridDiskDistances(H3Index,int)"/>.  Allocation-free on the fast
+    /// path; the fallback rents its dedup table from <see cref="ArrayPool{T}"/>.
+    /// </summary>
+    /// <param name="origin">origin cell</param>
+    /// <param name="k">disk radius; must be non-negative</param>
+    /// <param name="destination">buffer of at least
+    /// <see cref="MaxGridDiskSize"/>(<paramref name="k"/>) cells</param>
+    /// <returns>the number of cells written to <paramref name="destination"/></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when k is negative.</exception>
+    /// <exception cref="ArgumentException">Thrown when the destination buffer is
+    /// smaller than <see cref="MaxGridDiskSize"/>.</exception>
+    public static int GridDiskDistances(this H3Index origin, int k, Span<RingCell> destination) {
+        var required = MaxGridDiskSize(k);
+        if (destination.Length < required) {
+            throw new ArgumentException(
+                $"destination must hold at least {required} cells (see {nameof(MaxGridDiskSize)})", nameof(destination));
+        }
+
+        try {
+            return GridDiskDistancesUnsafeInto(origin, k, destination);
+        } catch (HexRingException) {
+            return GridDiskDistancesSafeInto(origin, k, destination);
+        }
+    }
+
+    /// <summary>
+    /// Fills <paramref name="destination"/> with the hollow ring of cells at
+    /// exactly grid distance <paramref name="k"/> from <paramref name="origin"/>
+    /// and returns the number written.  Allocation-free equivalent of the
+    /// streaming <see cref="GridRingUnsafe(H3Index,int)"/>; not pentagon safe: a
+    /// <see cref="HexRingException"/> is thrown if the origin is a pentagon or
+    /// pentagonal distortion is encountered.
+    /// </summary>
+    /// <param name="origin">origin cell</param>
+    /// <param name="k">ring distance; must be non-negative</param>
+    /// <param name="destination">buffer of at least
+    /// <see cref="MaxGridRingSize"/>(<paramref name="k"/>) cells</param>
+    /// <returns>the number of cells written to <paramref name="destination"/></returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when k is negative.</exception>
+    /// <exception cref="ArgumentException">Thrown when the destination buffer is
+    /// smaller than <see cref="MaxGridRingSize"/>.</exception>
+    /// <exception cref="HexRingException">Thrown when pentagonal distortion is
+    /// encountered.</exception>
+    public static int GridRingUnsafe(this H3Index origin, int k, Span<H3Index> destination) {
+        var required = MaxGridRingSize(k);
+        if (destination.Length < required) {
+            throw new ArgumentException(
+                $"destination must hold at least {required} cells (see {nameof(MaxGridRingSize)})", nameof(destination));
+        }
+
+        return GridRingUnsafeInto(origin, k, destination);
+    }
+
+    /// <summary>
+    /// Span-filling core mirroring the traversal, ordering and exception
+    /// semantics of <see cref="GridDiskDistancesUnsafe"/> exactly, writing into
+    /// <paramref name="destination"/> instead of yielding.
+    /// </summary>
+    private static int GridDiskDistancesUnsafeInto(H3Index origin, int k, Span<RingCell> destination) {
+        var index = origin;
+        var count = 0;
+
+        // k must be >= 0, so origin is always needed
+        destination[count++] = new RingCell(index, 0);
+
+        // Pentagon was encountered; bail out as user doesn't want this.
+        if (index.IsPentagon) throw new HexRingPentagonException();
+
+        // short circuit; k = 0 means we just want the origin
+        if (k == 0) return count;
+
+        var ring = 1;
+        var direction = 0;
+        var i = 0;
+        var rotations = 0;
+
+        while (ring <= k) {
+            if (direction == 0 && i == 0) {
+                (index, rotations) = index.GetDirectNeighbour(LookupTables.NextRingDirection, rotations);
+                if (index == H3Index.Invalid) throw new HexRingKSequenceException();
+                if (index.IsPentagon) throw new HexRingPentagonException();
+            }
+
+            (index, rotations) = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], rotations);
+            if (index == H3Index.Invalid) throw new HexRingKSequenceException();
+
+            destination[count++] = new RingCell(index, ring);
+            i += 1;
+
+            if (i == ring) {
+                i = 0;
+                direction += 1;
+                if (direction == 6) {
+                    direction = 0;
+                    ring += 1;
+                }
+            }
+
+            if (index.IsPentagon) throw new HexRingPentagonException();
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Span-filling core mirroring <see cref="GridDiskDistancesSafe"/>: the
+    /// caller's <paramref name="destination"/> doubles as the breadth-first
+    /// queue (it is sized to the disk maximum) and the linear-probe dedup table
+    /// is rented from <see cref="ArrayPool{T}"/>.  Cells, distances and ordering
+    /// are identical to the streaming safe traversal.
+    /// </summary>
+    private static int GridDiskDistancesSafeInto(H3Index origin, int k, Span<RingCell> destination) {
+        if (origin == H3Index.Invalid) return 0;
+
+        var totalCells = 2L + 120L * Utils.IPow(7, origin.Resolution);
+        var maximumSize = (int)Math.Min(k < 1_000_000 ? 3L * k * (k + 1) + 1 : long.MaxValue, Math.Min(totalCells, 1 << 30));
+        var tableSize = 4;
+        while (tableSize < 1 << 30 && tableSize < maximumSize) tableSize <<= 1;
+
+        var searched = ArrayPool<ulong>.Shared.Rent(tableSize);
+        try {
+            Array.Clear(searched, 0, tableSize);
+            var table = searched.AsSpan(0, tableSize);
+
+            var count = 0;
+            destination[count++] = new RingCell(origin, 0);
+
+            for (var head = 0; head < count; head += 1) {
+                var cell = destination[head];
+                var nextK = cell.Distance + 1;
+                if (nextK > k) continue;
+
+                for (var d = Direction.K; d < Direction.Invalid; d += 1) {
+                    var (neighbour, _) = cell.Index.GetDirectNeighbour(d);
+                    if (neighbour == H3Index.Invalid || neighbour == origin || neighbour == cell.Index) {
+                        continue;
+                    }
+
+                    if (!TryAddToProbeTable(table, neighbour)) {
+                        continue;
+                    }
+
+                    destination[count++] = new RingCell(neighbour, nextK);
+                }
+            }
+
+            return count;
+        } finally {
+            ArrayPool<ulong>.Shared.Return(searched);
+        }
+    }
+
+    /// <summary>
+    /// Span-filling core mirroring the traversal, ordering and exception
+    /// semantics of <see cref="GridRingUnsafe(H3Index,int)"/> exactly.
+    /// </summary>
+    private static int GridRingUnsafeInto(H3Index origin, int k, Span<H3Index> destination) {
+        var count = 0;
+
+        // Identity short-circuit; return origin if k == 0
+        if (k == 0) {
+            destination[count++] = origin;
+            return count;
+        }
+
+        if (origin.IsPentagon) throw new HexRingPentagonException();
+
+        var index = origin;
+        var rotations = 0;
+
+        // break out to the requested ring
+        for (var ring = 0; ring < k; ring += 1) {
+            (index, rotations) = index.GetDirectNeighbour(LookupTables.NextRingDirection, rotations);
+            if (index == H3Index.Invalid) throw new HexRingKSequenceException();
+            if (index.IsPentagon) throw new HexRingPentagonException();
+        }
+
+        H3Index lastIndex = new(index);
+        destination[count++] = index;
+
+        for (var direction = 0; direction < 6; direction += 1) {
+            for (var pos = 0; pos < k; pos += 1) {
+                (index, rotations) = index.GetDirectNeighbour(LookupTables.CounterClockwiseDirections[direction], rotations);
+                if (index == H3Index.Invalid) throw new HexRingKSequenceException();
+
+                // Skip the very last index, it was already added; still traverse
+                // to it for the pentagonal distortion check below.
+                if (pos == k - 1 && direction == 5) continue;
+
+                destination[count++] = index;
+                if (index.IsPentagon) throw new HexRingPentagonException();
+            }
+        }
+
+        if (lastIndex != index) throw new HexRingPentagonException();
+        return count;
     }
 
 }

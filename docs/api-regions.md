@@ -12,11 +12,11 @@ var filled = somePolygon.Fill(9).ToList();
 
 `Fill` also accepts an optional second argument specifying the `VertextTestMode` to be used while checking containment during the fill operation:
 
-  * `VertexTestMode.Center` (the default) requires that the center vertex of a given index must be within the provided polygon ![polyfill result](./polyfill-result-center.png)
+  * `VertexTestMode.Center` (the default) requires that the center vertex of a given index must be within the provided polygon ![polyfill result](./images/polyfill-result-center.png)
 
-  * `VertexTestMode.Any` specifies that any vertex of a given cell's boundary may be within the provided polygon ![polyfill result](./polyfill-result-any.png)
+  * `VertexTestMode.Any` specifies that any vertex of a given cell's boundary may be within the provided polygon ![polyfill result](./images/polyfill-result-any.png)
 
-  * `VertexTestMode.All` specifies that all vertices of a given cell's boundary must be within the provided polygon ![polyfill result](./polyfill-result-all.png)
+  * `VertexTestMode.All` specifies that all vertices of a given cell's boundary must be within the provided polygon ![polyfill result](./images/polyfill-result-all.png)
 
 #### `LineString`s / `TraceCoordinates`
 

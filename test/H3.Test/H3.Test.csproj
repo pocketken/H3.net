@@ -101,5 +101,9 @@
     <EmbeddedResource Include="TestData\res03cells.txt" />
     <EmbeddedResource Include="TestData\res03ic.txt" />
     <EmbeddedResource Include="TestData\res04ic.txt" />
+    <!-- adversarial edge cases for the vec3 projection: pentagons (distortion) at
+         res 0-2, plus the poles and antimeridian. -->
+    <EmbeddedResource Include="TestData\advcells.txt" />
+    <EmbeddedResource Include="TestData\resadvic.txt" />
   </ItemGroup>
 </Project>
