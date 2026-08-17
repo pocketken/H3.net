@@ -30,7 +30,7 @@
        the assembly is consumable from Unity and .NET Framework without the STJ dependency
        chain; the H3IndexJsonConverter is only available on net8.0+ where STJ is in-box -->
   <ItemGroup Condition="'$(TargetFramework.Contains(`netstandard`))' == 'true'">
-    <PackageReference Include="Polyfill" Version="11.0.2" PrivateAssets="all" />
+    <PackageReference Include="Polyfill" Version="11.2.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
